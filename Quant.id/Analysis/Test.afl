@@ -1,0 +1,15 @@
+#include_once <..\Quant.id\AFL\Bandarmologi\BandarmologiCommon.afl>
+
+// TimeFrameSet(in5Minute);
+
+Filter = Name() == "MDLN";
+
+cumBuy = stBdGetBrokerCumBuyValue("CG", "2017-05-08");
+cumSell = stBdGetBrokerCumSellValue("CG", "2017-05-08");
+
+balance = stBdGetBrokerCumValue("CG", "2017-05-08");
+
+AddColumn(cumBuy, "cumBuy");
+AddColumn(cumSell, "cumSell");
+AddColumn(balance, "balance");
+

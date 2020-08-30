@@ -1,0 +1,9 @@
+_SECTION_BEGIN("Volume Oscillator");
+Plot( OscV( Param("Periods (fast)", 12, 1, 100 ),
+			  Param("Periods (slow)", 26, 1, 100 ) ),
+		_DEFAULT_NAME(), ParamColor("Color", ColorCycle ) );
+_SECTION_END();
+
+_SECTION_BEGIN("Volume1");
+Plot( Volume, _DEFAULT_NAME(), ParamColor("Color", colorBlueGrey ), ParamStyle( "Style", styleHistogram | styleOwnScale | styleThick, maskHistogram  ) );
+_SECTION_END();

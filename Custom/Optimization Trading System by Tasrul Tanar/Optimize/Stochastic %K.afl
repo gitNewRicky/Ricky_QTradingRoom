@@ -1,0 +1,7 @@
+sig2 = Optimize("Slowing",2,2,5,2);
+sig1 = Optimize("%K Periods",14,2,15,2);
+sig3 = Optimize("OS",9,0,20,2);
+sig4 = Optimize("OB Periods",9,80,100,2);
+
+Buy=TAS_Buy_Stoch1(sig1,sig2,sig3);
+Sell=TAS_Sell_Stoch1(sig1,sig2,sig4);

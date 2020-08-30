@@ -1,0 +1,8 @@
+_SECTION_BEGIN("ABI");
+function AbsoluteBreadthIndex()
+{
+  return AdvIssues() - DecIssues();
+}
+
+Plot( AbsoluteBreadthIndex(), _DEFAULT_NAME(), ParamColor("Color", ColorCycle ) );
+_SECTION_END();

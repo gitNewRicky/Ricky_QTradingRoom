@@ -1,0 +1,17 @@
+_SECTION_BEGIN("B. AccDist Cross");
+R = ((HHV(H,13) - C) /(HHV (H,13) -LLV (L,13))) *-100;
+Period = 13;
+EMA1 = EMA(R,Period);
+EMA2 = EMA(EMA1,13);
+selisih = EMA1 - EMA2;
+nirjeda = EMA1 + selisih;
+PR = 0-abs(nirjeda);
+ratagerak = MA(PR,5);
+//warna
+naik = PR>=ratagerak AND PR>=Ref(PR,-1) ;
+turun = (PR < ratagerak) OR PR>= ratagerak AND PR< Ref(PR,-1) ;
+barcolor = IIf( turun,colorRed, IIf( naik, colorBrightGreen, 7));
+Graph0 = PR;
+Graph1 = ratagerak;
+Graph0BarColor = ValueWhen( barcolor != 0, barcolor );
+_SECTION_END();

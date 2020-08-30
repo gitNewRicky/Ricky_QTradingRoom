@@ -1,0 +1,11 @@
+_SECTION_BEGIN("Volume_Color");
+
+Plot(0,"",colorBlack,styleLine | styleThick);
+
+VMA = EMA(Volume,20);
+Volume_color_by_MA = IIf(Volume > VMA,colorBrightGreen,colorRed);
+Plot(Volume,"Volume",Volume_color_by_MA,styleHistogram | styleThick);
+Plot(VMA,"Volume MA(20)",colorBlue,styleLine);
+
+
+_SECTION_END();

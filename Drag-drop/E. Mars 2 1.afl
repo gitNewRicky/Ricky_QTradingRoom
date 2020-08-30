@@ -1,0 +1,20 @@
+_SECTION_BEGIN("E. Mars 2");
+//Mars-2
+
+n = Param("Average", 7, 5, 20, 1 );
+
+R1=WMA(RSI(n),n);
+Plot(RSI(n),"MRSI(7)", colorRed, styleLine);
+Plot(R1,"MR1", colorBlue, styleLine);
+
+
+StRSI=100*(RSI(n)-LLV(RSI(n),n))/(HHV(RSI(n),n)-LLV(RSI(n),n));
+S=WMA(strsi,5);
+Plot(S,"MStRSI", colorYellow, 1);
+
+Plot(20,"", 11, styleLine);
+Plot(80,"", 11, styleLine);
+
+top=IIf(s<20,20,IIf(s>80,s,20));
+bot=IIf(s<20,s,IIf(s>80,80,20));
+_SECTION_END();

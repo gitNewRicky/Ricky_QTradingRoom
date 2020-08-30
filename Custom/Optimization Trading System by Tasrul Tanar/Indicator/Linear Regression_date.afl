@@ -1,0 +1,7 @@
+r1 = Param( "Month", 1, 1, 12, 1 );
+r2 = Param( "Date", 31, 1, 31, 1 );
+r3 = Param( "Year", 2011, 1, 3000, 1 );
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style"); 
+
+TAS_LinearRegression_date(r2,r1,r3,iColor,iStyle);

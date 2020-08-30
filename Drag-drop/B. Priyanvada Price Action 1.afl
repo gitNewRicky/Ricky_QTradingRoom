@@ -1,0 +1,92 @@
+// Downloaded From www.WiseStockTrader.com
+//R2: - Pri color assignment modified 
+//R1: - Only background setting changed nothing special
+_SECTION_BEGIN("Chart Settings");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+SetChartBkColor(ParamColor("Outer Panel",colorPaleBlue));
+SetChartBkGradientFill(ParamColor("Upper Chart",1),ParamColor("Lower Chart",23));
+GraphXSpace=Param("GraphXSpace",10,0,100,1);
+dec = (Param("Decimals",2,0,7,1)/10)+1;
+bi = BarIndex();
+Lbi = LastValue(BarIndex());
+sbi = SelectedValue(bi);
+x1= BarCount-1;
+Title = EncodeColor(55)+ Title = Name() + " " + EncodeColor(32) + Date() +
+" " + EncodeColor(5) + "{{INTERVAL}} " +
+EncodeColor(55)+ " Open = "+ EncodeColor(52)+ WriteVal(O,dec) + 
+EncodeColor(55)+ " High = "+ EncodeColor(5) + WriteVal(H,dec) +
+EncodeColor(55)+ " Low = "+ EncodeColor(32)+ WriteVal(L,dec) + 
+EncodeColor(55)+ " Close = "+ EncodeColor(52)+ WriteVal(C,dec)+
+EncodeColor(55)+ " Volume = "+ EncodeColor(52)+ WriteVal(V,1);
+_SECTION_END();
+//=================
+_SECTION_BEGIN("Priyanvada's Price Action");
+P = ParamField( "Price field" );
+CandleT=ParamToggle("Candlestick Display","No|Yes",defaultval=1 ); 
+BarT=ParamToggle("Bar Display","No|Yes",defaultval=0 );
+LineT=ParamToggle("Line Display","No|Yes",defaultval=0 );
+//T3MA toggle
+T3MAT=ParamToggle("Moving Average","No|Yes",defaultval=1 ); 
+//T3MA Check Periods
+T3MAP = Param("T3MA Periods", 21, 2, 300, 1, 10 );
+function T3(price,periods)
+{
+s = 0.84;
+e1=EMA(price,periods);
+e2=EMA(e1,Periods);
+e3=EMA(e2,Periods);
+e4=EMA(e3,Periods);
+e5=EMA(e4,Periods);
+e6=EMA(e5,Periods);
+c1=-s*s*s;
+c2=3*s*s+3*s*s*s;
+c3=-6*s*s-3*s-3*s*s*s;
+c4=1+3*s+s*s*s+3*s*s;
+Ti3=c1*e6+c2*e5+c3*e4+c4*e3;
+return ti3;
+}
+T3MA = T3(P,T3MAP);
+for( i = 1; i < BarCount; i++ ) 
+{
+//assignments
+NvadaOpen[i] = Close[i-1];
+NvadaClose[i]=Close[i];
+NvadaHigh[i]=IIf(NvadaOpen[i]>=NvadaClose[i],NvadaOpen[i],NvadaClose[i]);
+NvadaLow[i]=IIf(NvadaOpen[i]>=NvadaClose[i],NvadaClose[i],NvadaOpen[i]);
+averagechange[i]=(NvadaOpen[i]+NvadaClose[i])/2;
+//=============================
+//CHECKS
+
+//check1= uptrend and upbar as referred for last 2 bars
+Check1[i]=averagechange[i]>T3MA[i] AND NvadaClose[i]>=NvadaOpen[i-2];
+//check2= uptrend and downbar as referred for last 2 bars
+Check2[i]=averagechange[i]>T3MA[i] AND NvadaClose[i]<NvadaOpen[i-2];
+
+//check3= downtrend and downbar as referred for last 2 bars
+Check3[i]=averagechange[i]<T3MA[i] AND NvadaClose[i]<=NvadaOpen[i-2];
+//check4= downtrend and upbar as referred for last 2 bars
+Check4[i]=averagechange[i]<T3MA[i] AND NvadaClose[i]>NvadaOpen[i-2];
+
+//check5=check2 or check 4 => possible corrections!
+Check5[i]=Check2[i] OR Check4[i];
+
+//Color assignment
+if(Check1[i]==1){pricolor[i] =colorGreen;}
+if(Check3[i]==1){pricolor[i] =colorRed;}
+if(Check5[i]==1){pricolor[i] =colorYellow;}
+//Pricolor = IIf(NvadaClose>Ref(NvadaOpen,-2),colorGreen,colorRed);
+}
+
+//price Display
+//if(CandleT==1){PlotOHLC( NvadaOpen, NvadaHigh, NvadaLow, NvadaClose, "", pricolor, styleCandle | styleThick );}
+if(CandleT==1){PlotOHLC( NvadaOpen, NvadaHigh, NvadaLow, NvadaClose, "", pricolor, styleCandle );}
+if(BarT==1){PlotOHLC( NvadaOpen, NvadaHigh, NvadaLow, NvadaClose, "", pricolor, styleBar | styleThick );}
+if(LineT==1){PlotOHLC( NvadaOpen, NvadaHigh, NvadaLow, NvadaClose, "", pricolor, styleLine | styleThick );}
+
+//T3MA Display
+if(T3MAT==1)
+{
+T3MAcolor = IIf(C>=T3MA,colorGreen,colorRed);
+Plot(T3MA,"T3MA",T3MAcolor,styleThick);
+}
+_SECTION_END(); 

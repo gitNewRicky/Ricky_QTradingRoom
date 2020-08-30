@@ -1,0 +1,23 @@
+SetChartBkColor(colorblack);
+
+_SECTION_BEGIN("Frekwensi Analyzer");
+garis = IIf(V==0 AND (Aux1 == Null OR Aux1==0),0,100* V/(Aux1^3));
+Plot(garis,"FQ", IIf(garis==0, colorRed,colorPaleTurquoise),styleLine|styleNoLabel|styleOwnScale,0);
+//Plot(MA(garis,20),"MA(FQ,20)", colorAqua,styleDashed|styleNoLabel|styleOwnScale);
+//PlotGrid(0, colorWhite,1);
+Filter = garis > MA(garis,5);
+_SECTION_END();
+
+_SECTION_BEGIN("Net Buy Sell Asing");
+NBSA_Color = IIf(Aux2 > 0,colorBrightGreen,colorRed);
+//Plot(WMA(Aux2,4),"",colorBlue,styleLine);
+//PlotOHLC(0,Aux2,0,Aux2,"NBSA",NBSA_Color,styleCandle);
+
+DaytoSum = Param("Selected Days",20,2,100,1);
+TotalNBSA = Sum(Aux2,Daytosum);
+PlotOHLC(0,Aux2,0,Aux2,"NBSA",colorWhite,styleCandle);
+
+_SECTION_END();
+
+
+

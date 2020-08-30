@@ -1,0 +1,31 @@
+_SECTION_BEGIN(" Smart Money Histogram");
+SetBarsRequired(sbrAll,sbrAll);
+BV = IIf( (H==L), 0, V*(C-L)/(H-L) );
+SV = IIf( (H==L), 0, V*(H-C)/(H-L) );
+
+BvS = BV - SV;
+EBvS3 = EMA(BvS,3);
+EBvS5 = DEMA(EBvS3,5);
+
+BvS_PC = IIf(BVS > 0, colorBrightGreen, colorRed);
+EBvS5_PC = IIf(EBVS5 > (Ref(EBVS5,-1)), colorBrightGreen, colorRed);
+
+Plot(BV - SV ,"Sell Volume",BvS_PC,styleHistogram | styleOwnScale);
+Plot(EBVS5,"EMA Buy Vs Sell", EBvS5_PC, styleDashed | styleOwnScale);
+
+
+//Va = MA(V,30);
+//PlotOHLC( Va, Va, 0, 0, "", ColorBlend( colorWhite , GetChartBkColor(), 0.4 ), styleNoLabel | styleCloud | styleNoRescale, Null, Null, Null, -1 );
+//Plot(Va,"Average Volume",colorRose,styleNoLine|styleNoLabel );
+//VI = V/Va;
+
+
+//Title = "SellVolume : "+WriteVal(SV,5.0)+EncodeColor(colorTeal)+
+// "\n"+" "+"BuyVolume : "+WriteVal(BV,5.0)+" "+
+//"\n"+"VolumeIndex : "+WriteVal(VI,1.2)+" "+ "\n"
+//+EncodeColor(colorPink)+
+//"BuyVolume : "+WriteVal(100*BV/(BV+SV),2.0)+"%"+" "+ 
+//"\n"+"SellVolume : " +WriteVal(100*SV/(BV+SV),2.0)+"%";
+GfxSetOverlayMode(1);
+
+_SECTION_END();

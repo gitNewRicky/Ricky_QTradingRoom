@@ -1,0 +1,5 @@
+_SECTION_BEGIN("Data_Module");
+odbcOpenDatabase("ODBC;DSN=MariaStocks;UID=root;APP=AmiBroker for Win32;WSID=DESKTOP-ASUS03;DATABASE=stocks;Trusted_Connection=Yes;DRIVER={MariaDB ODBC 3.1 Driver};SERVER=DESKTOP-ASUS03");
+
+ST_SQL_CACHING_ENABLED = True;
+_SECTION_END();

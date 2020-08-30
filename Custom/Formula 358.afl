@@ -1,0 +1,8 @@
+Filter =1 ;
+AddColumn(Open,"Open",1.0,colorDefault,colorDefault);
+AddColumn(High,"High",1.0,colorDefault,colorDefault);
+AddColumn(Low,"Low",1.0,colorDefault,colorDefault);
+AddColumn(Close,"Close",1.0,colorDefault,colorDefault);
+AddColumn(Volume,"Volume",1.0,colorDefault,colorDefault);
+AddColumn(Aux1,"Aux1",1.0,colorDefault,colorDefault);
+AddColumn(Aux2,"Aux2",1.0,colorDefault,colorDefault);

@@ -1,0 +1,194 @@
+/* 
+ * Copyright (C)2017 PT. Stosia Teknologi Investasi
+ *
+ * This file is licensed under  GNU GPL (General Public License) version 3.
+ *
+ * File ini dilisensikan kepada Anda, bukan  Anda miliki.  Pemilik file ini
+ * adalah pemegang  hak cipta ("copyright holder") di atas. Gunakanlah file
+ * ini sesuai dengan lisensi yang telah ditetapkan untuk file ini.
+ *
+ * File ini  berlisensi  GNU GPL (General Public License)  versi 3. Artinya
+ * kalau Anda  memodifikasi file ini, atau membuat karya lain yang berbasis
+ * file ini  ("derivative work"),  maka Anda  wajib  mendistribusikan  kode
+ * modifikasi atau karya tersebut kepada publik. Hal ini untuk menjaga agar
+ * pengetahuan yang ada di sini menjadi lebih berkembang  di masa mendatang 
+ * untuk kemajuan kita bersama.
+ *
+ * Silakan memakai kode ini untuk kepentingan apapun termasuk untuk mencari
+ * profit di pasar saham baik secara perorangan atau organisasi, asal tidak
+ * jahat. Sebagai tambahan permintaan, kami menghimbau untuk TIDAK  menjual
+ * kode/file  ini secara  apa adanya  atau dalam bundel  produk yang dijual
+ * secara komersial, karena hal itu tidak etis.
+ *
+ * Untuk penjelasan lebih lanjut silakan bertanya kepada kami.  Untuk detil
+ * lisensi GPLv3  silakan lihat file GPLv3-LICENSE.md  yang didistribusikan
+ * bersama file ini.
+ *
+ * Author: Benny Prijono <benny@stosia.com>
+ * Contributors:
+ *  - 
+ */
+
+_t0 = GetPerformanceCounter();
+
+#include_once <..\Quant.id\AFL\Bandarmologi\BrokerDetail\BrokerDetailCommon.afl>
+
+// Init broker detail pane as master
+stInitBrokerDetail(True);
+
+//
+// Title
+//
+stSetBackgroundTitle(Name());
+stSetBackgroundSubtitle("Broker Detail: " + WriteIf(stBdInvertBroker, "Inverted ", "") + stBrokerName);
+if (stBrokerName == "") {
+	stSetBackgroundSubsubtitle("Please set broker from parameters");
+} else {
+	stSetBackgroundSubsubtitle(QID_VERSION_LINE);
+}
+
+//
+// Price section
+//
+_SECTION_BEGIN("Price");
+	HighestHigh = HighestVisibleValue(High) * 1.02;
+	LowestLow = LowestVisibleValue(Low) * 0.98;
+
+	SetChartOptions(0,chartShowArrows|chartShowDates);
+	
+	_N(Title = StrFormat(QID_VERSION_LINE + " -- {{NAME}} - {{INTERVAL}} {{DATE}} {{VALUES}}"));
+
+	SetBarFillColor(IIf(C >= Open, GetChartBkColor(), ColorBlend(GetChartBkColor(), colorBrown, 0.6)));
+	
+	Plot( C, 
+		  "Close",  
+		  IIf(C >= Open, ColorBlend(GetChartBkColor(), colorGreen, 0.6), ColorBlend(GetChartBkColor(), colorBrown, 0.6)), 
+		  GetPriceStyle() | styleOwnScale, 
+		  LowestLow, 
+		  HighestHigh, 
+		  0, 
+		  1); 
+_SECTION_END();
+
+
+//
+// Broker details
+//
+_SECTION_BEGIN("Broker Detail");
+	brokerColor = colorBlue;
+
+	// Broker Balance
+	if (stBdParamUseValue) {
+		balance = stBdGetBrokerCumValue(stBrokerName, stBrokerStartDate);
+		_N(bTitle = "Holding (B Rp)");
+		_N(satuan = "(B Rp)");
+	} else {
+		balance = stBdGetBrokerCumShares(stBrokerName, stBrokerStartDate) / 100;
+		_N(bTitle = "Holding (Lot)");
+		_N(satuan = "(Lot)");
+	}
+
+	// Invert?
+	if (stBdInvertBroker) {
+		balance = stInvert(balance);
+	}
+
+	lowestBalance = LowestVisibleValue(balance);
+	highestBalance = HighestVisibleValue(balance);
+	
+	Plot(stAutoPrec(balance), 
+		 WriteIf(stBdInvertBroker, "Inverted ", "") + bTitle, 
+		 ColorBlend(colorRed, GetChartBkColor(), 0.2), 
+		 styleLine | styleThick, 
+		 Null, Null, 0, 5);
+
+	x = LastValue( BarIndex() ) + 1;
+	y = LastValue( balance );
+	PlotTextSetFont( stBrokerName, "Arial", 10, x, y, GetChartBkColor(), colorLightBlue, -6 );
+
+	// MA5 & 20
+	maEnabled = ParamToggle("Show MA", "No|Yes", 1);
+	if (maEnabled) {
+		MA_shortPeriod = Param("Short MA Period", 5, 2, 100);
+		MA_longPeriod = Param("Long MA Period", 20, 2, 100);
+		
+		mas = MA(balance, MA_shortPeriod);
+		mal = MA(balance, MA_longPeriod);
+		
+		Plot(stAutoPrec(mas), "MA" + MA_shortPeriod, ColorBlend(colorRed, GetChartBkColor(), 0.5), styleLine | styleNoLabel);
+		Plot(stAutoPrec(mal), "MA" + MA_longPeriod, ColorBlend(colorRed, GetChartBkColor(), 0.5), styleDashed | styleNoLabel);
+		
+		Buy = Cross(mas, mal);
+		Sell = Cross(mal, mas);
+		PlotShapes( Buy * shapeUpArrow, colorGreen, 0, mas); 
+		PlotShapes( Sell * shapeDownArrow, colorRed, 0, mal);
+	}
+	
+	// Average price and broker's P/L
+	avgPrice = stBdGetBrokerAveragePrice(stBrokerName, stBrokerStartDate);
+
+	Plot( Prec(avgPrice, 1), 
+		  "Avg Price", 
+		  colorGreen, 
+		  styleDashed | styleOwnScale | styleThick, 
+		  LowestLow, 
+		  HighestHigh, 
+		  0, 
+		  1); 
+
+	x = LastValue( BarIndex() ) + 1;
+	y = (LastValue( avgPrice ) - LowestLow) / (HighestHigh - LowestLow) * (highestBalance - lowestBalance) + lowestBalance;
+	PlotTextSetFont( "Avg", "Arial", 10, x, y, GetChartBkColor(), colorGreen, 2 );
+
+	//
+	// Bar
+	//
+	netBar = stGetIntervalFromCum(balance);
+	absNet = abs(netBar);
+	maxNet = HighestVisibleValue(absNet);
+	Plot(stAutoPrec(absNet), "Net", 
+		 IIf(netBar >= 0, ColorBlend(colorLightBlue, GetChartBkColor(), 0.3), 
+						  ColorBlend(colorLightOrange, GetChartBkColor(), 0.3)), 
+		 styleHistogram | styleThick | styleOwnScale | styleNoTitle, 0, maxNet * 2, 0, 0, 5);
+		 
+	Plot(netBar, "Net " + WriteIf(netBar >= 0, "Buy ", "Sell ") + satuan, 
+		 IIf(netBar >= 0, ColorBlend(colorLightBlue, GetChartBkColor(), 0.3), 
+						  ColorBlend(colorLightOrange, GetChartBkColor(), 0.3)), 
+		 styleNoDraw | styleNoLabel | styleOwnScale);
+
+_SECTION_END();
+
+if (maEnabled AND Interval() == inDaily) {
+	printf("<b>" + Name() + " RECOMMENDATIONS:</b>\n");
+	printf("----------------------------------------------\n");
+	
+	invert = StrFind(ST_RETAIL_BROKERS, stBrokerName) != 0;
+
+	score = ST_STATUS_NOP;
+	score = stMARecommendation(balance, mas, mal);
+	_N(reason = stRecReason);
+	
+	if (stBdParamUseValue) {
+		days = 3;
+		avg3 = LastValue(Sum(netBar,days)) / days;
+		intervalValue = stGetIntervalValue();
+		
+		lastRatio = LastValue(Sum(absNet,days)) / LastValue(Sum(intervalValue, days));
+		
+		_N(reason = reason + "\n\nTransaction value (avg " + days + ") (B Rp)\t: " + stAutoPrec(avg3));
+		_N(reason = reason + "\nLast value (B Rp)                     \t: " + stAutoPrec(LastValue(netBar)));
+		_N(reason = reason + "\nLast ratio                                    \t: " + stAutoPrec(lastRatio * 100) + "%%");
+	}
+	
+	if (invert)
+		score = score * (-1);
+	
+	printf("<b>YP:  " + EncodeColor(stStatusColor(score)) + stRecText(score) + "</b>" + EncodeColor(colorBlack) + "\n");
+	printf("" + reason + "\n");
+	printf("----------------------------------------------\n");
+	
+	stDisplayRec(score, 0);
+}
+
+_t1 = GetPerformanceCounter();
+_TRACE( Name() + " Broker details " + stBrokerName + ": " + (_t1 - _t0) + " ms");

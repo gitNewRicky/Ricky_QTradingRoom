@@ -1,0 +1,31 @@
+#include_once <../Include/BS_Tools.afl>
+_SECTION_BEGIN("Broker Line");
+
+Broker = ParamStr("Broker Code","YP");
+LineColor = ParamColor("Color",colorWhite);
+
+BVOL = fnGetBvolBroker(Broker);
+SVOL = fnGetSvolBroker(Broker);
+NetVol = BVOL - SVOL;
+
+ListType = ParamList("Type","All|NetVolume|Cumulative",0);
+
+if(ListType == "NetVolume")
+{
+	SetBarFillColor(IIf(NetVol<0,colorRed,colorLime));
+	PlotOHLC(0,NetVol,0,NetVol,"NetVol",colorWhite,stylecandle);
+}
+else if (Listtype == "Cumulative")
+{
+	Cum_NetVol = Cum(NetVol);
+	Plot(Cum_NetVol,"C. NetVolume "+Broker,LineColor,styleLine);
+}
+else
+{
+	SetBarFillColor(IIf(NetVol<0,colorRed,colorLime));
+	PlotOHLC(0,NetVol,0,NetVol,"Net Volume",colorWhite,stylecandle);
+	Cum_NetVol = Cum(NetVol);
+	Plot(Cum_NetVol,"C. NetVolume "+Broker,LineColor,styleLine | styleDashed | styleOwnScale);
+}
+
+_SECTION_END();

@@ -1,0 +1,13 @@
+#include_once <../Include/Data_Module.afl>
+
+function fnGetNBSVolA()
+{
+	result = odbcGetArraySQL("SELECT NBSVA, dtime FROM quote_aux WHERE symbol = '"+Name()+"' ORDER BY dtime ASC");
+	return result;
+}
+
+function fnGetFreq()
+{
+	result = odbcGetArraySQL("SELECT Freq, dtime FROM quote_aux WHERE symbol = '"+Name()+"' ORDER BY dtime ASC");
+	return result;
+}

@@ -1,0 +1,86 @@
+_SECTION_BEGIN("A29. Volume Flow");
+// Downloaded From www.WiseStockTrader.com
+//------------------------------------------------------------------------------
+//  Formula Name  : OGTS Time Segmented Money Flow
+//  Author        : KH Tang 
+//  Company       : Wealth Resonance 
+//  Last Update   : 15 Jan 2014
+//  Date Updated  : 22 Nov 2013 // Update with opening price as direction*
+//  Origin date	  : 5 Jun 2007 
+//  Origin        : KH Tang 
+//  Version       : 1.01
+//  Level         : Volume Spread Analysis
+//  Description   : Key Usages:
+//                : 1.Tape Reading for Direction of Breakout in Trading Range
+//                : 2.Tape Reading for Divergence in Trending
+//	 	  : Note: Enhancement to include Opening price as direction.
+//More notes on blog:
+//http://blessedfool.blogspot.sg/2014/02/stock-market-tools-12-better-obv-and.html
+//------------------------------------------------------------------------------
+
+
+SetBarsRequired( -2, -2 );
+//William C. Garrett's Approximation: 
+//GPaths   = IIf(C>Ref(C,-1),((H-Ref(C,-1))+(H-L)+(C-L)),IIf(C<Ref(C,-1),(Ref(C,-1)-L)+(H-L)+(H-C),1));
+//GUpShare = IIf(C>Ref(C,-1),((H-Ref(C,-1))+(C-L)),IIf(C<Ref(C,-1),(H-L),0));
+//GDnShare = IIf(C>Ref(C,-1),(H-L),IIf(C<Ref(C,-1),(Ref(C,-1)-L)+(H-C),0));
+
+
+//Expansion for clarity:
+PathA1= Ref(C,-1)-L;
+PathB1= H-L;
+PathC1= H-C;
+Path1 = PathA1+PathB1+PathC1;
+UpShare1 = PathB1;
+DnShare1 = PathA1+PathC1;
+
+PathA2= H-Ref(C,-1);
+PathB2= H-L;
+PathC2= C-L;
+Path2 = PathA2+PathB2+PathC2;
+UpShare2 = PathA2+PathC2;
+DnShare2 = PathB2;
+
+Paths  = IIf(C<Ref(C,-1),Path1,	  IIf(C>Ref(C,-1),Path2,   1));
+UpShare= IIf(C<Ref(C,-1),UpShare1,IIf(C>Ref(C,-1),UpShare2,0));
+DnShare= IIf(C<Ref(C,-1),DnShare1,IIf(C>Ref(C,-1),DnShare2,0));
+
+FlowFactor = Avg;
+
+FlowIn  = UpShare/Paths*Volume*FlowFactor;
+FlowOut = DnShare/Paths*Volume*FlowFactor;
+NetFlow = FlowIn - FlowOut;
+TotalFlow = Cum(NetFlow );
+
+
+PlotType = ParamList("Type of Chart Plotting:","Cumulative|Time Segmented",1);
+LBP = Param("LBP for Time Segmented Plot",26,10,50,1);
+FastSmoothMF     = EMA(TotalFlow,int(LBP/2)); 
+SlowSmoothMF   = EMA(TotalFlow,LBP);
+
+DailyNetFlow= IIf(NetFlow==0,MA(Netflow,30),NetFlow);
+
+if(PlotType=="Cumulative")
+{
+	EMATF = DEMA(TotalFlow,5);
+	Plot(EMATF, "EMA Total Flow",colorBlueGrey,styleDashed);
+	Plot(TotalFlow ,"Garrett Money Flow",colorRed,styleThick);
+	
+	
+}
+else if (PlotType=="Time Segmented")
+{
+	TSMF=FastSmoothMF - SlowSmoothMF;
+	Plot(TSMF,"Time Segmented Money Flow",colorRed,styleThick);
+	Plot(0,"",colorBlack);
+	TSMFsig = EMA(TSMF,9);
+	Plot(TSMFsig,"Sig",colorBlue);
+	
+	Histogram = TSMF-TSMFSig;
+	
+	Histogram_color = IIf(Histogram > Ref(Histogram,-1),colorBrightGreen,colorRed);
+	
+	Plot(Histogram,"Histogram",Histogram_color,styleHistogram | styleOwnScale);
+
+}
+_SECTION_END();

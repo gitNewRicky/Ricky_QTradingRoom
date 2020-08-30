@@ -1,0 +1,47 @@
+_SECTION_BEGIN("Formula 339");
+// Downloaded From https://www.WiseStockTrader.com
+paramLenRSI = Param("RSI Closes Length", 3, 2, 100, 1);
+paramLenUD = Param("RSI UpClose Length", 2, 2, 100, 1);
+paramLenRank = Param("PercentRank Length", 100, 10, 252, 1);
+paramAverage = Param("Average", 5, 1, 100, 1);
+
+function ConnorsRSI(lenRSI, lenUD, lenROC)
+{
+      upDays = BarsSince(C <= Ref(C,-1));
+      downDays = BarsSince(C >= Ref(C,-1));
+      updownDays = IIf(upDays > 0, upDays, IIf(downDays > 0, -downDays, 0));
+      crsi = ( PercentRank(ROC(C,1), lenROC) + RSIa(updownDays,lenUD) +
+RSI(lenRSI))/3;
+      return crsi;
+}
+
+function ClosingRange() {
+	return ((C - L) / (H - L)) * 100;
+}
+
+Plot( ConnorsRSI(paramLenRSI,paramLenUD,paramLenRank)
+      , "ConnorsRSI("+paramLenRSI+","+paramLenUD+","+paramLenRank+")"
+      , colorBrightGreen, styleLine, 0, 100);
+
+Plot(ClosingRange(), "Closing Range", colorRed, styleDashed);
+
+Plot( MA(ConnorsRSI(paramLenRSI,paramLenUD,paramLenRank), paramAverage)
+      , "Average("+paramAverage+")"
+      , colorLightBlue, styleLine, 0, 100);
+
+PlotGrid(85, colorGold);
+PlotGrid(15, colorGold);
+
+SetTradeDelays(0,0,0,0);
+BuyPrice = C;
+SellPrice = C;
+NumberPositions = 10;
+SetOption("MaxOpenPositions", NumberPositions);
+PositionSize = -100 / NumberPositions;
+Buy = ConnorsRSI(paramLenRSI,paramLenUD,paramLenRank) < 15 AND ClosingRange() < 25;
+Sell = ConnorsRSI(paramLenRSI,paramLenUD,paramLenRank) > 70;
+Short = ConnorsRSI(paramLenRSI,paramLenUD,paramLenRank) > 85 AND ClosingRange() > 75;
+Cover = ConnorsRSI(paramLenRSI,paramLenUD,paramLenRank) < 30;
+Lookback = 5;
+PositionScore = -ROC(C,Lookback);
+_SECTION_END();

@@ -1,0 +1,38 @@
+// Downloaded From www.WiseStockTrader.com
+_SECTION_BEGIN("Accelleration");
+MaxGraph=9;
+x=(H-L)/(H+L)/2;
+ub=EMA(H*(1+2*((2*X)*100)*.01),20);
+Lb= EMA(L*(1-2*((2*X)*100)*.01),20);
+mb=EMA(C,20);
+Graph5=EMA(C,150);
+Graph5Style=1+4+7;
+Graph5Color=7;
+Graph0=ub;
+Graph0Color=27;
+Graph0Style=1+4+7;
+Graph1Style=1+4+7;
+Graph1=mb;
+Graph2=Lb;
+Graph2Style=1+4+7;
+Graph2Color=4;
+
+upbar = H > Ref( H, -1 ) AND L >= Ref( L, -1 );
+downbar = L < Ref( L, -1 ) AND H <= Ref( H, -1 );
+
+ubb= BBandTop(Close, 20, 2);
+lbb = BBandBot(Close, 20, 2);
+
+//Colourized price bars drawn here
+Graph4 = Close;
+Graph4Style = 64;
+barcolor =  IIf( downbar, 4, IIf( upbar, 5, 0  ) );
+Graph4BarColor = ValueWhen( barcolor != 0, barcolor );
+
+Plot(C,"",1,64);
+
+Plot(ubb,"LowBollBand",colorWhite,styleLine|styleThick);
+Plot(lbb,"LowBollBand",colorWhite,styleLine|styleThick);
+
+
+Title = Name () + "   "+ Date() + " - " + FullName()+ " - Accelleration BANDS    Yellow = 150 EMA" ;

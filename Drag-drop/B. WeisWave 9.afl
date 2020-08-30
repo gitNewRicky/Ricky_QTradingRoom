@@ -1,0 +1,71 @@
+// Downloaded From www.WiseStockTrader.com
+SetChartBkColor( colorBlack ) ;
+_SECTION_BEGIN("WeisWave");
+//up[0] = V[0]; 
+//dn[0] = V[0];
+//vol[0] = V[0]; 
+trend[0] = 0;
+wave[0] = 0;
+vol[0] = 0;
+mov[0] = 0;
+dif=1;
+rp    = Param("Reversal Bars", 0.03,0.1,5,0.1);
+for( i=1; i<BarCount; i++) {
+
+if (Close[i]-Close[i-1]>rp) mov[i]=1;
+if (Close[i]-Close[i-1]==rp) mov[i]=0;
+if (Close[i]-Close[i-1]<-rp) mov[i]=-1; 
+
+if ((mov[i]!=0) && (mov[i]!=mov[i-1])) 
+{
+trend[i]=mov[i];
+} 
+else {trend[i]=trend[i-1];} 
+if ((trend[i]!=wave[i-1]) && (abs(Close[i]-Close[i-1])*10000>=dif)) 
+{
+wave[i]=trend[i];
+} 
+else 
+{
+wave[i]=wave[i-1];
+}    
+if (wave[i]==wave[i-1]) 
+{
+vol[i]=vol[i-1]+Volume[i];
+} 
+else 
+{
+vol[i]=Volume[i];
+}
+
+if (wave[i]==1) 
+{
+up[i]=vol[i]; 
+dn[i]=0;
+}
+if (wave[i]==-1) 
+{
+dn[i]=vol[i]; 
+up[i]=0;
+}
+if (wave[i]==0) 
+{
+dn[i]=vol[i-1]; 
+up[i]=vol[i-1];
+}
+}
+ 
+PlotOHLC(0,up,0,up,"SwingWave",colorBrightGreen, 2|styleThick ) ;
+PlotOHLC(0,dn,0,dn,"",colorRed , 2|styleThick ) ;
+
+Title = EncodeColor(colorWhite) + Name() + WriteIf(Up != 0,EncodeColor(colorBrightGreen),EncodeColor(colorRed)) + " - SwingWave = " +Up;
+
+Filter = 1;
+BuyWarning	= (Up > 0) AND Ref(up,-1) == 0;
+Bullish		= (Up > 0) AND Ref(up,-1) > 0;
+SellWarning	= (Up == 0) AND Ref(up,-1) > 0;
+
+SwingWarning = Writeif(BuyWarning,"1.Buy Warning",WriteIf(Bullish,"2. Hold",WriteIf(SellWarning,"3. Sell Warning","4. Bearish")));
+AddTextColumn(SwingWarning,"Swing",1,colorBlack);
+_SECTION_END();
+

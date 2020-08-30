@@ -1,0 +1,8 @@
+_SECTION_BEGIN("B. Bandar Weekly");
+BDIn=IIf(C>O, V,0); BDOut=IIf(C< O,V,0);
+BDAccW=Sum(BDIn, 5); BDAccM=Sum(BDIn, 21);
+BDDistW=Sum( BDout,5); BDDistM=Sum( BDout,21) ;
+BDWeek=(BDAccW- BDDistW);
+ColorBW=IIf( BDWeek>O, colorBrightGreen ,colorRed);
+Plot(BDWeek, "BDWk",colorBW, styleHistogram| styleThick) ;
+_SECTION_END();

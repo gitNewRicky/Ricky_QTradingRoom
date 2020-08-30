@@ -1,0 +1,6 @@
+sig1 = Optimize("Periode",9,2,15,1);
+sig2 = Optimize("OS",14,-100,-80,1);
+sig3 = Optimize("OB",9,-20,0,1);
+
+Buy=TAS_Buy_WilliamsR(sig1,sig2,sig3);
+Sell=TAS_Sell_WilliamsR(sig1,sig2,sig3);

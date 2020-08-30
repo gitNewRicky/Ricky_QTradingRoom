@@ -1,0 +1,440 @@
+//------------------------------------------------------
+//  Formula Name:      TRAILING STOP PROFIT TAKER AFL By pipschart.com
+//  Author	:      KrT group
+//  Uploader	:      www.pipschart.com
+//  E-mail	:      info@pipschart.com
+//  Amibroker Blog:    www.pipschart.com/amibroker
+//  Origin	:      Modified & Collected from different sources.
+//------------------------------------------------------
+
+_SECTION_BEGIN("KrT group Logo");
+GfxSetBkMode(1);
+X=750;
+Y=1;
+Font=10;
+GfxSelectFont("Impact",Font*2.2, 550);GfxSetTextColor(colorRed);GfxTextOut("KrT group",x,y);
+GfxSelectFont("Impact",Font*2.2, 550);GfxSetTextColor(colorGreen);GfxTextOut("RESEARCH",x+120,Y);
+
+_SECTION_END();
+
+//------------------------------------------------------------------------------
+
+_SECTION_BEGIN("JIMBERG");
+EntrySignal = C > ( LLV( L, 20 ) + 2 * ATR( 10 ) ); 
+ExitSignal = C < ( HHV( H, 20 ) - 2 * ATR( 10 ) ); 
+Color = IIf( EntrySignal, colorBlue, IIf( ExitSignal, colorOrange, colorGrey50 )); 
+TrailStop = HHV( C - 2 * ATR(10), 15 ); 
+ProfitTaker = EMA( H, 13 ) + 2 * ATR(10); 
+
+/* plot price chart and stops */ 
+Plot( TrailStop, "Trailing stop", colorBrown, styleThick | styleLine  ); 
+Plot( ProfitTaker, "Profit taker", colorLime, styleThick ); 
+Plot( C, "Price", color, styleCandle  ); 
+
+/* plot color ribbon */ 
+Plot( 2, "", Color, styleArea | styleOwnScale | styleNoLabel, -0.1, 50 );
+
+
+  /* **********************************
+
+Code to automatically identify pivots
+
+********************************** */
+
+// -- what will be our lookback range for the hh and ll?
+farback=Param("How Far back to go",100,50,5000,10);
+nBars = Param("Number of bars", 12, 5, 40);
+
+// -- Title.
+
+/* Title = Name() + " (" + StrLeft(FullName(), 15) + ") O: " + Open + ", 
+
+H: " + High + ", L: " + Low + ", C: " + Close; */
+
+// -- Plot basic candle chart
+
+PlotOHLC(Open, High, Low, Close, 
+
+"\n" + "O = " + O + "\n"+"H = "+ H + "\n"+"L = " + L 
+
++ "\n"+"C",
+
+color, styleCandle); 
+
+GraphXSpace=7;
+
+// -- Create 0-initialized arrays the size of barcount
+
+aHPivs = H - H;
+
+aLPivs = L - L;
+
+// -- More for future use, not necessary for basic plotting
+
+aHPivHighs = H - H;
+
+aLPivLows = L - L;
+
+aHPivIdxs = H - H;
+
+aLPivIdxs = L - L;
+
+nHPivs = 0;
+
+nLPivs = 0;
+
+lastHPIdx = 0;
+
+lastLPIdx = 0;
+
+lastHPH = 0;
+
+lastLPL = 0;
+
+curPivBarIdx = 0;
+
+// -- looking back from the current bar, how many bars 
+
+// back were the hhv and llv values of the previous 
+
+// n bars, etc.?
+
+aHHVBars = HHVBars(H, nBars);
+
+aLLVBars = LLVBars(L, nBars);
+
+aHHV = HHV(H, nBars);
+
+aLLV = LLV(L, nBars);
+
+// -- Would like to set this up so pivots are calculated back from
+
+// last visible bar to make it easy to "go back" and see the pivots
+
+// this code would find. However, the first instance of 
+
+// _Trace output will show a value of 0
+
+aVisBars = Status("barvisible");
+
+nLastVisBar = LastValue(Highest(IIf(aVisBars, BarIndex(), 0)));
+
+_TRACE("Last visible bar: " + nLastVisBar);
+
+// -- Initialize value of curTrend
+
+curBar = (BarCount-1);
+
+curTrend = "";
+
+if (aLLVBars[curBar] < 
+
+aHHVBars[curBar]) {
+
+curTrend = "D";
+
+}
+
+else {
+
+curTrend = "U";
+
+}
+
+// -- Loop through bars. Search for 
+
+// entirely array-based approach
+
+// in future version
+
+for (i=0; i<farback; i++) {
+
+curBar = (BarCount - 1) - i;
+
+// -- Have we identified a pivot? If trend is down...
+
+if (aLLVBars[curBar] < aHHVBars[curBar]) {
+
+// ... and had been up, this is a trend change
+
+if (curTrend == "U") {
+
+curTrend = "D";
+
+// -- Capture pivot information
+
+curPivBarIdx = curBar - aLLVBars[curBar];
+
+aLPivs[curPivBarIdx] = 1;
+
+aLPivLows[nLPivs] = L[curPivBarIdx];
+
+aLPivIdxs[nLPivs] = curPivBarIdx;
+
+nLPivs++;
+
+}
+
+// -- or current trend is up
+
+} else {
+
+if (curTrend == "D") {
+
+curTrend = "U";
+
+curPivBarIdx = curBar - aHHVBars[curBar];
+
+aHPivs[curPivBarIdx] = 1;
+
+aHPivHighs[nHPivs] = H[curPivBarIdx];
+
+aHPivIdxs[nHPivs] = curPivBarIdx;
+
+nHPivs++;
+
+}
+
+// -- If curTrend is up...else...
+
+} 
+
+// -- loop through bars
+
+} 
+
+// -- Basic attempt to add a pivot this logic may have missed
+
+// -- OK, now I want to look at last two pivots. If the most 
+
+// recent low pivot is after the last high, I could
+
+// still have a high pivot that I didn't catch
+
+// -- Start at last bar
+
+curBar = (BarCount-1);
+
+candIdx = 0;
+
+candPrc = 0;
+
+lastLPIdx = aLPivIdxs[0];
+
+lastLPL = aLPivLows[0];
+
+lastHPIdx = aHPivIdxs[0];
+
+lastHPH = aHPivHighs[0];
+
+if (lastLPIdx > lastHPIdx) {
+
+// -- Bar and price info for candidate pivot
+
+candIdx = curBar - aHHVBars[curBar];
+
+candPrc = aHHV[curBar]; 
+
+if (
+
+lastHPH < candPrc AND
+
+candIdx > lastLPIdx AND
+
+candIdx < curBar) {
+
+
+// -- OK, we'll add this as a pivot...
+
+aHPivs[candIdx] = 1;
+
+// ...and then rearrange elements in the 
+
+// pivot information arrays
+
+for (j=0; j<nHPivs; j++) {
+
+aHPivHighs[nHPivs-j] = aHPivHighs[nHPivs-
+
+(j+1)];
+
+aHPivIdxs[nHPivs-j] = aHPivIdxs[nHPivs-(j+1)];
+
+}
+
+aHPivHighs[0] = candPrc ;
+
+aHPivIdxs[0] = candIdx;
+
+nHPivs++;
+
+} 
+
+} else {
+
+
+// -- Bar and price info for candidate pivot
+
+candIdx = curBar - aLLVBars[curBar];
+
+candPrc = aLLV[curBar]; 
+
+if (
+
+lastLPL > candPrc AND
+
+candIdx > lastHPIdx AND
+
+candIdx < curBar) {
+
+
+// -- OK, we'll add this as a pivot...
+
+aLPivs[candIdx] = 1;
+
+// ...and then rearrange elements in the 
+
+// pivot information arrays
+
+for (j=0; j<nLPivs; j++) {
+
+aLPivLows[nLPivs-j] = aLPivLows[nLPivs-(j+1)];
+
+aLPivIdxs[nLPivs-j] = aLPivIdxs[nLPivs-(j+1)];
+
+}
+
+aLPivLows[0] = candPrc;
+
+aLPivIdxs[0] = candIdx;
+
+nLPivs++;
+
+}
+
+}
+
+// -- Dump inventory of high pivots for debugging
+
+/*
+
+for (k=0; k<nHPivs; k++) {
+
+_TRACE("High pivot no. " + k
+
++ " at barindex: " + aHPivIdxs[k] + ", " 
+
++ WriteVal(ValueWhen(BarIndex()==aHPivIdxs[k], 
+
+DateTime(), 1), formatDateTime)
+
++ ", " + aHPivHighs[k]);
+
+}
+
+*/
+
+// -- OK, let's plot the pivots using arrows
+
+PlotShapes(
+
+IIf(aHPivs==1, shapeDownArrow, shapeNone), colorRed, 0,
+
+High, Offset=-15);
+
+PlotShapes(
+IIf(aLPivs==1, shapeUpArrow , shapeNone), colorGreen, 0, 
+
+Low, Offset=-15);
+
+//AlertIf( aHPivs==1, "SOUND C:\\Windows\\Media\\Ding.wav", "Sell " + C,2,1+2,1);
+//AlertIf( aLPivs==1, "SOUND C:\\Windows\\Media\\Ding.wav","Buy " + C,1,1+2,1);
+ 
+_SECTION_END();
+
+_SECTION_BEGIN("C. VAP Coloured");
+/*
+	Author: Anderson Wilson 
+		based on PriceVolDistribution demo written by Tomasz Janeczko
+		
+Volume-by-Price is an indicator that shows the amount of volume for a particular price range,
+The Volume-by-Price bars are horizontal and shown on the left side of the chart to correspond 
+with these price ranges. Bar colors indicate bear/bull volume
+*/
+
+bi = BarIndex();
+fvb = FirstVisibleValue( bi );
+lvb = LastVisibleValue( bi );
+
+fvb = Max( 0, fvb );
+lvb = Max( 0, lvb );
+
+bins = Param("Bins", 152, 3, 200, 1);
+pRecHeight = Param("Rectangle Height", 0.90, 0.10, 1, 0.05);
+
+BullBearZone = (High - Low) / 3;
+bullbar = C > (High - BullBearZone);
+bearbar = C < (Low + BullBearZone);
+
+mx = PriceVolDistribution( H, L, V, bins, True, fvb, lvb );
+mx1 = PriceVolDistribution( H, L, IIf( bullbar, V, 0 ), bins, True, fvb, lvb );
+mx2 = PriceVolDistribution( H, L, IIf( bearbar, V, 0 ), bins, True, fvb, lvb );
+
+bins = MxGetSize( mx, 0 );
+bins1 = MxGetSize( mx1, 0 );
+bins2 = MxGetSize( mx2, 0 );
+
+GfxSetOverlayMode( 1 );
+GfxSetCoordsMode( 1 );
+
+if( bins > 1 && bins == bins1 && bins == bins2 ) {
+
+	MaxVolume = mx[ 0 ][ 1 ];
+
+	// find max volume
+	for( i = 1; i < bins; i++ )
+	{
+		if( mx[ i ][ 1 ] > MaxVolume )
+			MaxVolume = mx[ i ][ 1 ];
+	}
+	
+	// rectangle height
+	RecHeight = (mx[ 1 ][ 0 ] - mx[ 0 ][ 0 ]) / 2 * pRecHeight;
+	
+	for( i = 0; i < bins; i++ )
+	{
+		price = mx1[ i ][ 0 ]; // price level
+		
+		absVolume = mx1[ i ][ 1 ];
+		VolAcum = absVolume;
+		relvolume = absVolume / MaxVolume;
+		relbar = relvolume * (lvb-fvb+1);
+		
+		// upper left corner of the rectangle.	
+		x1 = fvb;
+		y1 = price + RecHeight;
+		// lower right corner of the rectangle.	
+		x2 = fvb + relbar;
+		y2 = price - RecHeight; 
+
+		GfxFillSolidRect( x1, y1, x2, y2, colorDarkGreen );
+		
+		absVolume = mx2[ i ][ 1 ];
+		VolAcum += absVolume;
+		relvolume = absVolume / MaxVolume;
+		relbar2 = relvolume * (lvb-fvb+1);
+
+		x1 = x2;
+		x2 = x1 + relbar2;
+		GfxFillSolidRect( x1, y1, x2, y2, colorRed );
+
+		absVolume = mx[ i ][ 1 ]; 
+		relvolume = (absVolume - VolAcum) / MaxVolume;
+		relbar3 = relvolume * (lvb-fvb+1);
+
+		x1 = x2;
+		x2 = x1 + relbar3;
+		GfxFillSolidRect( x1, y1, x2, y2, colorBrown );
+	}
+}
+_SECTION_END();

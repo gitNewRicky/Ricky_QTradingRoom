@@ -1,0 +1,88 @@
+// created by chandrakant
+//modified on 120309..credit goes to of Karthik sir 
+ 
+/*1. Here are some observations to keep in mind that will help assure
+you are in a good trending move which is detrimental to the success 
+of the trade moving higher before the inevitable over exhausted trend.
+  
+2 Consider only going long on the 5M if the 30M (two rows above) is also blue.
+ 
+3 Consider the 1hr row as well being blue since it has an effect too.
+ 
+4 The 15M row has to be blue with NO exceptions
+ 
+5 The 30M row if blue has less effect on the trade as compared to the 15M row 
+but keep this in mind. The 30M row being blue helps the 15M row continue to stay blue. 
+ 
+6 The 1hr row has even less effect OR importance but it too keeps the 30M 
+from weakening to some minor degree. 
+*/
+// Define label bar (x) position location
+ 
+blankRightBars = 5; //insert actual blank right bars specified in Preferences 
+barsInView = Status("lastvisiblebarindex") - Status("firstvisiblebarindex") - blankRightBars;
+Offset = Param("Offset Bar", 0.95, 0, 1, 0.01);
+textOffset = BarCount - (Offset * barsInView);
+ 
+_SECTION_BEGIN("default");
+HaClose =EMA((O+H+L+C)/4,3); 
+HaOpen = AMA( Ref( HaClose, -1 ), 0.5 ); 
+HaHigh = Max( H, Max( HaClose, HaOpen ) ); 
+HaLow = Min( L, Min( HaClose, HaOpen ) );
+PlotText("Heinkein 4T tf :"+Interval(2), textoffset, 41.01, colorYellow);
+ 
+Color = IIf( Haopen > Haclose,4, IIf( Haopen == Haclose,colorYellow, 6));
+Plot(10,"", Color,  styleHistogram+styleThick|styleOwnScale|styleNoLabel, 0, 100 );
+Plot( 11,"",colorBlack,styleOwnScale|styleArea|styleNoLabel,0, 100 );
+ 
+_SECTION_BEGIN("2");
+Compress2= Param("Compression",2,1,3,1); 
+TimeFrameSet(Compress2* Interval());
+HaClose2 =EMA((O+H+L+C)/4,3); 
+HaOpen2 = AMA( Ref( HaClose2, -1 ), 0.5 ); 
+HaHigh2 = Max( H, Max( HaClose2, HaOpen2 ) ); 
+HaLow2 = Min( L, Min( HaClose2, HaOpen2 ) ); 
+PlotText("Heinkein 4T tf :"+Interval(2), textoffset, 41.055, colorYellow);
+TimeFrameRestore();
+HAopen2f=TimeFrameExpand( Haopen2, Compress2* Interval()); 
+Haclose2f=TimeFrameExpand( Haclose2, Compress2* Interval()); 
+HaHigh2f=TimeFrameExpand( Hahigh2, Compress2* Interval());
+HaLow2f=TimeFrameExpand( Halow2, Compress2* Interval());
+Color2 = IIf( Haopen2f > Haclose2f,4, IIf(Haopen2f == Haclose2f,colorYellow, 6));
+Plot(20,"", Color2,  styleHistogram+styleThick|styleOwnScale|styleNoLabel, 0, 100 );
+Plot( 21,"",colorBlack,styleOwnScale|styleArea|styleNoLabel,0, 100 );
+ 
+_SECTION_BEGIN("3");
+Compress3= Param("Compression3",4,2,6,1); 
+TimeFrameSet(Compress3* Interval());
+HaClose3 =EMA((O+H+L+C)/4,3); 
+HaOpen3 = AMA( Ref( HaClose3, -1 ), 0.5 ); 
+HaHigh3 = Max( H, Max( HaClose3, HaOpen3 ) ); 
+HaLow3 = Min( L, Min( HaClose3, HaOpen3 ) ); 
+PlotText("Heinkein 4T tf :"+Interval(2), textoffset,41.10, colorYellow);
+TimeFrameRestore();
+HAopen3f=TimeFrameExpand( Haopen3, Compress3* Interval());  
+Haclose3f=TimeFrameExpand( Haclose3, Compress3* Interval()); 
+HaHigh3f=TimeFrameExpand( Hahigh3, Compress3* Interval());
+HaLow3f=TimeFrameExpand( Halow3, Compress3* Interval());
+color3 = IIf( Haopen3f > Haclose3f,4, IIf( Haopen3f == Haclose3f,colorYellow,6));
+Plot(30,"", Color3,  styleHistogram+styleThick|styleOwnScale|styleNoLabel, 0, 100 );
+Plot( 31,"",colorBlack,styleOwnScale|styleArea|styleNoLabel,0, 100 );
+ 
+_SECTION_BEGIN("4");
+Compress4= Param("Compression4",8,2,10,1); 
+TimeFrameSet(Compress4* Interval());
+HaClose4 =EMA((O+H+L+C)/4,3); 
+HaOpen4 = AMA( Ref( HaClose4, -1 ), 0.5 ); 
+HaHigh4 = Max( H, Max( HaClose4, HaOpen4 ) ); 
+HaLow4 = Min( L, Min( HaClose4, HaOpen4 ) ); 
+PlotText("Heinkein 4T tf :"+Interval(2), textoffset, 41.14, colorYellow);
+TimeFrameRestore();
+HAopen4f=TimeFrameExpand( Haopen4, Compress4* Interval());  
+Haclose4f=TimeFrameExpand( Haclose4, Compress4* Interval());
+HaHigh4f=TimeFrameExpand( Hahigh4, Compress4* Interval());
+HaLow4f=TimeFrameExpand( Halow4, Compress4* Interval());
+Color4 = IIf( Haopen4f > Haclose4f,4, IIf( Haopen4f == Haclose4f ,colorYellow, 6));
+Plot(40,"", Color3,  styleHistogram+styleThick|styleOwnScale|styleNoLabel, 0, 100 );
+Plot( 41,"",colorBlack,styleOwnScale|styleArea|styleNoLabel,0, 100 );
+_N(Title = "{{NAME}} - {{INTERVAL}} {{DATE}} "+_DEFAULT_NAME()+" : {{OHLCX}} {{VALUES}}" );

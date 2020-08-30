@@ -1,0 +1,202 @@
+// Downloaded From https://www.WiseStockTrader.com
+//SetChartBkColor( colorBlack );
+
+_SECTION_BEGIN("Naming");
+GfxSetBkMode(1);
+pxwidth = Status("pxwidth") ;
+pxheight = Status("pxheight");
+Font=12;
+
+GfxSelectFont("Impact",Font, 200,False,True);
+GfxSetTextColor(colorDarkGrey);GfxTextOut("Chart : Profit Wave 1.1",pxwidth * 0.0015,pxheight * 0.815);
+
+GfxSelectFont("Impact",Font*2.2, 550);
+GfxSetTextColor(colorDarkBlue);GfxTextOut(Name() + " - " + FullName() ,pxwidth * 0.0015 ,pxheight * 0.85  );
+
+_SECTION_END();
+
+_SECTION_BEGIN("RI_Swing_Line");
+no=Param( "Swing", 3, 1, 55 );
+res=HHV(C,no);
+res = IIf(res >= Ref(res,-1),Ref(res,-1),res);
+sup=LLV(C,no);
+sup = IIf(sup <= Ref(sup,-1), Ref(sup,-1),sup);
+tsl=IIf(ValueWhen(IIf(C>Ref(res,-1),1,IIf(C<Ref(sup,-1),-1,0))!=0, IIf(C>Ref(res,-1) ,1,IIf(C<Ref(sup,-1),-1,0)),1)==1,sup,res);
+tsl_col = IIf(Close >= tsl, colorBlue,IIf(Close <= tsl, ParamColor("Down",colorRed), ParamColor("Up",colorGreen)));
+Plot(tsl, _DEFAULT_NAME(), tsl_col, styleStaircase | styleThick);
+
+//Buy / Sell Shapes
+Buy	 = Cover = Cross(C,Ref(tsl,-1));
+Sell = Short = Cross(Ref(tsl,-1),C);
+Buy	 = ExRem(Buy,Sell);
+Sell = ExRem(Sell,Buy);
+
+PlotShapes(shapeUpArrow*Buy, colorGreen, 0, Tsl, Offset=-20);
+PlotShapes(shapeDownArrow*Sell, colorRed, 0, Tsl, Offset=-20);
+PlotShapes(IIf(Cover, shapeHollowCircle, shapeNone),colorBrightGreen, 0,tsl,0);  
+PlotShapes(IIf(Short, shapeHollowCircle, shapeNone),colorRed, 0,tsl,0); 
+
+// Buy / Sell Texts
+Long=Flip(Buy,Sell); 
+Short=Flip(Sell,Buy); 
+
+BuyPrice=ValueWhen(Buy,C);
+SellPrice=ValueWhen(Sell,C);
+
+
+Edc=(
+WriteIf (Buy AND Ref(short,-1), " Buy @"+IIf(L > Ref(tsl,-1),Open,Ref(tsl,-1))+" / SL "+Tsl,"")+ 
+WriteIf (Sell AND Ref(Long,-1), " Sell @"+IIf(H < Ref(tsl,-1),Open,Ref(tsl,-1))+"  ","")+
+WriteIf(Sell , "/ Profit "+WriteVal((C-BuyPrice)/BuyPrice*100,1.2)+"%",""));
+
+C15=Param("up-down",12,1,20,1 );
+pxwidth = Status("pxwidth");
+pxheight = Status("pxheight");
+GfxSelectFont("Arial",Font, 100);
+GfxTextOut(edc, Status("pxwidth")*0.84, Status("pxheight")*0.88 );
+
+dist = 1.5*ATR(15);
+dist1 = 1.5*ATR(15);
+for( i = 0; i < BarCount; i++ ) 
+{ 
+ if( Buy[i] ) 
+ {
+  PlotText("" + C[ i ] + "/" + tsl[i], i, tsl[i], colorGreen, colorDefault,-40 );
+ }
+ if( Sell[i] )
+ {
+  PlotText("" + C[ i ], i, tsl[i], colorRed, colorDefault,30 ); 
+ }
+}
+_SECTION_END();
+
+_SECTION_BEGIN("Fractal-EOD-WF");
+UpFractal= ValueWhen(
+  (Ref(H,-2) > Ref(H, -4)) AND
+  (Ref(H,-2) > Ref(H, -3)) AND
+  (Ref(H,-2) > Ref(H, -1)) AND
+  (Ref(H,-2) > H), Ref(H,-2));
+
+DownFractal= ValueWhen(
+  (Ref(L,-2) <= Ref(L, -4)) AND
+  (Ref(L,-2) <=  Ref(L, -3)) AND
+  (Ref(L,-2) <=  Ref(L, -1)) AND
+  (Ref(L,-2) <=  L), Ref(L,-2));
+
+UF=UpFractal;
+DF=DownFractal;
+
+Plot(UpFractal, "UF", ParamColor("Up Fractal Color",colorGreen),
+ParamStyle("Up Fractal Style", styleDashed));
+Plot(DownFractal, "DF",ParamColor("Down Fractal Color",colorOrange), 
+ParamStyle("Down Fractal Style", styleDashed));
+_SECTION_END();
+
+
+_SECTION_BEGIN( "Price" );
+SetChartOptions( 0, chartShowDates | chartShowArrows | chartLogarithmic | chartWrapTitle );
+_N( Title = StrFormat( "{{NAME}} - " + SectorID( 1 ) + " - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) Vol " + WriteVal( V, 1.0 ) + " {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+//BarCol = IIf(O < C, ParamColor("Candle up Color",colorGreen),ParamColor("Candle down Color",colorRed));
+//SetChartBkColor(colorBlack);
+//SetBarFillColor(BarCol);
+Plot( C, "Close", colorRose, styleCandle | styleNoTitle | ParamStyle( "Style" ) | GetPriceStyle() );
+
+CY1 =  Param("Short Cycle Length?" ,10, 1 ,1000 ,1 )/2;
+CY2 =  Param("Medium Cycle Length?" ,80, 1 ,1000 ,1 )/2;
+M1 =  Param("Short Cycle Multiplyer?" ,1, 0.01 ,10 ,1 );
+M2 =  Param("Medium Cycle Multiplyer?" ,3, 0.01 ,10 ,1 );
+T1 =  Ref(MA(Close ,CY1 ),CY1/2)+ M1*ATR(CY1 );
+B1 =  Ref(MA( Close ,CY1 ),CY1/2)- M1*ATR(CY1 );
+M1 = (T1 + B1) / 2;
+T2 =  Ref(MA(Close ,CY2 ),CY2/2)+ M2*ATR(CY2 );
+B2 =  Ref(MA( Close ,CY2 ),CY2/2)- M2*ATR(CY2 );
+M2 = (T2 + B2) / 2;
+
+colT1 = IIf(T1 > Ref(T1,-1), colorBrightGreen,IIf(T1 < Ref(T1,-1),colorRed,colorGrey50));
+colB1 = IIf(B1 > Ref(B1,-1), colorBrightGreen,IIf(B1 < Ref(B1,-1),colorRed,colorGrey50));
+
+colT2 = IIf(T2 > Ref(T2,-1), colorBrightGreen,IIf(T2 < Ref(T2,-1), colorRed, colorGrey50));
+colB2 = IIf(B2 > Ref(B2,-1), colorBrightGreen,iif(B2 < Ref(B2,-1), colorRed,colorGrey50));
+
+colM1 = IIf(M1 > Ref(M1,-1), colorBrightGreen,IIf(M1 < Ref(M1,-1),colorRed,colorGrey40));
+colM2 = IIf(M2 > Ref(M2,-1), colorBrightGreen,IIf(M2 < Ref(M2,-1),colorRed,colorGrey40));
+
+RedArea   = IIf(T1>=T2,ParamColor("Red Area",colorOrange),ParamColor("OS Color",ColorRGB(255,193,193)));
+PlotOHLC(T1,T2,T1,T2,"",RedArea,styleCloud);
+GreenArea = IIf(B1 <= B2,ParamColor("Green Area",colorLime),ParamColor("OB Color",ColorRGB(188,255,155)));
+PlotOHLC(B1,B2,B1,B2,"",GreenArea,styleCloud);
+
+
+
+GraphXSpace = 5;
+Filter=1;
+
+GTP = Close < B1 AND Close < B2;
+RTP = Close > T1 AND Close > T2;
+WGA = Close < B2;
+WRA = Close > T2;
+GA  = Close < B1;
+RA  = Close > T1;
+
+TextArea = WriteIf(GTP,"1. Green TP", WriteIf(RTP,"7. Red TP", WriteIf(WGA,"2. Watch Green", WriteIf(WRA,"6. Watch Red", WriteIf(GA,"3. Green",WriteIf(RA,"5. Red","4. Netral"))))));
+ColArea = IIf(GTP,colorBrightGreen,IIf(RTP,colorDarkRed,IIf(WGA,colorLime,IIf(WRA,colorRed,IIf(GA,colorGreen,IIf(RA,colorPink,colorGrey40))))));
+AddColumn(T2,"BigTop",1.0,colorDefault,colT2);
+AddColumn(T1,"LilTop",1.0,colorDefault,colT1);
+AddColumn(Close,"Close",1.0,colorDefault,ColArea);
+AddColumn(B1,"LilBot",1.0,colorDefault,colB1);
+AddColumn(B2,"BigBot",1.0,colorDefault,colB2);
+AddTextColumn(TextArea,"Gravity Area",1.0,colorDefault,ColArea);
+
+
+DayPrice = (O+H+L+C)/4;
+MAVol = MA(Volume,20);
+DayTrx = DayPrice * Volume / 100000000000;
+MAPrice = MA(DayTrx,20);
+MATrx = MaVol * MAPrice;
+MaxEntry = (MAPrice * MaVol) / 100;
+AddColumn(MaxEntry, "Max_Entry(Mil)",1.2,colorDefault);
+
+if ( ParamToggle( "Tooltip shows", "All Values|Only Prices" ) )
+{
+    ToolTip = StrFormat( "Open: %g\nHigh:  %g\nLow:   %g\nClose:  %g (%.1f%%)\nVolume: " + NumToStr( V, 1 ), O, H, L, C, SelectedValue( ROC( C, 1 ) ) );
+}
+_SECTION_END();
+
+
+
+
+//Pixel trend harga jangka pendek = batang ke-1 (paling atas)
+//Warna hijau tua muncul jika V > Vrata2 34 hari
+H1 = Ref( H,-1 );
+Vrt=MA(V,21);
+St = StDev(Vrt,21);
+Vp3 = Vrt + 3*st; 
+Vp2 = Vrt + 2*st;
+Vp1 = Vrt + 1*st;
+Warna1 = 
+IIf(C>O AND C>H1 AND V>Vrt OR C>O AND C>H1 AND V>Vp1 OR C>O AND C>H1 AND V>Vp2 OR C>O AND C>H1 AND V>Vp3,colorGreen,IIf(C>WMA(C,5),colorPaleGreen, IIf(C<O AND C<H1,colorRed,
+IIf(C<WMA(C,5),colorRed,
+IIf(C>O and C<WMA(C,3),colorGreen,
+colorRed)))));
+SetBarFillColor(Warna1);
+PlotOHLC(6,8.5,6,8.5, "",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+//Pixel trend harga jangka menengah = batang ke-2
+Warna2 = 
+IIf(C>O AND C>H1 AND V>Vrt,colorGreen,IIf(C>=TSL,colorPaleGreen, IIf(C<O AND C<H1,colorRed,
+IIf(C<TSL,colorRed,
+IIf(C<O OR C<TSL,colorGreen,
+colorRed)))));
+SetBarFillColor(Warna2);
+PlotOHLC(3,5.5,3,5.5, "",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+//Pixel trend harga jangka panjang (2-3 bulan) = batang ke-3
+Warna3 = 
+IIf(C>O AND C>H1 AND V>Vrt,colorGreen,IIf(C>WMA (C,34),colorPaleGreen, IIf(C<O AND C<H1,colorRed,
+IIf(C<WMA (C,34),colorRed,
+IIf(C>O OR C<WMA(C,34),colorGreen,
+colorRed)))));
+SetBarFillColor(Warna3);
+PlotOHLC(0,2.5,0,2.5, "",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+

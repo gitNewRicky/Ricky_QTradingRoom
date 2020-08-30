@@ -1,0 +1,108 @@
+_SECTION_BEGIN("MACD Plotter ver 3");
+
+/**********************************************************
+ /MACD Cross
+***********************************************************/ 
+
+
+
+StartBar=SelectedValue(BarIndex());
+FinishBar = EndValue( BarIndex() );
+i = Startbar;
+
+
+
+
+EWODAILY =  EMA(C,5) - EMA(C,34);
+
+SIG =  EMA(EWODAILY,5);
+
+GfxSelectFont("Tahoma", 11, 700 ); 
+
+todayEWODAILY    = EWODAILY  ; 
+onedaybackEWODAILY    =Ref(EWODAILY  ,-1);
+twodaybackEWODAILY   =  Ref(EWODAILY  ,-2)  ;
+
+if( (todayEWODAILY   [i] > onedaybackEWODAILY   [i])   AND (onedaybackEWODAILY   [i] <= twodaybackEWODAILY  [i]))
+{
+GfxSetTextColor(ColorRGB(186,236,94)); 
+GfxTextOut("New Trend Up",400,1);
+}
+if( (todayEWODAILY   [i] < onedaybackEWODAILY  [i])   AND (onedaybackEWODAILY   [i] >= twodaybackEWODAILY  [i]) )
+{
+GfxSetTextColor(colorRed); 
+GfxTextOut("New Trend Dn",400,1);
+}
+
+if((todayEWODAILY   [i] > onedaybackEWODAILY  [i])   AND (onedaybackEWODAILY   [i] >= twodaybackEWODAILY   [i])
+)
+{
+GfxSetTextColor(colorBlack); 
+GfxTextOut("Trend Up",400,1);
+}
+
+if( (todayEWODAILY   [i]< onedaybackEWODAILY  [i])   AND (onedaybackEWODAILY   [i] <= twodaybackEWODAILY   [i])
+                       )
+{
+GfxSetTextColor(colorBlack); 
+GfxTextOut("Trend Dn",400,1);
+}
+
+
+
+EWODAILY_ZEROCRUP = Cross(EWODAILY ,0);
+EWODAILY_ZEROCRDN = Cross(0,EWODAILY );
+
+
+if(EWODAILY_ZEROCRUP[I])
+{
+GfxSetTextColor(ColorRGB(221,248,112)); 
+GfxTextOut("Zero Cross Up",550,1);
+}
+
+
+if(EWODAILY_ZEROCRDN[I])
+{
+GfxSetTextColor(ColorRGB(248,113,113)); 
+GfxTextOut("Zero Cross Dn",550,1);
+}
+
+
+
+EWO_LEADING = (EWODAILY > 0) AND (EWODAILY > Ref(EWODAILY,-1));
+EWO_IMPROVING = (EWODAILY < 0) AND (EWODAILY > Ref(EWODAILY,-1));
+EWO_WEAKENING = (EWODAILY > 0) AND (EWODAILY < Ref(EWODAILY,-1));
+EWO_LAGGING = (EWODAILY < 0) AND (EWODAILY < Ref(EWODAILY,-1));
+
+EWO_COLOR = IIf(EWO_LEADING,colorGreen,IIf(EWO_IMPROVING,colorYellow,IIf(EWO_WEAKENING,colorBlue,IIf(EWO_LAGGING,colorRed,colorWhite))));
+
+Plot(EWODAILY , "EWODAILY ", EWO_COLOR, styleHistogram | styleThick| styleNoLabel, styleOwnScale);
+
+
+
+ 
+Plot(SIG ,"",colorBlueGrey,styleLine|styleThick);
+
+
+
+GfxSetTextAlign( TA_LEFT = 0 );
+GfxSelectFont("Tahoma", 11, 700 ); 
+GfxSetTextColor(colorBlack); 
+GfxTextOut(Name()+ "   " + Date(),07,0); 
+
+
+
+
+
+ 
+
+
+Title =
+
+"\n";
+ 
+ 
+ 
+  
+
+_SECTION_END();

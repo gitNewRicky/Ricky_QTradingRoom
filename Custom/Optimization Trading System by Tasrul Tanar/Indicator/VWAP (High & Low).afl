@@ -1,0 +1,6 @@
+r1 = Param( "High (1) or Low (2)", 2, 1, 2, 1 );
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style"); 
+a=TAS_WAP_HandL(r1);
+
+Plot(a,"VWAP (H & L)",iColor,iStyle); 

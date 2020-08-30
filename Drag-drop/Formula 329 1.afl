@@ -1,0 +1,29 @@
+#include_once <..\Quant.id\AFL\Tools.afl>
+stSetBackgroundTitle(Name() + " Volume FF / Total ");
+
+_SECTION_BEGIN("FF Terhadap Volume");
+MP = (H + L + C)/3;
+ForVol = Aux2 / MP;
+AbsForvol = abs(Aux2) / MP;
+
+ColFor = IIf(ForVol <0,colorRed,colorBrightGreen);
+WColFor = WriteIf(Aux2 <0,"EncodeColor(colorRed)","EncodeColor(colorBrightGreen)");
+
+Plot(WMA(AbsForvol,200),"",colorBlack,styleLine);
+SetBarFillColor(ColFor);
+PlotOHLC(0,AbsForvol,0,AbsForvol,"VA",colorBlack,styleCandle);
+
+//FPV = (Forvol / Volume)*100;
+_SECTION_END();
+
+_SECTION_BEGIN("Volume");
+//Plot( Volume, _DEFAULT_NAME(), ParamColor("Color", colorBlueGrey ), ParamStyle( "Style", styleHistogram | styleThick, maskHistogram  ) );
+AvgVolumePeriod = Param("Period",21,2,200,1);
+MAvol = WMA(Volume,AvgVolumePeriod);
+LVMAvol = LastValue(MaVol);
+VRatio = Volume / LVMAvol *100;
+Plot(LVMAvol,"Avg Vol",colorYellow,styleLine | styleDashed);
+
+SetBarFillColor(ParamColor("Volume Color",colorBlueGrey));
+PlotOHLC(0,Volume,0,Volume,"Volume",colorWhite,styleCandle);
+_SECTION_END();

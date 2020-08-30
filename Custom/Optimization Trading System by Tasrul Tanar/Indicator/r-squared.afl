@@ -1,0 +1,2 @@
+Periods = Param("r-squared Periods", 14, 1, 10000, 1, 1 );
+Plot( TAS_r2( Periods ), "r-squared", ParamColor( "Color", colorRed ), ParamStyle("Style") ); 

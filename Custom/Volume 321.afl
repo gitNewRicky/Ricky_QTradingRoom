@@ -1,0 +1,22 @@
+#include_once <../Include/BS_Tools.afl>
+#include_once <../Include/Common_Tools.afl>
+
+_SECTION_BEGIN("Volume | NetVol | Vol Ratio");
+stSetBackgroundTitle("Volume and Net Volume");
+
+	NetVol = fnGetNetVol() * 100;
+	
+	VolRatio = V / NetVol;
+	VolumeColor = IIf(VolRatio < 4, colorGreen,IIf(VolRatio<6,colorRed,colorDarkRed));
+	SetBarFillColor(VolumeColor);
+	PlotOHLC(0,NetVol,0,NetVol,"Net Volumes",colorDarkGrey,styleCandle);
+	SetBarFillColor(colorwhite);
+	PlotOHLC(0,Volume,0,Volume,"Total Volume",colorDarkGrey,styleCandle);
+	
+	VolRatioTC = WriteIf(VolRAtio<4,EncodeColor(colorWhite),WriteIf(VolRatio<6,EncodeColor(colorRed),EncodeColor(colorDarkRed)));
+	
+	Title = Name() + 
+			EncodeColor (colorWhite)+ " Total Volume = "+ WriteVal(Volume,1.0) +
+			EncodeColor (colorWhite)+ " Net Volume = "+ WriteVal(NetVol,1.0) +
+			EncodeColor (colorWhite)+ " Vol Ratio = "+ VolRatioTC + WriteVal(VolRatio,1.1)+ "x";
+_SECTION_END();

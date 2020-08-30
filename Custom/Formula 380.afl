@@ -1,0 +1,18 @@
+SetChartBkColor(colorWhite);
+_SECTION_BEGIN("Combi Indicator");
+
+periods = Param( "Periods", 15, 1, 200, 1 );
+Ksmooth = Param( "%K avg", 3, 1, 200, 1 );
+Dsmooth = Param( "%D avg", 3, 1, 200, 1 );
+Plot( StochK( periods , Ksmooth), "StorchK",ParamColor("Stochastic K%",colorBlack),styleLine);
+Plot( StochD( periods , Ksmooth, DSmooth ), "StorchD", ParamColor("Stochastic D%",colorblack), styleDashed );
+
+periods = Param( "Periods", 15, 1, 200, 1 );
+Plot( RSI( periods), "RSI", colorBlue, styleThick );
+
+Plot(20,"",colorBlack,styleDashed | styleNoLabel);
+Plot(50,"",colorBlack,styleDashed | styleNoLabel);
+Plot(80,"",colorBlack,styleDashed | styleNoLabel);
+
+_N(Title = EncodeColor(colorblack) + StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} "));
+_SECTION_END();

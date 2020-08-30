@@ -1,0 +1,26 @@
+_SECTION_BEGIN("E. Mars_3");
+//Mars-3
+
+m = Param("Periods", 10, 5, 20, 1 );
+n = Param("Average", 5, 3, 10, 1 );
+
+pa = (2*C+H+L)/4;
+cost = pa*Volume;
+
+scost5 = Sum(cost,n);
+svolume5 = Sum(Volume,n);
+pa5 = scost5/svolume5;
+
+RSV = (pa5-LLV(pa5,m))/(HHV(pa5,m)-LLV(pa5,m))*100;
+pak = WMA(rsv,n);
+paD = WMA(paK,n);
+
+UP=pak; 
+DOWN=pad; 
+Oo=IIf(up<down,up,down);
+Hh=Oo;
+Ll=IIf(up<down,down,up);
+Cc=Ll;
+barcolor2=IIf(up>down,5,colorRed);
+PlotOHLC( Oo,hh,ll,Cc, "Winner ", barcolor2, styleCandle );
+_SECTION_END();

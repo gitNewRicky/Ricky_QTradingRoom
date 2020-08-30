@@ -1,0 +1,27 @@
+#include_once <../Include/BS_Tools.afl>
+
+_SECTION_BEGIN("Broker BS");
+
+PlotType = ParamList("Plot Type", "NET|Vol",0);
+
+BrokerCD = ParamList("Broker","YP|PD|KK|NI|DH|GR|OD",1);
+BrokerBVol = fnGetBvolBroker(BrokerCD);
+BrokerSVol = fnGetSvolBroker(BrokerCD);
+NetVol = BrokerBVol - BrokerSVol;
+NetVol_Color = IIf(NetVol > 0,colorLime,colorRed);
+Plot(0,"",styleLine);
+
+if (PlotType == "NET")
+{
+	SetBarFillColor(NetVol_Color);
+	PlotOHLC(0,NetVol,0,NetVol,BrokerCD,colorBlack,styleCandle);
+}
+else
+{
+	SetBarFillColor(colorLime);
+	PlotOHLC(0,BrokerBVol,0,BrokerBVol,"BVol "+BrokerCD,colorGreen,styleCandle);
+	SetBarFillColor(colorRed);
+	PlotOHLC(0,BrokerSVol*-1,0,BrokerSVol*-1,"SVol "+BrokerCD,colorRed,styleCandle);
+	
+}
+_SECTION_END();

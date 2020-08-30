@@ -1,0 +1,227 @@
+/*
+//------------------------------------------------------------------------------
+//
+//  Formula Name: QIFA - PE Chart Ver. 1.4 (Quantitative Intelligent Fundamental Analysis)
+//  Author		: Isnandar 
+//  E-mail		: isnandar2009@gmail.com
+//  Url			: QISignal.com
+//  Date		: Feb 2016
+//  Flags		: Indicator & Explore
+//  
+//------------------------------------------------------------------------------
+*/
+
+/*
+Disclaimer :
+	Data maupun rekomendasi yang dihasilkan oleh Quantitative Intelligent Fundamental Analysis (QIFA) berdasarkan Financial Data, dan merupakan informasi semata. 
+	Segala keputusan dalam membeli atau menjual saham memiliki resiko yang harus dipahami sebelum pengambilan keputusan.
+	QISignal.com sebagai penyedia data dan pengembang indikator PE Chart tidak bertanggung jawab terhadap kerugian baik langsung maupun 
+	tidak langsung yang timbul dari tindakan membeli atau menjual saham.
+	
+	Rencanakan investasi anda dengan manajemen yang baik. 
+	Setiap keputusan investasi menjadi tanggung jawab pemilik investasi atau pemilik modal.
+*/
+
+/*
+New Update :
+
+v.1.4 : 2016-05-10
+- Plot Foreign Flow (colorYellow)
+- Remove Bollinger Bands
+
+v.1.3 : 2016-04-01
+- Menambahkan kolom PEG
+- Menambahkan Bollinger Bands
+- Menambahkan Volume
+- Menambahkan Net Foreign Value, Cummulative 5Day & 10Day 
+
+v.1.2 : 2016-03-17
+- Menambahkan FinancialGrowth
+
+v.1.1 : 2016-03-10
+- Exploration 
+
+*/
+
+QIsnInitialize();
+/*
+	Variable :
+				NBSFVal = NetBuySell Foreign by Value
+				NBSFVol = NetBuySell Foreign by Volume
+*/
+
+
+
+AflTitle = "QIFA - PE Chart Ver.1.4";
+SetChartOptions(0,chartShowArrows|chartShowDates);
+	SetChartBkColor(colorDarkOliveGreen); // color of outer border
+	SetChartBkGradientFill( colorDarkGrey, colorDarkOliveGreen);
+	GfxSetOverlayMode(1);
+	GfxSetTextColor( ColorHSB( 41, 41, 41 ) );
+	GfxSetBkMode(0); 
+	GfxSelectFont( "Comic Sans MS", Status("pxheight")/36 );
+	GfxTextOut( "QISignal.com", 15, Status("pxheight")-57 );
+
+
+
+NetBuySellForeignValue = NBSFVal/1000000000;
+	
+cumNBSF = Cum(NetBuySellForeignValue);
+NF5D = Sum(NetBuySellForeignValue,5);
+NF10D = Sum(NetBuySellForeignValue,10);
+
+colorNF = SelectedValue(IIf(NetBuySellForeignValue > 0,colorBrightGreen,32)); 
+colorNF5D = SelectedValue(IIf(NF5D > 0,colorBrightGreen,32)); 
+colorNF10D = SelectedValue(IIf(NF10D > 0,colorBrightGreen,32)); 
+
+
+
+
+    dec = (Param("Decimals",2,0,7,1)/10)+1;	
+    period = Hor=Param("Yr. Range",5,1,8,1);
+    
+    if( SelectedValue( BarIndex() ) > 1 ) MBBarIndex = MA( C, SelectedValue( BarIndex() ) - 1);
+
+	plPE = ParamList("P/E","P/E~ttm|Forward P/E",0);
+    if (plPE=="P/E~ttm")
+    {    
+		QIsnPEttm(period);
+		rv="EPS~ttm";
+	}
+	else if(plPE=="Forward P/E")
+	{
+		QIsnForwardPE(period);
+		rv="Forward EPS";
+	}
+	
+	StdDevMin1	= AvgPE-PEStDev;
+	StdDevMin2	= AvgPE-(2*PEStDev);
+	Plot(PE,"P/E Ratio", colorAqua, ParamStyle("Style")  );
+	Plot(AvgPE,"Avg.P/E", colorWhite, ParamStyle("Style")  );
+	Plot(AvgPE+(2*PEStDev), "+2 StdDev",colorRed, styleDashed);
+	Plot(AvgPE+PEStDev,"+1 StdDev", 11, ParamStyle("Style")  );
+	Plot(StdDevMin1,"-1 StdDev", colorBrightGreen, ParamStyle("Style")  );
+	Plot(StdDevMin2, "-2 StdDev",colorPaleGreen, styleDashed);
+
+function FinancialGrowth(Fin,YrRange,a,b)
+{
+	Yr0EPS = a;
+	Yr1EPS = b;
+	EPSFinGrowth = IIf(Yr0EPS>0 && Yr1EPS>0,Nz(100 * ( -1 + Yr0EPS / Yr1EPS )),0);
+	if( YrRange<2 ) break;
+	for( y = 2; y <= YrRange ; y++ )
+	{
+		Yr0EPS = QIsnFA(Fin,-1 * y );
+		EPSFinGrowth += IIf(Yr0EPS>0 && Yr1EPS>0,100 * ( -1 + Yr1EPS / Yr0EPS ),0);
+		Yr1EPS = Yr0EPS ;
+	}
+	return EPSFinGrowth / YrRange ;
+ }
+	
+EPS1YrAgo = Nz(QIsnFA("EPS",-1),0) ;
+Yr1EPSGrowth =IIf(EPS1YrAgo>0 && EPS>0,Nz(100 * ( -1 + EPS / EPS1YrAgo )),0);
+EPSFinGrowth = FinancialGrowth("EPS",period,EPS,EPS1YrAgo);
+PEG = IIf(PE>0 && EPSFinGrowth>0 ,Nz(PE / EPSFinGrowth),0) ;	
+
+if( Status("action") == actionExplore ) 
+{
+	Filter = (GroupID() == 2 OR GroupID() == 3) AND FinancialRange>0 ; //Nz(PE,0) ;
+	MRQorFY  =  QIsnFA("AsOfDate") ;
+
+	bkColorDefault = 54;
+	Chg = C - Ref(C,-1); 
+	
+	if( Nz(QIsnFA("EPS"),0) == 0) MRQorFY ="N/A";
+	AddColumn(C,"Close",1,IIf(Chg>0,colorGreen,colorRed),colorDefault,60);		
+	AddTextColumn(MRQorFY, "Period",1.0,colorDefault,bkColorDefault,70);
+	AddColumn(C*QIsnFA("SharesOut")/1000000,"M.Cap.(Bio) ",1.2,colorDefault,bkColorDefault,85);
+	AddColumn(Nz(EPSFinGrowth,0),"EPS:"+period+"YrGrowthRate",1.2,colorDefault,bkColorDefault,85);
+	AddColumn(Yr1EPSGrowth,"1YrEPSGrowth",1.2,colorDefault,bkColorDefault,105);
+	AddColumn(Nz(EPS),rv,1.2,IIf(EPS<0,colorDefault,IIf(Nz(Yr1EPSGrowth)>0,colorGreen,colorRed)),colorDefault,85);
+	AddColumn(Nz(PE),plPE,1.2,IIf(PE<0,colorDefault,IIf(Nz(PE)<AvgPE,colorGreen,colorRed)),colorDefault,75);
+	AddColumn(Nz(PEG),"PEG",1.2,colorDefault,colorDefault,55);
+	AddColumn(Nz(AvgPE),"AvgPE",1.2,colorDefault,colorDefault,55);
+	AddColumn(Nz(PEStDev),"StDev",1.2,colorDefault,colorDefault,55);
+	AddTextColumn(SectorID(1), "Sector",1.0,colorDefault,bkColorDefault,90);
+	AddTextColumn(IndustryID(1), "Industry",1.0,colorDefault,bkColorDefault,100);
+}
+
+_SECTION_BEGIN("ForeignFlow");
+if( Status("action") == actionIndicator ) 
+{
+	ShowForeignFlow = ParamToggle("Show ?","Yes|No",1);
+	foreigncolor = ParamColor("Foreign Flow Color", colorYellow);
+	foreignstyle = ParamStyle("Foreign Style", styleNoLabel | styleOwnScale);
+	if(ShowForeignFlow==1)
+	{
+		Plot(cumNBSF,"",foreigncolor,foreignstyle);
+	}
+}
+_SECTION_END();
+
+
+_SECTION_BEGIN("Title");
+
+		if( Status("action") == actionIndicator ) 
+		(Title = EncodeColor(colorYellow)+ AflTitle + "     " + EncodeColor(55)+  Name() + "     " + EncodeColor(32) + Date() + "      " + 
+				 EncodeColor(5) + "{{INTERVAL}}  " + 
+				EncodeColor(55)+ "Open = "+ EncodeColor(52)+ WriteVal(O,dec) + 
+				EncodeColor(55)+ "     High = "+ EncodeColor(5) + WriteVal(H,dec) +
+				EncodeColor(55)+ "      Low = "+ EncodeColor(32)+ WriteVal(L,dec) + 
+				EncodeColor(55)+ "    Close = "+ EncodeColor(52)+ WriteVal(C,dec) + 
+				EncodeColor(55)+ "    Chg = "+ WriteIf(C>Ref(C,-1),EncodeColor(colorBrightGreen),EncodeColor(colorRed))+ WriteVal(SelectedValue( ROC( C, 1 )),dec) + "%\n" + 
+			    EncodeColor(55)+ "Volume = "+ EncodeColor(52)+ WriteVal(V,1) + 
+			   EncodeColor(55)+ "    T. Value = "+ EncodeColor(52)+ WriteVal(TradeValue/1000000000,1.2) + "B" + 
+				EncodeColor(55)+ "   Net Foreign = " + EncodeColor(colorNF) + WriteVal(NetBuySellForeignValue,1.2,True) + "B"+
+				EncodeColor(colorDefault)+"   5Day = " + EncodeColor(colorNF5D) + WriteVal(NF5D,1.2,True) + "B"+
+				EncodeColor(colorDefault)+"   10Day = " + EncodeColor(colorNF10D) + WriteVal(NF10D,1.2,True) + "B"+
+				EncodeColor(55)+ "    Foreign Flow = "+ EncodeColor(foreigncolor)+ WriteVal(cumNBSF,1.2) + "B" + "\n" +
+				EncodeColor(55)+ "" + EncodeColor(coloryellow)+  QIsnFA("Asofdate") + 
+				EncodeColor(55)+ "  "+rv+" = "+ EncodeColor(colorAqua)+ WriteVal(EPS,1.2) +
+				EncodeColor(55)+ "  "+plPE+" = "+ EncodeColor(colorAqua)+ WriteVal(PE,1.2) + 
+				EncodeColor(55)+ "  PEG = "+ EncodeColor(colorAqua)+ WriteVal(PEG,1.2) + "\n" +
+			 EncodeColor(55)+ "Avg.P/E = "+ EncodeColor(colorWhite)+ WriteVal(AvgPE,1.2) + " ("+WriteVal(AvgPE*EPS,1.2)+")"+
+			 EncodeColor(55)+ "     +2 StdDev = "+ EncodeColor(colorRed)+ WriteVal(AvgPE+(2*PEStDev),1.2) + " ("+WriteVal((AvgPE+(2*PEStDev))*EPS,1.2)+")" +
+			 EncodeColor(55)+ "     +1 StdDev = "+ EncodeColor(11)+ WriteVal(AvgPE+PEStDev,1.2) + " ("+WriteVal((AvgPE+PEStDev)*EPS,1.2)+")" +
+			 EncodeColor(55)+ "     -1 StdDev = "+ EncodeColor(colorBrightGreen)+ WriteVal(StdDevMin1,1.2) + " ("+WriteVal(StdDevMin1*EPS,1.2)+")" +
+			 EncodeColor(55)+ "     -2 StdDev = "+ EncodeColor(colorPaleGreen)+ WriteVal(StdDevMin2,1.2) + " ("+WriteVal(StdDevMin2*EPS,1.2) +")" ) ;
+_SECTION_END();
+
+_SECTION_BEGIN("Volume");
+if( Status("action") == actionIndicator ) 
+{
+	ShowVolume = ParamToggle("Show ?","Yes|No",1);
+	if(ShowVolume==1)
+	{
+		//Plot( Volume, _DEFAULT_NAME(), ParamColor("Color", colorBlueGrey ), ParamStyle( "Style", styleHistogram | styleOwnScale | styleThick, maskHistogram  ) );
+		ColorVolume = ParamColor("Color", ColorRGB( 128, 128, 192 ) );
+		Plot( Volume, _DEFAULT_NAME(), ColorBlend( ColorVolume, GetChartBkColor(), 0.5  ), styleNoTitle | ParamStyle( "Style", styleHistogram | styleOwnScale | styleThick | styleNoLabel, maskHistogram  ), 2 );
+	}
+}
+_SECTION_END();
+
+
+
+
+/*
+_SECTION_BEGIN("Bollinger Bands");
+
+if( Status("action") == actionIndicator ) 
+{
+	ShowBB = ParamToggle("Show Area ?","Yes|No",0);
+	P = PE;
+	Periods = Param("BB Periods", 15, 2, 100, 1 );
+	Width = Param("BB Width", 2, 0, 10, 0.05 );
+	Color = ParamColor("BB Color", colorLightGrey );
+	Style = ParamStyle("BB Style", styleLine | styleNoLabel ) ;
+		
+	if(ShowBB==1)  
+	{
+		Plot( bbt = BBandTop( P, Periods, Width ), "BBTop" + _PARAM_VALUES(), Color, Style ); 
+		Plot( bbb = BBandBot( P, Periods, Width ), "BBBot" + _PARAM_VALUES(), Color, Style ); 
+		PlotOHLC( bbt, bbt, bbb, bbb, "", ColorBlend( Color, GetChartBkColor(), 0.8 ), styleNoLabel | styleCloud | styleNoRescale, Null, Null, Null, -1 );
+	}
+}
+_SECTION_END();
+
+*/

@@ -1,0 +1,273 @@
+///Candlestick Exploration for Amibroker (AFL)
+
+
+// Downloaded From www.WiseStockTrader.com
+MAXH5=HHV(High,5)==High;
+MaxH5COLOR=IIf(MAXH5,colorBrightGreen,colorWhite);
+
+MAXH5Y=HHV(High,5)==Ref(High,-1);
+MAXH5YCOLOR=IIf(MAXH5Y,colorBrightGreen,colorWhite);
+
+MINL5=LLV(Low,5)==Low;
+MINL5COLOR=IIf(MinL5,colorBrightGreen,colorWhite);
+
+MINL5Y=LLV(Low, 5)==Ref(Low,-1);
+MINL5YCOLOR=IIf(MINL5Y,colorBrightGreen,colorWhite);
+
+DOJI1=abs(Close-Open) <= (Close*.0025);
+DOJI1COLOR=IIf(DOJI1,colorBrightGreen,colorWhite);
+
+DOJI2=(abs(Open-Close)<=((High-Low)*0.1));
+DOJI2COLOR=IIf(DOJI2,colorBrightGreen,colorWhite);
+
+DOJI1Y=abs(Ref(Close,-1)-Ref(Open,-1)) <= (Ref(Close,-1)*.0025);
+DOJI1YCOLOR=IIf(DOJI1Y,colorBrightGreen,colorWhite);
+
+DOJI2Y=(abs(Ref(Open,-1)-Ref(Close,-1))<=((Ref(High,-1)-Ref(Low,-1))*0.1));
+DOJI2YCOLOR=IIf(DOJI2Y,colorBrightGreen,colorWhite);
+
+MRNSTAR=Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(Open,-1)<=Ref(Close,-2) AND Ref(Close,-1)<=Ref(Close,-2) AND Close>Ref(Close,-2) AND Close>=Open*1.01;
+MRNSTARCOLOR=IIf(MRNSTAR,colorBrightGreen,colorWhite);
+
+ABBABY=Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(High,-1)<Ref(Low,-2) AND Low>Ref(High,-1) AND Close>=Open*1.01;
+ABBABYCOLOR=IIf(ABBABY,colorBrightGreen,colorWhite);
+
+TRISTARBLSH=LLV(Low,3)==LLV(Low, 13) AND (HHV(High, 3)-LLV(Low, 3))<=(HHV(High, 3)*.01);
+TRISTARBLSHCOLOR=IIf(TRISTARBLSH,colorBrightGreen,colorWhite);
+
+TSTARSO=LLV(Low,8)==Ref(Low,-2) AND Ref(Close,-2)<Ref(Open,-2) AND Ref(Close,-2)>=(Ref(Low,-2)+((Ref(High,-2)-Ref(Low,-2))*.25)) AND Ref(Open,-1)>Ref(Close,-2) AND Ref(Low,-1)>Ref(Low,-2) AND Ref(Close,-1)>=(Ref(Low,-1)+((Ref(High,-1)-Ref(Low,-1))*.25)) AND Ref(Close,-1)<Ref(Open,-1) AND High<Ref(High,-1) AND Low>Ref(Low,-1) AND High-Low<=(High*.01);
+TSTARSOCOLOR=IIf(TSTARSO,colorBrightGreen,colorWhite);
+
+BLHARAMI=Ref(Close,-1)<=Ref(Open,-1)*.99 AND High<=Ref(Open,-1) AND Low>=Ref(Close,-1) AND Close>Open;
+BLHARAMICOLOR=IIf(BLHARAMI,colorBrightGreen,colorWhite);
+
+TINSDUP=Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(High,-1)<=Ref(Open,-2) AND Ref(Low,-1)>=Ref(Close,-2) AND Close>Ref(Open,-2);
+TINSDUPCOLOR=IIf(TINSDUP,colorBrightGreen,colorWhite);
+
+HARAMICRS=Ref(Close,-1)<=Ref(Open,-1)*.99 AND High<Ref(Open,-1) AND Low>Ref(Close,-1);
+HARAMICRSCOLOR=IIf(HARAMICRS,colorBrightGreen,colorWhite);
+
+HARAMIPG=Ref(Close,-1)<=Ref(Open,-1)*.99 AND High<=Ref(Open,-1) AND Low>=Ref(Close,-1) AND Close<Open;
+HARAMIPGCOLOR=IIf(HARAMIPG,colorBrightGreen,colorWhite);
+
+KICKBULL=Ref(Close,-1)<=Ref(Open,-1)*.99 AND Low>=Ref(High,-1) AND Close>=Open*1.01;
+KICKBULLCOLOR=IIf(KICKBULL,colorBrightGreen,colorWhite);
+
+HIPRCGAP=Ref(Close,-4)>=Ref(Open,-4)*1.01 AND HHV(Ref(High, -1),3)<=Ref(High,-4) AND LLV(Ref(Low, -1), 3) >=Ref(Low,-4) AND Close>Open*1.01 AND Low>=Ref(High,-4);
+HIPRCGAPCOLOR=IIf(HIPRCGAP,colorBrightGreen,colorWhite);
+
+SDBSDWTLN=HHV(High,2)==HHV(High,8) AND Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(Low,-1)>Ref(High,-2) AND Ref(Close,-1)>=Ref(Open,-1)*1.01 AND Low>Ref(High,-2) AND Open<=Ref(Open,-1)*1.005 AND Close>=Open*1.01;
+SDBSDWTLNCOLOR=IIf(SDBSDWTLN,colorBrightGreen,colorWhite);
+
+UPSGAP3=Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(Low,-1)>Ref(High,-2) AND Ref(Close,-1)>=Ref(Open,-1)*1.01 AND Open<Ref(Close,-1) AND Open>Ref(High,-2) AND Close<Ref(Close,-2);
+UPSGAP3COLOR=IIf(UPSGAP3,colorBrightGreen,colorWhite);
+
+TASUKIGAPBLSH=Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(Low,-1)>Ref(High,-2) AND Ref(Close,-1)>=Ref(Open,-1)*1.01 AND Close<Open AND Close<Ref(Close,-1) AND Low>Ref(High,-2);
+TASUKIGAPBLSHCOLOR=IIf(TASUKIGAPBLSH,colorBrightGreen,colorWhite);
+
+HAMMER=Open>=(High-((High-Low)*.25)) AND Close>=(High-((High-Low)*.25));
+HAMMERCOLOR=IIf(HAMMER,colorBrightGreen,colorWhite);
+
+INVHAMMER=Open<=(Low+((High-Low)*.25)) AND Close<=(Low+((High-Low)*.25));
+INVHAMMERCOLOR=IIf(INVHAMMER,colorBrightGreen,colorWhite);
+
+TRIVBOT=Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(Open,-1)>Ref(Close,-2) AND Ref(Close,-1)>Ref(Close,-2) AND Close>Open AND Close<Ref(Open,-2) AND Open>Ref(Close,-2) AND Ref(Open,-1)>=(Ref(High,-1)-((Ref(High,-1)-Ref(Low,-1))*.25)) AND Ref(Close,-1)>=(Ref(High,-1)-((Ref(High,-1)-Ref(Low,-1))*.25));
+TRIVBOTCOLOR=IIf(TRIVBOT,colorBrightGreen,colorWhite);
+
+CONBABYSW=Ref(Close,-3)<=Ref(Open,-3)*.99 AND Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(Open,-1)<Ref(Close,-2) AND Ref(High,-1)>Ref(Close,-2) AND Open>Ref(Close,-2) AND Close<=Ref(Close,-1) AND LLV(Low,2)==LLV(Low,8);
+CONBABYSWCOLOR=IIf(CONBABYSW,colorBrightGreen,colorWhite);
+
+LLDOJIBLSH=Open<Ref(Low,-1) AND High>=Low*1.01;
+LLDOJIBLSHCOLOR=IIf(LLDOJIBLSH,colorBrightGreen,colorWhite);
+
+MATCHLOW=LLV(Low,8)==LLV(Low,2) AND Ref(Close,-1)<=Ref(Open,-1)*.99 AND abs(Close-Ref(Close,-1))<=Close*.0025 AND Open>Ref(Close,-1) AND Open<=(High-((High-Low)*.5));
+MATCHLOWCOLOR=IIf(MATCHLOW,colorBrightGreen,colorWhite);
+
+BELTHOLD=Open<=Ref(Low,-1)*.99 AND Close>Ref(Low,-1);
+BELTHOLDCOLOR=IIf(BELTHOLD,colorBrightGreen,colorWhite);
+
+BULLENG=Open<Ref(Low,-1) AND Close>Ref(High,-1) AND Close>=Open*1.01;
+BULLENGCOLOR=IIf(BULLENG,colorBrightGreen,colorWhite);
+
+TOUTSUP=Ref(Open,-1)<Ref(Low,-2) AND Ref(Close,-1)>Ref(High,-2) AND Ref(Close,-1)>=Ref(Open,-1)*1.01 AND Close>Ref(High,-1) AND Close>Open;
+TOUTSUPCOLOR=IIf(TOUTSUP,colorBrightGreen,colorWhite);
+
+STICKSAND=LLV(Low, 8)==LLV(Low, 3) AND Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(Close,-1)>=Ref(Open,-1)*1.01 AND Ref(Close,-1)>=Ref(High,-2) AND Open>=Ref(High,-1) AND abs(Close-Ref(Close,-2))<=Close*.0025;
+STICKSANDCOLOR=IIf(STICKSAND,colorBrightGreen,colorWhite);
+
+BREAKAWAY=Ref(Close,-4)<Ref(Open,-4) AND HHV(Ref(High,-1), 3) < Ref(Low,-4) AND Open < HHV(Ref(High,-1), 3) AND Close>Ref(Low,-4);
+BREAKAWAYCOLOR=IIf(BREAKAWAY,colorBrightGreen,colorWhite);
+
+MEETLNS=Ref(Close,-1)<=Ref(Open,-1)*.99 AND abs(Close-Ref(Close,-1))<=Close*.0025 AND Close>=Open*1.01;
+MEETLNSCOLOR=IIf(MEETLNS,colorBrightGreen,colorWhite);
+
+PRCLINE=Ref(Close,-1)<=Ref(Open,-1)*.99 AND Open<Ref(Low,-1) AND Close>=(Close+((Open-Close)*.5));
+PRCLINECOLOR=IIf(PRCLINE,colorBrightGreen,colorWhite);
+
+TWHITESOLD=LLV(Low,8)==Ref(Low,-2) AND Ref(Open,-1)<Ref(Close,-2) AND Open<Ref(Close,-1) AND Ref(Close,-1)>Ref(Close,-2) AND Close>Ref(Close,-1) AND Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(Close,-1)>=Ref(Open,-1)*1.01 AND Close>=Open*1.01;
+TWHITESOLDCOLOR=IIf(TWHITESOLD,colorBrightGreen,colorWhite);
+
+TLINESTRK=Ref(Open,-2)<Ref(Close,-3) AND Ref(Open,-1)<Ref(Close,-2) AND Ref(Close,-2)>Ref(Close,-3) AND Ref(Close,-1)>Ref(Close,-2) AND Ref(Close,-3)>=Ref(Open,-3)*1.01 AND Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(Close,-1)>=Ref(Open,-1)*1.01 AND Open>Ref(Close,-1) AND Close< LLV( Ref(Open,-1), 3);
+TLINESTRKCOLOR=IIf(TLINESTRK,colorBrightGreen,colorWhite);
+
+SEPLINES=Ref(Close,-1)<=Ref(Open,-1)*.99 AND abs(Open-Ref(Open,-1))<=Open*.0025 AND Close>=Open*1.01;
+SEPLINESCOLOR=IIf(SEPLINES,colorBrightGreen,colorWhite);
+
+RISTHREE=Ref(Close,-4)>Ref(Open,-4) AND Ref(High,-3)>Ref(High,-4) AND Ref(High,-1)<Ref(High,-3) AND Ref(Low,-1)<Ref(Low,-3) AND Ref(Close,-3)<Ref(Open,-3) AND LLV(Ref(Low,-1),3)>Ref(Low,-4) AND Close>=Open*1.01 AND Close>HHV(Ref(H,-1),3);
+RISTHREECOLOR=IIf(RISTHREE,colorBrightGreen,colorWhite);
+
+MATHOLD=Ref(Close,-4)>=Ref(Open,-4)*1.01 AND Ref(Low,-3)>Ref(High,-4) AND Ref(High,-1)<Ref(High,-3) AND Ref(Low,-1)<Ref(Low,-3) AND Ref(Close,-3)<Ref(Open,-3) AND LLV(Ref(L,-1),3) > Ref(Low,-4) AND Open<Ref(Open,-1) AND Close>HHV(Ref(H,-1),3) AND Close>=Open*1.01;
+MATHOLDCOLOR=IIf(MATHOLD,colorBrightGreen,colorWhite);
+
+EVNSTAR=Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(Open,-1)>=Ref(Close,-2) AND Ref(Close,-1)>=Ref(Close,-2) AND Open<=Ref(Close,-1) AND Close<=Open*.99;
+EVNSTARCOLOR=IIf(EVNSTAR,colorBrightGreen,colorWhite);
+
+ABBABYBRSH=Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(Low,-1)>Ref(High,-2) AND High<Ref(Low,-1) AND Close<=Open*.99;
+ABBABYBRSHCOLOR=IIf(ABBABYBRSH,colorBrightGreen,colorWhite);
+
+TWOCROWS=Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(Open,-1)>=Ref(Close,-2) AND Ref(Close,-1)>=Ref(Close,-2) AND Open>Ref(Low,-1) AND Open<Ref(High,-1) AND Close<=Open*.99;
+TWOCROWSCOLOR=IIf(TWOCROWS,colorBrightGreen,colorWhite);
+
+UPSGAPTWOCROWS=Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(Open,-1)>=Ref(Close,-2) AND Ref(Close,-1)>=Ref(Close,-2) AND Open>Ref(High,-1) AND Close<Ref(Low,-1);
+UPSGAPTWOCROWSCOLOR=IIf(UPSGAPTWOCROWS,colorBrightGreen,colorWhite);
+
+TSTARBRSH=HHV(High, 3)==HHV(High, 13) AND (HHV(High, 3)-LLV(Low, 3))<=( HHV(High, 3)*.01);
+TSTARBRSHCOLOR=IIf(TSTARBRSH,colorBrightGreen,colorWhite);
+
+SHOOTSTAR=Low>Ref(High,-1) AND Open<=(Low+((High-Low)*.25)) AND Close<=(Low+((High-Low)*.25));
+SHOOTSTARCOLOR=IIf(SHOOTSTAR,colorBrightGreen,colorWhite);
+
+HANGMAN=Open>Ref(High,-1) AND Open>=(High-((High-Low)*.25)) AND Close>=(High-((High-Low)*.25));
+HANGMANCOLOR=IIf(HANGMAN,colorBrightGreen,colorWhite);
+
+SBSWHTLINESBRSH=LLV(Low, 8)==LLV(Low, 2) AND Ref(High,-1)<Ref(Low,-2) AND High<Ref(Low,-2) AND Ref(Close,-2)<=Ref(Open,-2)*.99 AND Open<=Ref(Open,-1)*1.005 AND Ref(Close,-1)>=Ref(Open,-1)*1.01 AND Close>=Open*1.01;
+SBSWHTLINESBRSHCOLOR=IIf(SBSWHTLINESBRSH,colorBrightGreen,colorWhite);
+
+LOWPRCGAP=Ref(Close,-4)<Ref(Open,-4)*.99 AND HHV(Ref(High,-1),3)<=(LLV(Ref(Low, -1),3)*1.01) AND High<LLV(Ref(Low,-1),3) AND Close<Open;
+LOWPRCGAPCOLOR=IIf(LOWPRCGAP,colorBrightGreen,colorWhite);
+
+DOWNGAP3=Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(High,-1)<Ref(Low,-2) AND Ref(Close,-1)<=Ref(Open,-1)*.99 AND Open<Ref(Open,-1) AND Close>Ref(Close,-2);
+DOWNGAP3COLOR=IIf(DOWNGAP3,colorBrightGreen,colorWhite);
+
+TASUKIGAPBRSH=Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(High,-1)<Ref(Low,-2) AND Ref(Close,-1)<=Ref(Open,-1)*.99 AND Open<Ref(High,-1) AND Close>Ref(High,-1) AND High<Ref(Low,-2);
+TASUKIGAPBRSHCOLOR=IIf(TASUKIGAPBRSH,colorBrightGreen,colorWhite);
+
+HARAMIBRSH=Ref(Close,-1)>=Ref(Open,-1)*1.01 AND High<Ref(Close,-1) AND Low>Ref(Open,-1);
+HARAMIBRSHCOLOR=IIf(HARAMIBRSH,colorBrightGreen,colorWhite);
+
+TINSIDEDOWN=Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(High,-1)<Ref(Close,-2) AND Ref(Low,-1)>Ref(Open,-2) AND Close<Ref(Open,-2) AND Open>Ref(Open,-2);
+TINSIDEDOWNCOLOR=IIf(TINSIDEDOWN,colorBrightGreen,colorWhite);
+
+HARAMICROSS=Ref(Close,-1)>=Ref(Open,-1)*1.01 AND High<Ref(Close,-1) AND Low>Ref(Open,-1);
+HARAMICROSSCOLOR=IIf(HARAMICROSS,colorBrightGreen,colorWhite);
+
+BRSHENGULF=Open>Ref(High,-1) AND Close<Ref(Low,-1);
+BRSHENGULFCOLOR=IIf(BRSHENGULF,colorBrightGreen,colorWhite);
+
+TINSIDDOWN=Ref(Open,-1)>Ref(High,-2) AND Ref(Close,-1)<Ref(Low,-2) AND Close<Open AND Close<Ref(Close,-1);
+TINSIDDOWNCOLOR=IIf(TINSIDDOWN,colorBrightGreen,colorWhite);
+
+DARKCLOUD=Ref(Open,-1)>=Ref(Close,-1)*1.01 AND Open>Ref(Close,-1) AND Close<=(Ref(Close,-1)-((Ref(Close,-1)-Ref(Open,-1))*.5));
+DARKCLOUDCOLOR=IIf(DARKCLOUD,colorBrightGreen,colorWhite);
+
+BELTHOLD=Open>=Ref(High,-1)*1.01 AND Close<Ref(High,-1);
+BELTHOLDCOLOR=IIf(BELTHOLD,colorBrightGreen,colorWhite);
+
+MTGLINES=Ref(Close,-1)>Ref(Open,-1) AND Open>=Ref(Close,-1)*1.01 AND abs(Close-Ref(Close,-1))<=Close*.0025;
+MTGLINESCOLOR=IIf(MTGLINES,colorBrightGreen,colorWhite);
+
+LLDOJIBRSH=Open>Ref(High,-1) AND High>=Low*1.01;
+LLDOJIBRSHCOLOR=IIf(LLDOJIBRSH,colorBrightGreen,colorWhite);
+
+ADVBLOCK=Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(High,-1)>Ref(High,-2) AND Ref(Close,-1)>Ref(Open,-1) AND Close>Open AND High>Ref(High,-1) AND (Ref(Close,-1)-Ref(Open,-1))<(Ref(Close,-2)-Ref(Open,-2)) AND (Close-Open)<(Ref(Close,-1)-Ref(Open,-1));
+ADVBLOCKCOLOR=IIf(ADVBLOCK,colorBrightGreen,colorWhite);
+
+DELIB=Ref(Close,-2)>=Ref(Open,-2)*1.01 AND Ref(High,-1)>Ref(High,-2) AND Ref(Close,-1)>Ref(Open,-1)*1.01 AND Close>Open AND High>Ref(High,-1) AND (Close-Open)<(Ref(Close,-1)-Ref(Open,-1));
+DELIBCOLOR=IIf(DELIB,colorBrightGreen,colorWhite);
+
+TBLKCROWS=HHV(High,8)==Ref(High,-2) AND Ref(Open,-1)>Ref(Close,-2) AND Open>Ref(Close,-1) AND Ref(Close,-1)<Ref(Close,-2) AND Close<Ref(Close,-1) AND Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(Close,-1)<=Ref(Open,-1)*.99 AND Close<=Open*.99;
+TBLKCROWSCOLOR=IIf(TBLKCROWS,colorBrightGreen,colorWhite);
+
+TLNSTRIKE=HHV(High,8)==Ref(High,-3) AND Ref(Open,-2)>Ref(Close,-3) AND Ref(Open,-1)>Ref(Close,-2) AND Ref(Close,-2)<Ref(Close,-3) AND Ref(Close,-1)<Ref(Close,-2) AND Ref(Close,-3)<=Ref(Open,-3)*.99 AND Ref(Close,-2)<=Ref(Open,-2)*.99 AND Ref(Close,-1)<=Ref(Open,-1)*.99 AND Open<Ref(Low,-1) AND Close>HHV(Ref(H,-1),3);
+TLNSTRIKECOLOR=IIf(TLNSTRIKE,colorBrightGreen,colorWhite);
+
+ONNECK=Ref(Close,-1)<=Ref(Open,-1)*.99 AND Open<Ref(Low,-1) AND Close>Open AND Close<Ref(Close,-1);
+ONNECKCOLOR=IIf(ONNECK,colorBrightGreen,colorWhite);
+
+INNECK=Ref(Close,-1)<=Ref(Open,-1)*.99 AND Open<Ref(Low,-1) AND Close>Open AND abs(Close-Ref(Close,-1))<=(Close*.0025);
+INNECKCOLOR=IIf(INNECK,colorBrightGreen,colorWhite);
+
+SEPLINES=Ref(Close,-1)>=Ref(Open,-1)*1.01 AND abs(Open-Ref(Open,-1))<=Open*.0025 AND Close<Open*.99;
+SEPLINESCOLOR=IIf(SEPLINES,colorBrightGreen,colorWhite);
+
+FALL3=Ref(Close,-4)<Ref(Open,-4) AND Ref(High,-3)<Ref(High,-4) AND Ref(High,-1)>Ref(High,-3) AND Ref(Low,-1)>Ref(Low,-3) AND HHV(Ref(H,-1),3) <= Ref(High,-4) AND Open>Ref(Low,-1) AND Close<LLV(Ref(Low,-1),3);
+FALL3COLOR=IIf(FALL3,colorBrightGreen,colorWhite);
+
+Filter = 1;
+
+AddColumn(MAXH5,"Maximum High Today",1,colorBlack,MaxH5color);
+AddColumn(MAXH5Y,"Maximum High Yesterday ",1,colorBlack,MaxH5Ycolor);
+AddColumn(MINL5,"Minimum Low Today",1,colorBlack,MINL5Ycolor);
+AddColumn(MINL5Y,"Minimum Low Yesterday",1,colorBlack,MINL5Ycolor);
+AddColumn(DOJI1,"Doji 1",1,colorBlack,DOJI1color);
+AddColumn(DOJI2,"Doji 2",1,colorBlack,DOJI2color);
+AddColumn(DOJI1Y,"Doji Yesterday 1",1,colorBlack,DOJI1Ycolor);
+AddColumn(DOJI2Y,"Doji Yesterday 2",1,colorBlack,DOJI2Ycolor);
+AddColumn(MRNSTAR,"Morning Star ",1,colorBlack,MRNSTARcolor);
+AddColumn(ABBABY,"Abandoned Baby",1,colorBlack,ABBABYcolor);
+AddColumn(TSTARSO,"Tri Star",1,colorBlack,TSTARSOcolor);
+AddColumn(TRISTARBLSH,"Three Stars in the South",1,colorBlack,TRISTARBLSHcolor);
+AddColumn(BLHARAMI,"Bullish Harami",1,colorBlack,BLHARAMIcolor);
+AddColumn(TINSDUP,"3 Inside Up Confirmation",1,colorBlack,TINSDUPcolor);
+AddColumn(HARAMICRS,"Harami Cross",1,colorBlack,HARAMICRScolor);
+AddColumn(HARAMIPG,"Homing Pigeon",1,colorBlack,HARAMIPGcolor);
+AddColumn(KICKBULL,"Kicking Bullish",1,colorBlack,KICKBULLcolor);
+AddColumn(HIPRCGAP,"High Price Gapping",1,colorBlack,HIPRCGAPcolor);
+AddColumn(SDBSDWTLN,"Side by Side White Lines",1,colorBlack,SDBSDWTLNcolor);
+AddColumn(UPSGAP3,"Tasuki Gap",1,colorBlack,UPSGAP3color);
+AddColumn(HAMMER,"Hammer",1,colorBlack,HAMMERcolor);
+AddColumn(INVHAMMER,"Inverted Hammer",1,colorBlack,INVHAMMERcolor);
+AddColumn(TRIVBOT,"Three River Bottom",1,colorBlack,TRIVBOTcolor);
+AddColumn(CONBABYSW,"Concealing Baby Swallow",1,colorBlack,CONBABYSWcolor);
+AddColumn(LLDOJIBLSH,"Long Legged Doji",1,colorBlack,LLDOJIBLSHcolor);
+AddColumn(MATCHLOW,"Matching Low",1,colorBlack,MATCHLOWcolor);
+AddColumn(BELTHOLD,"Belt Hold",1,colorBlack,BELTHOLDcolor);
+AddColumn(BULLENG,"Bullish Engulfing",1,colorBlack,BULLENGcolor);
+AddColumn(TOUTSUP,"Three Outside Up",1,colorBlack,TOUTSUPcolor);
+AddColumn(STICKSAND,"Stick Sandwich",1,colorBlack,STICKSANDcolor);
+AddColumn(MEETLNS,"Meeting Lines",1,colorBlack,MEETLNScolor);
+AddColumn(BREAKAWAY,"Breakaway",1,colorBlack,BREAKAWAYcolor);
+AddColumn(PRCLINE,"Piercing Line",1,colorBlack,PRCLINEcolor);
+AddColumn(TWHITESOLD,"Three White Soldiers",1,colorBlack,TWHITESOLDcolor);
+AddColumn(TLINESTRK,"Three Line Strike",1,colorBlack,TLINESTRKcolor);
+AddColumn(SEPLINES,"Seperating Lines",1,colorBlack,SEPLINEScolor);
+AddColumn(RISTHREE,"Rising Three",1,colorBlack,RISTHREEcolor);
+AddColumn(MATHOLD,"Mat Hold",1,colorBlack,MATHOLDcolor);
+AddColumn(EVNSTAR,"Evening Star",1,colorBlack,EVNSTARcolor);
+AddColumn(ABBABYBRSH,"Abandoned Baby bearish",1,colorBlack,ABBABYBRSHcolor);
+AddColumn(TWOCROWS,"Two Crows",1,colorBlack,TWOCROWScolor);
+AddColumn(UPSGAPTWOCROWS,"Upside Gap Two Crows",1,colorBlack,UPSGAPTWOCROWScolor);
+AddColumn(SHOOTSTAR,"Shooting Star",1,colorBlack,SHOOTSTARcolor);
+AddColumn(TSTARBRSH,"Tri-Star bearish",1,colorBlack,TSTARBRSHcolor);
+AddColumn(HANGMAN,"Hanging Man",1,colorBlack,HANGMANcolor);
+AddColumn(SBSWHTLINESBRSH,"Side by Side White Lines bearish",1,colorBlack,SBSWHTLINESBRSHcolor);
+AddColumn(LOWPRCGAP,"Low Price Gapping",1,colorBlack,LOWPRCGAPcolor);
+AddColumn(DOWNGAP3,"Downside Gap Three",1,colorBlack,DOWNGAP3color);
+AddColumn(TASUKIGAPBRSH,"Tasuki Gap",1,colorBlack,TASUKIGAPBRSHcolor);
+AddColumn(HARAMIBRSH,"Harami bearish",1,colorBlack,HARAMIBRSHcolor);
+AddColumn(TINSIDEDOWN,"3 Inside Down Confirmation",1,colorBlack,TINSIDEDOWNcolor);
+AddColumn(HARAMICROSS,"Harami Cross",1,colorBlack,HARAMICROSScolor);
+AddColumn(BRSHENGULF,"Engulfing bearish",1,colorBlack,BRSHENGULFcolor);
+AddColumn(TINSIDDOWN,"Three Inside Down ",1,colorBlack,TINSIDDOWNcolor);
+AddColumn(DARKCLOUD,"Dark Cloud Cover ",1,colorBlack,DARKCLOUDcolor);
+AddColumn(BELTHOLD,"Belt Hold",1,colorBlack,BELTHOLDcolor);
+AddColumn(MTGLINES,"Meeting Lines",1,colorBlack,MTGLINEScolor);
+AddColumn(LLDOJIBRSH,"Long Legged Doji",1,colorBlack,LLDOJIBRSHcolor);
+AddColumn(ADVBLOCK,"Advance Block",1,colorBlack,ADVBLOCKcolor);
+AddColumn(DELIB,"Deliberation",1,colorBlack,DELIBcolor);
+AddColumn(TBLKCROWS,"Three Black Crows",1,colorBlack,TBLKCROWScolor);
+AddColumn(TLNSTRIKE,"Three Line Strike",1,colorBlack,TLNSTRIKEcolor);
+AddColumn(ONNECK,"On Neck",1,colorBlack,ONNECKcolor);
+AddColumn(INNECK,"In Neck",1,colorBlack,INNECKcolor);
+AddColumn(SEPLINES,"Seperating Lines",1,colorBlack,SEPLINEScolor);
+AddColumn(FALL3,"Falling Three",1,colorBlack,FALL3color);

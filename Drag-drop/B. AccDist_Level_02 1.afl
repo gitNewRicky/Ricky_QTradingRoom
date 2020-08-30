@@ -1,0 +1,43 @@
+_SECTION_BEGIN("AccDist Change");
+
+Short = Param("Short Period",3,2,200,1);
+Long = Param("Long Period",5,5,200,1);
+
+AD = AccDist();
+MSAD = WMA(AD,Short);
+MLAD = WMA(AD,Long);
+
+Acc  = MSAD > MLAD;
+Dist = MSAD < MLAD;
+
+MSADUP = MSAD > Ref(MSAD,-1);
+MSADDW = MSAD < Ref(MSAD,-1);
+
+MLADUP = MLAD > Ref(MLAD,-1);
+MLADDW = MLAD < Ref(MLAD,-1);
+
+CrossUp = Cross(MSAD,MLAD);
+CrossDw = Cross(MLAD,MSAD);
+GreenArea = MSAD > MLAD;
+RedArea = MLAD > MSAD;
+
+Histogram = MSAD - MLAD;
+Histogram3 = WMA(Histogram,3);
+Histogram5 = WMA(Histogram,5);
+
+Plot(0,"",colorBlack,styleLine);
+Plot(Histogram,"RoC AccDist(1)",colorBlue,styleLine);
+Plot(Histogram3,"RoC AccDist(3)",colorGreen,styleLine);
+Plot(Histogram5,"RoC AccDist(5)",colorRed,styleLine);
+
+Proc = (Histogram - Ref(Histogram,-1)) / abs(Ref(Histogram,-1)) *100;
+Proc3 = (Histogram3 - Ref(Histogram3,-1) ) / abs(Ref(Histogram3,-1)) *100;
+Proc5 = (Histogram5 - Ref(Histogram5,-1)) / abs(Ref(Histogram5,-1)) *100;
+
+Title = EncodeColor(colorBlue) + "ROC_AccDist(0) LD = "+ WriteVal(Ref(Histogram,-1),1.0) +
+WriteIf(Histogram > Ref(Histogram,-1),EncodeColor(colorGold),EncodeColor(colorRed)) + " Last = "+ WriteVal(Histogram,1.0) + " " + WriteVal(Proc,1.0) + "% \n" +
+EncodeColor(colorGreen) + "ROC_AccDist(3) LD = "+WriteVal(Histogram3,1.0)+
+WriteIf(Histogram3 > Ref(Histogram3,-1),EncodeColor(colorGold),EncodeColor(colorRed)) + " Last = "+ WriteVal(Histogram3,1.0) + " " + WriteVal(Proc3,1.0) + "% \n" +
+EncodeColor(colorRed) + "ROC_AccDist(5) LD = "+Histogram5+
+WriteIf(Histogram5 > Ref(Histogram5,-1),EncodeColor(colorGold),EncodeColor(colorRed)) + " Last = "+ WriteVal(Histogram5,1.0) + " " + WriteVal(Proc5,1.0) + "% \n";
+_SECTION_END();

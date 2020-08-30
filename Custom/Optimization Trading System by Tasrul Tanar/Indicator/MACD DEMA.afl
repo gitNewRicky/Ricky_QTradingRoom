@@ -1,0 +1,9 @@
+r1 = Param( "DEMA Short Periode", 12, 1, 1000, 1 );
+r2 = Param( "DEMA Long Periode", 26, 1, 1000, 1 );
+r3 = Param( "Trigger Periode", 9, 1, 100, 1 );
+iColor=ParamColor( "MACD Color", colorRed );
+iStyle=ParamStyle("MACD Style"); 
+iColor2=ParamColor( "Trigger Color", colorBlue );
+iStyle2=ParamStyle("Trigger Style",styleDashed); 
+
+TAS_MACD_Smooth(r1,r2,r3,iColor,iStyle,iColor2,iStyle2);

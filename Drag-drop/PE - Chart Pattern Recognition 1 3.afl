@@ -1,0 +1,731 @@
+//|-----------------------------------------------------------------------------------------
+//|PatternExplorer.com - Chart Pattern Recognition 1
+//|Copyright © 2007, PatternExplorer.com
+//|http://www.PatternExplorer.com
+//|e-mail: support@PatternExplorer.com
+//|-----------------------------------------------------------------------------------------
+FormulaName = "PE - Chart Pattern Recognition 1";
+
+SetChartOptions( 0, chartShowDates | chartLogarithmic | chartWrapTitle );
+#pragma nocache
+#include_once  <\PEInc\PatternExplorer_f0.afl>
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Defaults.afl"
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Mods.afl"
+def_GraphXSpace = 10;
+/*******************************************************************************************/
+AddCustomCodeBeforePE();
+/*******************************************************************************************/
+AddAlertParam( def_AudioAlert, def_EmailAlert, def_BarComplete );
+/*******************************************************************************************/
+_SECTION_BEGIN( "Alerts" );
+SRbS = ParamToggle( "S/R broken", "Off,On", 1 );
+SRcS = ParamToggle( "S/R confirmed", "Off,On", 1 );
+PjabS = ParamToggle( "Price just above/below", "Off,On", 1 );
+_SECTION_END();
+/*******************************************************************************************/
+_SECTION_BEGIN( "Main Parameters" );
+AddparamUsefromChart( def_UseFromChart );
+PatternPriceBasis = ParamToggle( "Pattern Price Basis", "Close|High & Low", def_PatternPriceBasisCPR );
+Sensitivity = Param( "Sensitivity", 15, 1, 100, 1 );
+
+if ( InChart )
+    StaticVarSet( "UO3443", PatternPriceBasis );
+
+if ( inAA AND Usefromchart )
+    PatternPriceBasis = StaticVarGet( "UO3443" );
+
+if ( InChart )
+    StaticVarSet( "D4Q5T6", Sensitivity );
+
+if ( inAA AND Usefromchart )
+    Sensitivity = StaticVarGet( "D4Q5T6" );
+
+PatternPriceBasis = ParamToggle( "Pattern Price Basis", "Close|High & Low", def_PatternPriceBasisCPR );
+
+PlotP1P2 = ParamToggle( "Plot P1/P2 Shapes", "Off,On", def_Plot_P1P2_Shapes );
+
+P1Shape = Param( "P1 Shape Typ", 35, 0, 50, 1 );
+
+P2Shape = Param( "P2 Shape Typ", 37, 0, 50, 1 );
+
+Parallellinesswitch = ParamToggle( "Plot Parallel Lines", "Off,On" );
+
+DisRange = Param( "Plot Parallel Lines Trigger", 3, 0.0, 10, 0.5 );
+
+_SECTION_END();
+
+/*******************************************************************************************/
+_SECTION_BEGIN( "Styles" );
+
+Style_SL = ParamStyle( "Support", styleLine + styleThick, maskDefault ) + styleNoRescale;
+
+Style_RL = ParamStyle( "Resistance", styleLine + styleThick, maskDefault ) + styleNoRescale;
+
+Style_PHL = ParamStyle( "Parallel Support", styleLine, maskDefault ) + styleNoRescale;
+
+Style_PLL = ParamStyle( "Parallel Resistance", styleLine, maskDefault ) + styleNoRescale;
+
+_SECTION_END();
+
+/*******************************************************************************************/
+_SECTION_BEGIN( "Colors" );
+
+Color_SL =  ParamColor( "Support", def_Color1 );
+
+Color_RL = ParamColor( "Resistance", colorRed );
+
+Shadowcolor = ParamColor( "Shadow", def_Shadowcolor );
+
+Color_PLL = Color_RL; //ParamColor("Resistance",colorRed);
+
+Color_PHL = Color_SL; //ParamColor("Support",def_Color1);
+
+_SECTION_END();
+
+/*******************************************************************************************/
+if ( inAA )
+{
+    _SECTION_BEGIN( "Pattern Selection" );
+    AscTs = ParamToggle( "Ascending Triangle", "Off,On", 1 );
+    DscTs = ParamToggle( "Descending Triangle", "Off,On", 1 );
+    STs = ParamToggle( "Symmetrically Triangle", "Off,On", 1 );
+    ETs = ParamToggle( "Expanding Triangle", "Off,On", 1 );
+    RWs = ParamToggle( "Rising Wedge", "Off,On", 1 );
+    FWs = ParamToggle( "Falling Wedge", "Off,On", 1 );
+    UTs = ParamToggle( "Up Trend", "Off,On", 1 );
+    DTs = ParamToggle( "Down Trend", "Off,On", 1 );
+    Rectangles = ParamToggle( "Rectangle", "Off,On", 1 );
+    NonDefinedPatterns = ParamToggle( "Not defined Patterns", "Off,On", 0 );
+    _SECTION_END();
+}
+
+/*******************************************************************************************/
+#include_once  <\PEInc\Lib\PatternExplorer_f06.afl>
+#include_once  <\PEInc\PatternExplorer_1.afl>
+/*******************************************************************************************/
+GraphZOrder = 0;
+
+Plot( TRS, "  SL" , Color_SL, Style_SL + styleNoTitle );
+
+Plot( TRR, "  RL" , Color_RL, Style_RL + styleNoTitle );
+
+PlotOHLC( Null, TRR, TRS, Null, "", Shadowcolor, styleCloud + styleNoLabel );
+
+Plot( IIf( Parallellinesswitch, PLL_plot, -1e10 ), "  PLL", Color_PLL, Style_PLL + styleNoTitle );
+
+Plot( IIf( Parallellinesswitch, PHL_plot, -1e10 ), "  PHL", Color_PHL, Style_PHL + styleNoTitle );
+
+/*******************************************************************************************/
+PlotShapes( IIf( BS & x > LastValue( x ) - 3, def_BuyShape, shapeNone ), def_BuyShapeColor, 0, Low, -def_BuyShapeOffset );
+
+PlotShapes( IIf( SS & x > LastValue( x ) - 3, def_SellShape, shapeNone ), def_SellShapeColor, 0, High, -def_SellShapeOffset );
+
+if ( PlotP1P2 )
+{
+    PlotShapes( IIf( x == xa & NOT AnZ, P1Shape, shapeNone ), Color_SL, 0, SL, -13 );
+    PlotShapes( IIf( x == xb & NOT AnZ, P2Shape, shapeNone ), Color_SL, 0, SL, -13 );
+    PlotShapes( IIf( x == xc & NOT AnZ, P1Shape, shapeNone ), Color_RL, 0, H, 13 );
+    PlotShapes( IIf( x == xd & NOT AnZ, P2Shape, shapeNone ), Color_RL, 0, H, 13 );
+}
+
+/*******************************************************************************************/
+Buy = def_Buy AND BS;
+
+Sell = def_Sell AND SS;
+
+/*******************************************************************************************/
+if ( inAA )
+{
+    CPRFilter =
+        ( AscT AND AscTs ) | ( DscT AND DscTs ) | ( ST AND STs ) |
+        ( ET AND ETs ) | ( RW AND RWs ) | ( FW AND FWs ) |
+        ( UT AND UTs ) | ( DT AND DTs ) | ( Rectangle AND Rectangles ) |
+        ( SupSignals AND NonDefinedPatterns AND NOT DefinedPatterns ) |
+        ( ResSignals AND NonDefinedPatterns AND NOT DefinedPatterns );
+    Filter = def_Filter AND BarIndex() == LastValue( BarIndex() ) AND NOT GroupID() == 253;
+    Filter = Filter AND CPRFilter;
+    /*******************************************************************************************/
+    Addefaultcolumns();
+    Adddefaultcolumns( 2, 1 );
+    AddTextColumn( WriteIf( Sup_pricejustabove, "Price just above",
+                            WriteIf( Sup_confirmed, "Confirmed",
+                                     WriteIf( Sup_break, "Break", "" ) ) ), "Support Line", 1.2, IIf( Sup_pricejustabove OR sup_confirmed, colorGreen, colorRed ) );
+    AddTextColumn(
+        WriteIf( Res_pricejustbelow, "Price just below", WriteIf( Res_confirmed, "confirmed",
+                 WriteIf( Res_break, "Break", "" ) ) ), "Resistance Line", 1.2, IIf( Res_pricejustbelow OR Res_confirmed, colorRed, colorGreen ) );
+    /*******************************************************************************************/
+    patterncolor =
+        IIf( AscT | FW | UT, colorGreen,
+             IIf( DscT | RW | DT, colorRed,
+                  IIf( ST | ET | Rectangle, colorBlue, colorBlack ) ) );
+    AddTextColumn( PatternText, "Pattern", 0, patterncolor );
+    AddTextColumn( FullName(), "Full name" );
+}
+
+/*******************************************************************************************/
+/*
+AddTextColumn(
+WriteIf(PLL_pricejustabove,"price just above",
+WriteIf(PLL_confirmed,"confirmed",
+WriteIf(PLL_break,"break",""))),"Parallel support line");
+
+AddTextColumn(
+WriteIf(PHL_pricejustbelow,"price just below",
+WriteIf(PHL_confirmed,"confirmed",
+WriteIf(PHL_break,"break",""))),"Parallel resistance line");
+*/
+/*******************************************************************************************/
+if ( SRbS )
+{
+    AddAlert( Res_break, Audio, Email, "Resistance broken", 1, BarComplete, def_BuySound1 );
+    AddAlert( Sup_break, Audio, Email, "Support broken", 2, BarComplete, def_SellSound1 );
+}
+
+if ( SRcS )
+{
+    AddAlert( Sup_confirmed, Audio, Email, "Support confirmed", 1, BarComplete, def_BuySound2 );
+    AddAlert( Res_confirmed, Audio, Email, "Resistance confirmed", 2, BarComplete, def_SellSound2 );
+}
+
+if ( PjabS )
+{
+    AddAlert( Sup_pricejustabove AND PatternDirection == 1, Audio, Email, "Price just above Support", 1, BarComplete, def_BuySound3 );
+    AddAlert( Res_pricejustbelow AND PatternDirection == -1, Audio, Email, "Price just below Resistance", 2, BarComplete, def_SellSound3 );
+    AddAlert( Sup_pricejustabove AND PatternDirection == 0, Audio, Email, "Price just above Support", 5, BarComplete, def_BuySound3 );
+    AddAlert( Res_pricejustbelow AND PatternDirection == 0, Audio, Email, "Price just below Resistance", 5, BarComplete, def_SellSound3 );
+}
+
+/*******************************************************************************************/
+/*******************************************************************************************/
+AddCustomCodeAfterPE();
+
+/*******************************************************************************************/
+Title = "PatternExplorer.com - Chart Pattern Recognition 1 "
+        + default_priceTitle + ", " + EncodeColor( def_Text3 ) + "Pattern: " + PatternText
+        + EncodeColor( IIf( NOT AnZ, def_Text2, colorRed ) ) + ", Sensitivity = " + WriteVal( Sensitivity, 1 ) + " " + EncodeColor( colorRed ) + WriteIf( NOT AnZ, "", " NO POINTS AVAILABLE -> REDUCE SENSITIVITY " );
+
+/*******************************************************************************************/
+ST = LastValue( ST );
+
+AscT = LastValue( AscT );
+
+DscT = LastValue( DscT );
+
+ET = LastValue( ET );
+
+RW = LastValue( RW );
+
+FW = LastValue( FW );
+
+UT = LastValue( UT );
+
+ParamToggle( "Up Trend", "Off,On", 1 );
+
+DT = LastValue( DT );
+
+ParamToggle( "Down Trend", "Off,On", 1 );
+
+Rectangles = LastValue( Rectangle );
+
+ParamToggle( "Rectangle", "Off,On", 1 );
+
+/*******************************************************************************************/
+ToolTip = def_ToolTip;
+
+if ( ST )
+{
+    ToolTip = ToolTip +
+              "\n\n" +
+              "Current Pattern = Symmetrical Triangle" + "\n" +
+              " ";
+}
+
+if ( AscT )
+{
+    ToolTip = ToolTip +
+              "\n\n" +
+              "Current Pattern = Ascending Triangle" + "\n" +
+              " ";
+}
+
+if ( DscT )
+{
+    ToolTip = ToolTip +
+              "\n\n" +
+              "Current Pattern = Descending Triangle" + "\n" +
+              " ";
+}
+
+if ( ET )
+{
+    ToolTip = ToolTip +
+              "\n\n" +
+              "Current Pattern = Expanding Triangle" + "\n" +
+              " ";
+}
+
+if ( RW )
+{
+    ToolTip = ToolTip +
+              "\n\n" +
+              "Current Pattern = Rising Wedge" + "\n" +
+              " ";
+}
+
+if ( FW )
+{
+    ToolTip = ToolTip +
+              "\n\n" +
+              "Current Pattern = Falling Wedge" + "\n" +
+              " ";
+}
+
+if ( UT )
+{
+    ToolTip = ToolTip +
+              "\n\n" +
+              "Current Pattern = Up Channel" + "\n" +
+              " ";
+}
+
+if ( DT )
+{
+    ToolTip = ToolTip +
+              "\n\n" +
+              "Current Pattern = Down Channel" + "\n" +
+              " ";
+}
+
+if ( Rectangles )
+{
+    ToolTip = ToolTip +
+              "\n\n" +
+              "Current Pattern = Rectangle" + "\n" +
+              " ";
+}
+
+//|-----------------------------------------------------------------------------------------
+//|PatternExplorer.com - Candlestick Recognition
+//|Copyright © 2007, PatternExplorer.com
+//|http://www.PatternExplorer.com
+//|e-mail: support@PatternExplorer.com
+//|-----------------------------------------------------------------------------------------
+FormulaName = "PE - Candlesticks";
+
+SetChartOptions( 0, chartShowDates | chartLogarithmic | chartWrapTitle );
+#pragma nocache
+#include_once  <\PEInc\PatternExplorer_f0.afl>
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Defaults.afl"
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Mods.afl"
+/*******************************************************************************************/
+AddCustomCodeBeforePE();
+/*******************************************************************************************/
+def_PE_AB_Style = 0; //PatternExplorer style:0 //Amibroker style: 1
+def_pricestyle = styleCandle;// + styleThick; //can be used at PatternExplorer mode
+def_Band_switch = 1;//Off:0 //On:1
+def_BandTyp = 0;//Off:0 //Bollinger Bands:1 //Headley Acceleration Bands:2 //Keltner Channel:3 //Price Channel:4
+/*******************************************************************************************/
+//AddparamUsefromChart(1);
+AddAlertParam( def_AudioAlert, def_EmailAlert, def_BarComplete );
+/*******************************************************************************************/
+_SECTION_BEGIN( "Main Parameters" );
+ActTrendFilter = ParamToggle( "Trend Filter", "Off,On", 0 );
+SRplot = ParamToggle( "Plot S/R", "Off,On", 1 );
+TextPlot = ParamToggle( "Plot Signal Text", "Off,On", 0 );
+Buyshape = Param( "Buy Shape Typ", def_BuyShape, 1, 60, 1 );
+Sellshape = Param( "Sell Shape Typ", def_SellShape, 1, 60, 1 );
+BuyColor = ParamColor( "Buy Signals", def_BuyShapeColor );
+SellColor = ParamColor( "Sell Signals", def_SellShapeColor );
+_SECTION_END();
+/*******************************************************************************************/
+_SECTION_BEGIN( "Pattern Selection" );
+Dojistar_s = ParamToggle( "Doji Star", "Off,On", 1 );
+Hammer_s = ParamToggle( "Hammer/Shooting Star", "Off,On", 1 );
+Hangingman_s = ParamToggle( "Hanging Man/Inverted Hammer", "Off,On", 1 );
+Spinningtop_s = ParamToggle( "Spinning Top", "Off,On", 1 );
+Eng_s = ParamToggle( "Engulfing", "Off,On", 1 );
+Harami_s = ParamToggle( "Harami", "Off,On", 1 );
+Piercingline_s = ParamToggle( "Piercing Line/Dark Cloud Cover", "Off,On", 1 );
+Morning_evening_star_s = ParamToggle( "Morning Star/Evening Star", "Off,On", 1 );
+_SECTION_END();
+/*Static - currently not support by amibroker
+if(InChart)StaticVarSet("PQQAWN",Dojistar_s);if(inAA AND Usefromchart) Dojistar_s = StaticVarGet("PQQAWN");
+if(InChart)StaticVarSet("ONLDUM",Hammer_s);if(inAA AND Usefromchart) Hammer_s = StaticVarGet("ONLDUM");
+if(InChart)StaticVarSet("CPAWNL",Hangingman_s);if(inAA AND Usefromchart) Hangingman_s = StaticVarGet("CPAWNL");
+if(InChart)StaticVarSet("MNHCWV",Spinningtop_s);if(inAA AND Usefromchart) Spinningtop_s = StaticVarGet("MNHCWV");
+if(InChart)StaticVarSet("FLXSHT",Eng_s);if(inAA AND Usefromchart) Eng_s = StaticVarGet("FLXSHT");
+if(InChart)StaticVarSet("FBDBRN",Harami_s);if(inAA AND Usefromchart) Harami_s = StaticVarGet("FBDBRN");
+if(InChart)StaticVarSet("OVITBK",Piercingline_s);if(inAA AND Usefromchart) Piercingline_s = StaticVarGet("OVITBK");
+if(InChart)StaticVarSet("VHVRAB",Morning_evening_star_s);if(inAA AND Usefromchart) Morning_evening_star_s = StaticVarGet("VHVRAB");
+*/
+/*******************************************************************************************/
+#include_once  <\PEInc\Lib\PatternExplorer_f01.afl>
+#include_once  <\PEInc\PatternExplorer_1.afl>
+/*******************************************************************************************/
+
+if ( ActTrendFilter == 0 )
+{
+    Buy = def_Buy AND CandlePatternRank > 0;
+    Sell = def_Sell AND CandlePatternRank < 0;
+}
+
+if ( ActTrendFilter )
+{
+    Buy = def_Buy AND CandlePatternRank > 0
+          AND PeTaio() > 0
+          AND TaioTimeFrame( 5, 6, 4, expandLast ) > 0
+          AND Taio2direction == 1; //define your conditions for the Trendfilter here.
+
+    Sell = def_Sell AND CandlePatternRank < 0
+           AND PeTaio() < 0
+           AND TaioTimeFrame( 5, 6, 4, expandLast ) < 0
+           AND Taio2direction == 0; //define your conditions for the Trendfilter here.
+}
+
+/*******************************************************************************************/
+Filter = def_Filter  AND NOT GroupID() == 253;
+
+Filter = Filter AND ( Buy OR Sell );
+
+/*******************************************************************************************/
+Addefaultcolumns();
+
+Adddefaultcolumns( 2, 1 );
+
+if ( CandleColumnOn == 0 )
+    AddCandleColumn();
+
+AddTextColumn( FullName(), "Full name" );
+
+/*******************************************************************************************/
+PlotShapes(
+    IIf( Buy, Buyshape,
+         IIf( Sell, Sellshape, Null ) ),
+    IIf( Buy, BuyColor, SellColor ), 0,
+    IIf( Buy, L, H ), IIf( Buy, -def_BuyShapeOffset, -def_SellShapeOffset ) );
+
+Plot( IIf( SRplot, Plot_Buy, Null ), "Support", Buycolor, 1 + styleNoTitle );
+
+Plot( IIf( SRplot, Plot_Sell, Null ), "Resistance", Sellcolor, 1 + styleNoTitle );
+
+/*******************************************************************************************/
+if ( TextPlot )
+{
+    //PlotSignalText (Condition,Text,AdText,AdTextArray,Distance,Array,TextColor,BGColor);
+    PlotSignalText ( PR > 0, "Buy", 0, L, -0.8, L, BuyColor, colorDefault );
+    PlotSignalText ( PR < 0, "Sell", 0, H, 1.0, H, SellColor, colorDefault );
+}
+
+/*******************************************************************************************/
+AddAlert( Hammer, Audio, Email, "Bullish Hammer" + def_AudioAlertText, 1, BarComplete, def_BuySound1 );
+
+AddAlert( beSSTAR, Audio, Email, "Bearish Shooting Star" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( InvertedHammer, Audio, Email, "Bullish Inverted Hammer" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( HangingMan, Audio, Email, "Bearish Hanging Man" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( SpinningTop AND NOT buDS, Audio, Email, "Bearish Spinning Top" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( buENG, Audio, Email, "Bullish Engulfing" + def_AudioAlertText, 1, BarComplete, def_BuySound1 );
+
+AddAlert( beENG, Audio, Email, "Bearish Engulfing" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( buHARAMI, Audio, Email, "Bullish Harami" + def_AudioAlertText, 1, BarComplete, def_BuySound1 );
+
+AddAlert( beHARAMI, Audio, Email, "Bearish Harami" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( buHARAMICROSS, Audio, Email, "Bullish Harami Cross" + def_AudioAlertText, 1, BarComplete, def_BuySound1 );
+
+AddAlert( beHARAMICROSS, Audio, Email, "Bearish Harami Cross" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( buDS, Audio, Email, "Bullish Doji Star" + def_AudioAlertText, 1, BarComplete, def_BuySound1 );
+
+AddAlert( beDS, Audio, Email, "Bearish Doji Star" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( buPIERCINGLINE, Audio, Email, "Bullish Piercingline" + def_AudioAlertText, 1, BarComplete, def_BuySound1 );
+
+AddAlert( beDARKCLOUDCOVER, Audio, Email, "Bearish Dark Cloud Cover" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( buMorningStar, Audio, Email, "Bullish Morning Star" + def_AudioAlertText, 1, BarComplete, def_BuySound1 );
+
+AddAlert( buMorningDojiStar, Audio, Email, "Bullish Morning Doji Star" + def_AudioAlertText, 1, BarComplete, def_BuySound1 );
+
+AddAlert( beEveningStar, Audio, Email, "Bearish Evening Star" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+AddAlert( beEveningDojiStar, Audio, Email, "Bearish Evening Doji Star" + def_AudioAlertText, 2, BarComplete, def_SellSound1 );
+
+/*******************************************************************************************/
+ToolTip = def_ToolTip + "\n\n" + CandlePattern;
+
+/*******************************************************************************************/
+AddCustomCodeAfterPE();
+
+/*******************************************************************************************/
+Title = "PatternExplorer.com - Candlestick Recognition" + default_priceTitle + ", " + EncodeColor( def_Color3 ) + WriteIf( CandlePatternRank > 0, "Bullish ", WriteIf( CandlePatternRank < 0, "Bearish ", "" ) ) + CandlePattern + " ";
+
+//|-----------------------------------------------------------------------------------------
+//|PatternExplorer.com - Fractals
+//|Copyright © 2007, PatternExplorer.com
+//|http://www.PatternExplorer.com
+//|e-mail: support@PatternExplorer.com
+//|-----------------------------------------------------------------------------------------
+FormulaName = "PE - Fractals";
+
+SetChartOptions( 0, chartShowDates | chartWrapTitle );
+#pragma nocache
+#include_once  <\PEInc\PatternExplorer_f0.afl>
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Defaults.afl"
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Mods.afl"
+/*******************************************************************************************/
+AddCustomCodeBeforePE();
+/*******************************************************************************************/
+AddAlertParam( def_AudioAlert, def_EmailAlert, def_BarComplete );
+/*******************************************************************************************/
+_SECTION_BEGIN( "Alerts" );
+SRbS = ParamToggle( "S/R broken", "Off,On", 1 );
+SRcS = ParamToggle( "S/R confirmed", "Off,On", 1 );
+PjabS = ParamToggle( "Price just above/below", "Off,On", 1 );
+_SECTION_END();
+/*******************************************************************************************/
+_SECTION_BEGIN( "Main parameters" );
+SRplot = ParamToggle( "Plot S/R", "Off,On", 1 );
+Sswitch = ParamToggle( "PLot Swing Chart", "Off,On", 0 );
+Shswitch = ParamToggle( "Plot Swing Shapes", "Off,On", 0 );
+SwingSize = Param( "Swing Size %", 5, 0.1, 40, 0.1 );
+_SECTION_END();
+/*******************************************************************************************/
+_SECTION_BEGIN( "Sensitivity" );
+AddparamUsefromChart2( def_UseFromChart );
+PatternPriceBasis = ParamToggle( "Pattern Price Basis", "Close|High & Low", def_PatternPriceBasisFractals );
+Bars = Param( "Bars", 5, 2, 20, 1 );
+MinVertSize = Param( "Minimum Vertical Size (*ATR)", 0, 0, 3.01, 0.05 );
+
+if ( InChart )
+    StaticVarSet( "Ddf343", PatternPriceBasis );
+
+if ( inAA AND Usefromchart )
+    PatternPriceBasis = StaticVarGet( "Ddf343" );
+
+if ( InChart )
+    StaticVarSet( "P54972", Bars );
+
+if ( inAA AND Usefromchart )
+    Bars = StaticVarGet( "P54972" );
+
+if ( InChart )
+    StaticVarSet( "Adf343", MinVertSize );
+
+if ( inAA AND Usefromchart )
+    MinVertSize = StaticVarGet( "Adf343" );
+
+_SECTION_END();
+
+/*******************************************************************************************/
+_SECTION_BEGIN( "Styles" );
+
+Swingstyle = ParamStyle( "Swing Line", styleLine | styleThick, maskDefault );
+
+TopShape = Param( "Top Fractal Typ", 21, 0, 50, 1 );
+
+ValleyShape = Param( "Valley Fractal Typ", 22, 0, 50, 1 );
+
+_SECTION_END();
+
+/*******************************************************************************************/
+_SECTION_BEGIN( "Colors" );
+
+SLC = ParamColor( "Swing Low", colorPaleGreen );
+
+SHC = ParamColor( "Swing High", colorLightOrange );
+
+Swingcolor = ParamColor( "Swing Line", def_Color6 );
+
+Topshapecolor = ParamColor( "Top  Fractal", def_SellShapeColor );
+
+Valleyshapecolor = ParamColor( "Bottom Fractal", def_BuyShapeColor );
+
+_SECTION_END();
+
+/*******************************************************************************************/
+#include_once  <\PEInc\PatternExplorer_1.afl>
+#include_once  <\PEInc\Lib\PatternExplorer_f13.afl>
+/*******************************************************************************************/
+PlotShapes( IIf( Top, TopShape, -1e10 ), Topshapecolor, 0, H, def_BuyShapeOffset );
+
+PlotShapes( IIf( Valley, Valleyshape, -1e10 ), ValleyShapecolor, 0, L, def_SellShapeOffset );
+
+Plot( IIf( SRplot & x >= x_lasttop, LastValue( ValueWhen( top, TopInput, 1 ) ), Null ), "", Topshapecolor, 1 + styleNoRescale );
+
+Plot( IIf( SRplot & x >= x_lastvalley, LastValue( ValueWhen( Valley, ValleyInput, 1 ) ), Null ), "", Valleyshapecolor, 1 + styleNoRescale );
+
+/*******************************************************************************************/
+Buy = def_Buy AND ( Sup_confirmed OR Res_break );
+
+Sell = def_Sell AND ( Res_confirmed OR Sup_break );
+
+/*******************************************************************************************/
+Filter = def_Filter AND BarIndex() == LastValue( BarIndex() ) AND NOT GroupID() == 253;
+
+Filter = Filter AND ( SupSignals OR ResSignals );
+
+/*******************************************************************************************/
+Addefaultcolumns();
+
+Adddefaultcolumns( 2, 1 );
+
+AddTextColumn(
+    WriteIf( Sup_pricejustabove, "Price just above",
+             WriteIf( Sup_confirmed, "Confirmed",
+                      WriteIf( Sup_break, "Break", "" ) ) ), "Support", 1.2,
+    IIf( Sup_pricejustabove OR sup_confirmed, colorGreen, colorRed ) );
+
+AddTextColumn(
+    WriteIf( Res_pricejustbelow, "Price just below",
+             WriteIf( Res_confirmed, "Confirmed",
+                      WriteIf( Res_break, "Break", "" ) ) ), "Resistance", 1.2,
+    IIf( Res_pricejustbelow OR Res_confirmed, colorRed, colorGreen ) );
+
+AddTextColumn( FullName(), "Full name" );
+
+/*******************************************************************************************/
+PlotShapes( IIf( Shswitch AND PivotLow, shapeCircle, Null ), SLC, 0, L, -35 ) ;
+
+PlotShapes( IIf( Shswitch AND PivotHigh, shapeCircle, Null ), SHC, 0, H, 35 ) ;
+
+Plot( IIf( Sswitch, ZZ, Null ), " ", Swingcolor, Swingstyle + styleNoTitle );
+
+/*******************************************************************************************/
+if ( SRbS )
+{
+    AddAlert( Res_break, Audio, Email, "Resistance broken", 1, BarComplete, def_BuySound1 );
+    AddAlert( Sup_break, Audio, Email, "Support broken", 2, BarComplete, def_SellSound1 );
+}
+
+if ( SRcS )
+{
+    AddAlert( Sup_confirmed, Audio, Email, "Support confirmed", 1, BarComplete, def_BuySound2 );
+    AddAlert( Res_confirmed, Audio, Email, "Resistance confirmed", 2, BarComplete, def_SellSound2 );
+}
+
+if ( PjabS )
+{
+    AddAlert( Sup_pricejustabove, Audio, Email, "Price just above Support", 1, BarComplete, def_BuySound1 );
+    AddAlert( Res_pricejustbelow, Audio, Email, "Price just below Resistance", 2, BarComplete, def_SellSound1 );
+}
+
+/*******************************************************************************************/
+ToolTip = def_ToolTip;
+
+/*******************************************************************************************/
+AddCustomCodeAfterPE();
+
+/*******************************************************************************************/
+Title = "PatternExplorer.com - Fractals" + default_priceTitle;
+
+//|-----------------------------------------------------------------------------------------
+//|PatternExplorer.com - Support & Resistance
+//|Copyright © 2007, PatternExplorer.com
+//|http://www.PatternExplorer.com
+//|e-mail: support@PatternExplorer.com
+//|-----------------------------------------------------------------------------------------
+FormulaName = "PE - S & R";
+
+SetChartOptions( 0, chartShowDates | chartLogarithmic | chartWrapTitle );
+#pragma nocache
+#include_once  <\PEInc\PatternExplorer_f0.afl>
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Defaults.afl"
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Mods.afl"
+/*******************************************************************************************/
+AddCustomCodeBeforePE();
+/*******************************************************************************************/
+
+_SECTION_BEGIN( "Main Parameters" );
+AddparamUsefromChart( def_UseFromChart );
+Sensitivity = Param( "Sensitivity", 10, 0, 100, 1 );
+
+if ( InChart )
+    StaticVarSet( "FYIOKU", Sensitivity );
+
+if ( inAA AND Usefromchart )
+    Sensitivity = StaticVarGet( "FYIOKU" );
+
+DisRange = Param( "Plot 'far away' Lines Trigger", 3, 0, 10, 0.5 );
+
+Color_SL =  ParamColor( "Support", def_Color1 );
+
+Color_RL =  ParamColor( "Resistance", colorRed );
+
+_SECTION_END();
+
+/*******************************************************************************************/
+#include_once  <\PEInc\PatternExplorer_1.afl>
+#include_once  <\PEInc\Lib\PatternExplorer_f15.afl>
+/*******************************************************************************************/
+BS = break_G1_val == 1 OR break_G2_val == 1;
+
+SS = break_G1_val == -1 OR break_G2_val == -1;
+
+Buy = def_Buy AND BS;
+
+Sell = SS;
+
+/*******************************************************************************************/
+Filter = def_Filter AND BarIndex() == LastValue( BarIndex() ) AND NOT GroupID() == 253;
+
+Filter = Filter AND ( Buy OR Sell );
+
+/*******************************************************************************************/
+Addefaultcolumns();
+
+Adddefaultcolumns( 2, 1 );
+
+AddTextColumn(
+    WriteIf( break_G1_val == -1, "Break",
+             WriteIf( break_G1_val == 1, "Break", "" ) ), "Minor Levels", 1.2,
+    IIf( break_G1_val == 1, colorGreen, IIf( break_G1_val == -1, colorRed, colorBlue ) ) );
+
+AddTextColumn(
+    WriteIf( break_G2_val == -1, "Break",
+             WriteIf( break_G2_val == 1, "Break", "" ) ), "Major Levels", 1.2,
+    IIf( break_G2_val == 1, colorGreen, IIf( break_G2_val == -1, colorRed, colorBlue ) ) );
+
+AddTextColumn( FullName(), "Full name" );
+
+/*******************************************************************************************/
+Plot( IIf( x >= XT1 & RT1 &NOT T1 == 0, T1, -1e10 ), "T1", IIf( LastValue( C ) < T1, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XT2 & RT2 &NOT T2 == 0, T2, -1e10 ), "T2", IIf( LastValue( C ) < T2, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XT3 & RT3 &NOT T3 == 0, T3, -1e10 ), "T3", IIf( LastValue( C ) < T3, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XT4 & RT4 &NOT T4 == 0, T4, -1e10 ), "T4", IIf( LastValue( C ) < T4, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XT5 & RT5 &NOT T5 == 0, T5, -1e10 ), "T5", IIf( LastValue( C ) < T5, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XP1 & RP1 &NOT P1 == 0, P1, -1e10 ), "P1", IIf( LastValue( C ) < P1, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XP2 & RP2 &NOT P2 == 0, P2, -1e10 ), "P2", IIf( LastValue( C ) < P2, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XP3 & RP3 &NOT P3 == 0, P3, -1e10 ), "P3", IIf( LastValue( C ) < P3, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XP4 & RP4 &NOT P4 == 0, P4, -1e10 ), "P4", IIf( LastValue( C ) < P4, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XP5 & RP5 &NOT P5 == 0, P5, -1e10 ), "P5", IIf( LastValue( C ) < P5, Color_RL, Color_SL ), 1 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XT6 & RT6 &NOT T6 == 0, T6, -1e10 ), "T6", IIf( LastValue( C ) < T6, Color_RL, Color_SL ), 8 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XT7 & RT7 &NOT T7 == 0, T7, -1e10 ), "T7", IIf( LastValue( C ) < T7, Color_RL, Color_SL ), 8 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XP6 & RP6 &NOT P6 == 0, P6, -1e10 ), "P6", IIf( LastValue( C ) < P6, Color_RL, Color_SL ), 8 + 2048 + styleNoTitle );
+
+Plot( IIf( x >= XP7 & RP7 &NOT P7 == 0, P7, -1e10 ), "P7", IIf( LastValue( C ) < P7, Color_RL, Color_SL ), 8 + 2048 + styleNoTitle );
+
+/*******************************************************************************************/
+ToolTip = def_ToolTip;
+
+/*******************************************************************************************/
+AddCustomCodeAfterPE();
+
+/*******************************************************************************************/
+Title = "PatternExplorer.com - Support & Resistance" + default_priceTitle + EncodeColor( IIf( NOT AnZ, def_Text2, colorRed ) ) + ",Sensitivity = " + WriteVal( Sensitivity, 1 ) + "     " + EncodeColor( colorRed ) + WriteIf( NOT AnZ, "", "  NO POINTS AVAILABLE -> REDUCE SENSITIVITY " );

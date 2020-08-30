@@ -1,0 +1,22 @@
+SetChartBkColor(colorBlack);
+_SECTION_BEGIN("Normalize ATR");
+periods = Param( "Periods", 15, 1, 200, 1 );
+NATRO = (ATR(periods) / Open) * 100;
+NATRH = (ATR(periods) / High) * 100;
+NATRL = (ATR(periods) / Low) * 100;
+NATRC = (ATR(periods) / Close) * 100;
+
+NATRA = WMA(NATRC,3);
+NATRA3 = WMA(NATRC,5);
+ROCNATRA = ROC(NATRA,1);
+
+
+Histogram = (NATRA - NATRA3)*100 ;
+HCol = IIf(Histogram > Ref(Histogram,-1),colorBrightGreen,colorDarkRed);
+//PlotOHLC( NATRO,NATRH,NATRL,NATRC, _DEFAULT_NAME(), ParamColor( "Color", colorBlack ), styleCandle );
+Plot(0,"",colorWhite);
+Plot(WMA(Histogram,5),"",colorWhite,styleLine | styleDashed);
+SetBarFillColor(Hcol);
+PlotOHLC(0,Histogram,0,Histogram,"Volatility Index",colorGrey50,styleCandle);
+
+_SECTION_END();

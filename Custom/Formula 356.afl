@@ -1,0 +1,40 @@
+Filter = 1;
+
+fh = fopen( "d://BulkDB//"+Name()+".txt", "w");
+if( fh )
+{
+fputs( "Ticker,Date,Open,High,Low,Close,Volume
+", fh );
+y = Year();
+m = Month();
+d = Day();
+//r = Hour();
+//e = Minute();
+//n = Second();
+for( i = 0; i < BarCount; i++ )
+{
+fputs( Name() + "," , fh );
+ds = StrFormat("%02.0f-%02.0f-%02.0f,",
+y[ i ], m[ i ], d[ i ] );
+fputs( ds, fh );
+
+//ts = StrFormat("%02.0f:%02.0f:%02.0f,",
+//r[ i ],e[ i ],n[ i ] );
+//fputs( ts, fh );
+
+qs = StrFormat("%g,%g,%g,%g,%.0f",
+O[i],H[i],L[i],C[i],V[i]);
+fputs( qs, fh );
+
+qa = StrFormat("%g,%.g
+",
+Aux1[i],Aux2[i]);
+fputs( qa, fh );
+}
+
+
+
+fclose( fh );
+}
+
+Buy = 0;

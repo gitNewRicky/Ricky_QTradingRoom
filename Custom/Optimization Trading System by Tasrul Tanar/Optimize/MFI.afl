@@ -1,0 +1,6 @@
+sig1 = Optimize("MFI Periods",9,2,50,2);
+sig2 = Optimize("OS",14,0,20,2);
+sig3 = Optimize("OB",9,80,100,2);
+
+Buy=TAS_Buy_MFI(sig1,sig2);
+Sell=TAS_Sell_MFI(sig1,sig3);

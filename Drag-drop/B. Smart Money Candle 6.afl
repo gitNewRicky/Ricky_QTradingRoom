@@ -1,0 +1,38 @@
+_SECTION_BEGIN(" Smart Money Indicator");
+SetBarsRequired(sbrAll,sbrAll);
+
+BV = IIf( (H==L), 0, V*(C-L)/(H-L) );
+SV = IIf( (H==L), 0, V*(H-C)/(H-L) );
+PlotOHLC(SV,SV,0,0,"SellVolume",colorRed,styleCandle|styleNoTitle|styleNoLabel );
+PlotOHLC(SV,BV+SV,SV,BV+SV,"BuyVolume",colorBrightGreen ,styleCandle|styleNoTitle|styleNoLabel );
+
+BVa = EMA(BV,5);
+SVa = EMA(SV,5);
+
+BVI = BV / BVA;
+SVI = SV / SVA;
+
+Va = EMA(V,5);
+PlotOHLC( Va, Va, 0, 0, "", ColorBlend( colorWhite , GetChartBkColor(), 0.3 ), styleNoLabel | styleCloud | styleNoRescale, Null, Null, Null, -1 );
+Plot(Va,"Average Volume",colorRose,styleNoLine|styleNoLabel );
+VI = V/Va;
+
+avgprice = (O+H+L+C) / 4;
+BDVM = BV * avgprice * 100 / 1000000000;
+SDVM = SV * avgprice * 100 / 1000000000;
+
+
+
+Index_Color = WriteIf(VI > 1,EncodeColor(colorWhite),EncodeColor(colorGrey40));
+BVI_Color = WriteIf(BVI > 1,EncodeColor(colorWhite),EncodeColor(colorGrey40));
+SVI_Color = WriteIf(SVI > 1,EncodeColor(colorWhite),EncodeColor(colorGrey40));
+Buy_Sell = WriteIf((100*BV/(BV/SV)) > (100*SV/(BV+SV)), EncodeColor(colorGreen),EncodeColor(colorRed));
+
+
+
+Title = Index_Color+"Volume Index = "+WriteVal(VI,1.2)+" Volume = "+WriteVal(V,1)+"\n"+
+BVI_Color+"BV Index = "+WriteVal(BVI,1.1)+"   Buy Volume = "+WriteVal(BV,1.2)+"   Buy Value = "+WriteVal(BDVM,1.2)+"M\n"+
+SVI_Color+"SV Index = "+WriteVal(SVI,1.1)+"   Sell Volume = "+WriteVal(SV,1.2)+"   Sell Value = "+WriteVal(SDVM,1.2)+"M\n"+
+Buy_Sell+"Buy " +WriteVal(100*BV/(BV+SV),2.0)+ " : " +WriteVal(100*SV/(BV+SV),2.0)+ " Sell";
+
+_SECTION_END();

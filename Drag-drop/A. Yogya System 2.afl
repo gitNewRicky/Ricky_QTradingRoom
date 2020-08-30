@@ -1,0 +1,1042 @@
+//------------------------------------------------------------------------------
+//  Formula Name	:      YOGYA DAILY TRADING GUIDE AMIBROKER AFL by pipschart
+//  Author	        :      KrT group
+//  Uploader	        :      www.pipschart.com
+//  E-mail		:      info@pipschart.com
+//  Amibroker Blog	:      www.pipschart.com/amibroker
+//  Origin		:      Modified & Collected from different sources.
+//------------------------------------------------------------------------------
+
+_SECTION_BEGIN("KrT group");
+GfxSetBkMode(1);
+X=750;
+Y=1;
+Font=10;
+GfxSelectFont("Impact",Font*2.2, 550);GfxSetTextColor(colorRed);GfxTextOut("KrT group",x,y);
+GfxSelectFont("Impact",Font*2.2, 550);GfxSetTextColor(colorGreen);GfxTextOut("RESEARCH",x+120,Y);
+
+_SECTION_END();
+
+//------------------------------------------------------------------------------
+
+_SECTION_BEGIN("Yogya Daily Trading System");
+Overlaymode = ParamToggle("Overlay Mode", "Show|Hide",0);
+Fullsymbol = ParamToggle("Name/Industry", "Show|Hide",1);
+Day1 = ParamToggle("Week Separator", "Show|Hide",1);
+Ribbon5 = ParamToggle("Stock Ribbon", "Show|Hide",0);
+Sectorticker = ParamStr( "Sector Ticker", Name() );
+Indexticker = ParamStr( "Índex Ticker", "Nifty 50" );
+Sectorribbon5 = ParamToggle("Sector-Stock", "Show|Hide",0);
+Messageboardtext = ParamToggle("All Price", "Show|Hide",0);
+YPR=Param("Price Range",0.05,0,2,0.005);
+YPARANGE= Param("Price Range",0.005,0,0.3,0.001);
+Messageboard = ParamToggle("Analysis Message Board", "Show|Hide",0);
+Heading = ParamToggle("Heading", "Show|Hide",0);
+
+Datetime1 = ParamToggle("Date/Ltp", "Show|Hide",0);
+Datetime2 = ParamToggle("Today Action", "Show|Hide",0);
+Yhor=Param("Horizontal Position",1,0.001,1,0.001);
+Yver=Param("Vertical Position",0, -15, 100, 1);
+Yfont5 = Param("Font Size",0,-0.01,1,0.001);
+
+Ycandledays = Param( "Candle Days", 23, 5, 50000 ); // Candle Days To Determine High-Low
+Ypricefield = ParamField("Price Field",0);
+showtrendline = ParamToggle("Show Trend Line", "SHOW|HIDE", 0);
+Yspace=Param("Graphic Space",75,1,1000);
+
+
+
+Title = "";
+
+Ygbody=C>=O; //First Candle Green
+Yrbody=C<O; // First Candle Red
+Ygbody1 = Ref(C,-1) >= Ref(O, -1); // Second Candle Green
+Yrbody1 = Ref(C,-1) < Ref(O, -1); // Second Candle Red
+Ygbody2 = Ref(C,-2) >= Ref(O, -2); // Third Candle Green
+Yrbody2 = Ref(C,-2) < Ref(O, -2); // Third Candle Red
+
+Yocspread = abs(O-C);// Body Of The First Candle
+Yhlspread = (H-L); // Length Of The First Candle
+Yocspread1 = abs(Ref(O,-1)- Ref(C, -1));// Body Of The Second Candle
+Yhlspread1 = Ref(H, -1)- Ref(L,-1); // Length Of The First Candle
+Yocspread2 =abs(C-(Ref(O,-1))); // Body Of First And Second Candle
+Yhlspread2= Max(H, Ref(H,-1))-Min(L,Ref(L,-1)); //Length Of First And Second Candle
+
+Ygapup = Open >Ref(Close,-1); // Gap Up In First Candle
+Ygapdown= Open < Ref(Close, -1);// Gap Down In First Candle
+Ygapup1 = Ref(Open,-1) >Ref(Close,-2); // Gap Up In First Candle
+Ygapdown1= Ref(Open, -1) < Ref(Close, -2);// Gap Down In First Candle
+
+Ybiggapup = Low > Ref(H, -1); // First Candle Low Is Greater Than Second Candle High
+Ybiggapdown = High < Ref(L, -1); // First Candle High Is Less Than Second Candle Low
+Ybiggapup1 = Ref(Low, -1) > Ref(H, -2); // Second Candle Low Is Greater Than Third Candle High
+Ybiggapdown1 = Ref(High, -1) < Ref(L, -2); //Second Candle High Is Less Than Third Candle Low
+Ybiggapup2 = Ref(Low, -2) > Ref(H, -3); // Third Candle Low Is Greater Than Fourth Candle High
+Ybiggapdown2 = Ref(High, -2) < Ref(L, -3); //Third Candle High Is Less Than Fourth Candle Low
+
+
+Ypclose = C>=Ref(C,-1); // Gain In First Candle
+Ynclose = C < Ref(C,-1); //Loss In First Candle
+Ypclose1 =Ref(C, -1) >=Ref(C,-2); // Gain In Second Candle
+Ynclose1 = Ref(C, -1) < Ref(C,-1); //Loss In Second Candle
+
+Ybopen = (O >= (Ref(High,-1)+Ref(Low,-1))/2) AND Yrbody1; // Bullish Open First Candle
+Ybeopen = (O < (Ref(High,-1)+Ref(Low,-1))/2) AND Ygbody1; // Bearish Open First Candle
+Yexbopen = O > Ref(H,-1); // Extreme Bullish Open First Candle
+Yexbeopen = O < Ref(L,-1); // Extreme Bearish Open First Candle
+
+Ybclose = C > Ref(H, -1); // Bullish Close First Candle
+Ybeclose = C < Ref (L, -1); // Bearish Close First Candle
+Ybclose1 = Ref(C, -1) > Ref(H, -2); // Bullish Close Second Candle
+Ybeclose1 = Ref(C, -1) < Ref (L, -2); // Bearish Close Second Candle
+
+Yaverage5 = Ref(MA(H, 5), -1) - Ref(MA(L, 5), -1); // Average Lenth Of Five Candle
+
+
+Yexbclose = C>= (L+Yhlspread*0.8) ; // Bullish Close(Closed At Upper End Of The Candle)
+Yexbeclose = C<=(L+Yhlspread*0.2) ; // Bearish Close(Closed At Lower End Of The Candle)
+
+Yexbclose1 = C>= (L+Yhlspread*0.8) AND Ypclose ; // Bullish Close(Closed At Upper End Of The Candle)
+Yexbeclose1 = C<=(L+Yhlspread*0.2) AND Ynclose ; // Bearish Close(Closed At Lower End Of The Candle)
+Ynuclose =  (Yexbclose1==0 AND Yexbeclose1==0);// Neutral Close
+
+
+
+Topresistance = HHV(Ypricefield, Ycandledays)== Max(Ypricefield, Ref(Ypricefield, -1));
+
+Yabandonedbabybearish= (Ygbody2 AND Ybiggapup1 AND Ybiggapdown AND Topresistance);
+
+Ybelowthestomach= (Ybeopen AND Ybclose1 AND Yrbody AND Topresistance);
+
+Ybeltholdbearish = (Yexbopen AND Yrbody AND Topresistance);
+
+Ybreakawaybearish = (Ybeopen AND Ybeclose AND Topresistance);
+
+Ydarkcloudcover= (Ygapup AND Ygbody1 AND Ynclose AND Topresistance);
+
+Yengulfingbearish= (Ygapup AND Ygbody1 AND Ybeclose AND Topresistance);
+
+Yeveningstar= (Ygbody2 AND Ygapup1 AND Ygapdown AND Ybeclose AND Topresistance) ;
+
+Yharamibearish = (Ygapdown AND Ygbody1 AND Yrbody AND Topresistance);
+
+Ykickingbearish = (Ygbody1 AND Yexbeopen AND Yrbody AND Topresistance);
+
+Yshootingstar= (Ygapup AND (Yocspread/Yhlspread) < 0.3  AND Yexbeclose AND Topresistance);
+
+Ytristarbearish= (Ybiggapup2 AND Ybiggapup1 AND Ybiggapdown AND Topresistance);
+
+Ydojibearish= ((Yocspread/Yhlspread) < 0.1 AND Topresistance); 
+
+Ydojibearishyesterday= ((Yocspread1/Yhlspread1) < 0.1 AND Topresistance); 
+
+Yonebarbearishwick= ((Yocspread/Yhlspread)< 0.25 AND Yexbeclose AND Topresistance);
+
+Ytwobarbearishwick= ((Yocspread2/Yhlspread2)< 0.25 AND Yexbeclose AND Topresistance);
+
+Ytheextremereversalbearish = ((Yhlspread/Yaverage5) > 3.5 AND C<= (L +Yhlspread*0.7) AND Topresistance);
+
+Ytopcandlebearish = (Yrbody AND Topresistance); 
+
+
+
+Bottomsupport = LLV(Ypricefield, Ycandledays)== Min(Ypricefield, Ref(Ypricefield, -1));
+
+Yabandonedbabybullish= (Yrbody2 AND Ybiggapdown1 AND Ybiggapup AND Bottomsupport);
+
+Yabovethestomach= (Ybopen AND Ybeclose1 AND Ygbody AND Bottomsupport);
+
+Ybeltholdbullish = (Yexbeopen AND Ygbody AND Bottomsupport);
+
+Ybreakawaybullish = (Ybopen AND Ybclose AND Bottomsupport);
+
+Yengulfingbullish= (Ygapdown AND Yrbody AND Ybclose AND Bottomsupport);
+
+Yhammer= (Ygapdown AND (Yocspread/Yhlspread) < 0.3 AND Yexbclose AND Bottomsupport);
+
+Yharamibullish = (Ygapup AND Yrbody1 AND Ygbody AND Bottomsupport);
+
+Ykickingbullish = (Yrbody1 AND Yexbopen AND Ygbody AND Bottomsupport);
+
+Ymorningstar= (Yrbody2 AND Ygapdown1 AND Ygapup AND Ybclose AND Bottomsupport) ;
+
+Ypiercingpattern= (Ygapdown AND Yrbody1 AND Ypclose AND Bottomsupport);
+
+Ytristarbullish= (Ybiggapdown2 AND Ybiggapdown1 AND Ybiggapup AND Bottomsupport);
+
+Ydojibullish= ((Yocspread/Yhlspread) < 0.1 AND Bottomsupport); 
+
+Ydojibullishyesterday= ((Yocspread1/Yhlspread1) < 0.1 AND Bottomsupport); 
+
+Yonebarbullishwick= ((Yocspread/Yhlspread)< 0.25 AND Yexbclose AND Bottomsupport);
+
+Ytwobarbullishwick= ((Yocspread2/Yhlspread2)< 0.25 AND Yexbclose AND Bottomsupport);
+
+Ytheextremereversalbullish = ((Yhlspread/Yaverage5) > 3.5 AND C>= (L +Yhlspread*0.4) AND Bottomsupport);
+
+Ybottomcandlebullish = (Ygbody AND Bottomsupport);
+
+
+Ytopbreak = Ypricefield >= Ref(HHV(Ypricefield, Ycandledays), -1);
+Yheavyvolume = Volume >= Ref(HHV(Volume, Ycandledays), -1);
+Ytopbreakout1= Ygapup AND Ygbody AND Ytopbreak AND Yheavyvolume;
+Ytopbreakout2= Ygapdown AND Ygbody AND Ytopbreak AND Ybclose;
+
+
+
+Ybottombreak = Ypricefield <= Ref(LLV(Ypricefield, Ycandledays), -1);
+Ybottombreakout1 = Ygapdown AND Yrbody AND Ybottombreak;
+Ybottombreakout2 = Ygapup AND Yrbody AND Ybottombreak AND Ybclose;
+
+
+Ctype =
+WriteIf(Yexbclose1, "Bullish Close",
+WriteIf(Yexbeclose1, "Bearish Close",
+WriteIf(Ynuclose, "Neutral Close","")));
+
+
+Tcandle =
+WriteIf(Yabandonedbabybearish, "Abandoned Baby Bearish",
+WriteIf(Ybelowthestomach, "Belowthe Stomach",
+WriteIf(Ybeltholdbearish, "Belthold Bearish",
+WriteIf(Ybreakawaybearish, "Breakaway Bearish",
+WriteIf(Ydarkcloudcover, "Darkcloud Cover",
+WriteIf(Yengulfingbearish, "Engulfing Bearish",
+WriteIf(Yeveningstar, "Evening Star", 
+WriteIf(Yharamibearish, "Harami Bearish",
+WriteIf(Ykickingbearish, "Kicking Bearish",
+WriteIf(Yshootingstar, "Shooting Star",
+WriteIf(Ytristarbearish, "Tristar Bearish",
+WriteIf(Ydojibearish, "Doji Bearish First Candle",
+WriteIf(Ydojibearishyesterday, "Doji Bearish Second Candle",
+WriteIf(Yonebarbearishwick, "Onebar Bearish Wick",
+WriteIf(Ytwobarbearishwick, "Twobar Bearish Wick", 
+WriteIf(Ytheextremereversalbearish, "Extreme Reversal Bearish", 
+WriteIf(Ytopcandlebearish, "Top Candle Bearish",
+
+
+
+WriteIf(Yabandonedbabybullish, "Abandoned Baby Bullish",
+WriteIf(Yabovethestomach, "Above The Stomach",
+WriteIf(Ybeltholdbullish, "Belthold Bullish",
+WriteIf(Ybreakawaybullish, "Breakaway Bullish",
+WriteIf(Ypiercingpattern, "Piercing Pattern",
+WriteIf(Yengulfingbullish, "Engulfing Bullish",
+WriteIf(Ymorningstar, "Morning Star", 
+WriteIf(Yharamibullish, "Harami Bullish",
+WriteIf(Ykickingbullish, "Kicking Bullish",
+WriteIf(Yhammer, "Hammer",
+WriteIf(Ytristarbullish, "Tristar Bullish",
+WriteIf(Ydojibullish, "Doji Bullish First Candle",
+WriteIf(Ydojibullishyesterday, "Doji Bullish Second Candle",
+WriteIf(Yonebarbullishwick, "Onebar Bullish Wick",
+WriteIf(Ytwobarbullishwick, "Twobar Bullish Wick", 
+WriteIf(Ytheextremereversalbullish, "Extreme Reversal Bullish", 
+WriteIf(Ybottomcandlebullish, "Bottom Candle Bullish",""))))))))))))))))))))))))))))))))));
+
+Breakoutcandle =
+WriteIf(Ytopbreakout1, "Top Breakout Gapup",
+WriteIf(Ytopbreakout2, "Top Breakout Gapdown",
+
+WriteIf(Ybottombreakout1, "Bottom Breakout Gapdown",
+WriteIf(Ybottombreakout2, "Bottom Breakout Gapup",""))));
+
+Tcandlec =	IIf( Yabandonedbabybearish OR Ybelowthestomach OR Ybeltholdbearish OR Ybreakawaybearish OR Ydarkcloudcover OR Yengulfingbearish OR Yeveningstar OR Yharamibearish OR Ykickingbearish OR Yshootingstar OR Ytristarbearish OR Ydojibearish OR Ydojibearishyesterday OR Yonebarbearishwick OR Ytwobarbearishwick OR Ytheextremereversalbearish OR Ytopcandlebearish, colorRed,
+			IIf( Yabandonedbabybullish OR Yabovethestomach OR Ybeltholdbullish OR Ybreakawaybullish OR Ypiercingpattern OR Yengulfingbullish OR Ymorningstar OR Yharamibullish OR Ykickingbullish OR Yhammer OR Ytristarbullish OR Ydojibullish OR Ydojibullishyesterday OR Yonebarbullishwick OR Ytwobarbullishwick OR Ytheextremereversalbullish OR Ybottomcandlebullish, colorGreen, 0));
+Breakoutcandlec =IIf(Ytopbreakout1 OR Ytopbreakout2, colorGreen, 
+	       IIf(Ybottombreakout1 OR Ybottombreakout2, colorRed, 0));
+Ctypec =	IIf(Yexbclose1, colorGreen, 
+	       IIf(Yexbeclose1, colorRed, 0));
+
+
+
+
+Yath = Ref(HHV(Ypricefield, 2500), -1); // All Time High
+Yatl = Ref(LLV(Ypricefield, 2500), -1); // All Time Low
+
+Y2yh = Ref(HHV(Ypricefield, 500), -1); // 2 Year High
+Y2yl = Ref(LLV(Ypricefield, 500), -1); // 2 Year Low
+
+Y52wh = Ref(HHV(Ypricefield, 250), -1); // 52 Week High 
+Y52wl = Ref(LLV(Ypricefield, 250), -1); // 52 Week Low
+
+Yqh = Ref(HHV(Ypricefield, 55), -1); // Quarterly High
+Yql = Ref(LLV(Ypricefield, 55), -1); // Quarterly Low
+
+Ymh = Ref(HHV(Ypricefield, 21), -1); // Monthly High
+Yml = Ref(LLV(Ypricefield, 21), -1); // Monthly Low
+
+Yfh = Ref(HHV(Ypricefield, 10), -1); //Fortnight High
+Yfl = Ref(LLV(Ypricefield, 10), -1); //Fortnight Low
+
+Ywh = Ref(HHV(Ypricefield, 5), -1); // Weekly High
+Ywl = Ref(LLV(Ypricefield, 5), -1); // Weekly Low
+
+
+Yath1 = (C > (Yath -Yath*YPR));
+Yatl1 = (C < (Yatl + Yatl*YPR));
+
+Y2yh1 = (C > (Y2yh - Y2yh*YPR));
+Y2yl1 = (C < (Y2yl+ Y2yl*YPR));
+
+Y52wh1 = (C < (Y52wh+ Y52wh*YPARANGE) AND C > (Y52wh - Y52wh*YPARANGE));
+Y52wl1 = (C < (Y52wl+ Y52wl*YPARANGE) AND C > (Y52wl - Y52wl*YPARANGE));
+
+Yqh1 = (C < (Yqh+ Yqh*YPARANGE) AND C > (Yqh - Yqh*YPARANGE));
+Yql1 = (C < (Yql+ Yql*YPARANGE) AND C > (Yql - Yql*YPARANGE));
+
+Ymh1 = (C < (Ymh+ Ymh*YPARANGE) AND C > (Ymh - Ymh*YPARANGE));
+Yml1 = (C < (Yml+ Yml*YPARANGE) AND C > (Yml - Yml*YPARANGE));
+
+Yfh1 = (C < (Yfh+ Yfh*YPARANGE) AND C > (Yfh - Yfh*YPARANGE));
+Yfl1 = (C < (Yfl+ Yfl*YPARANGE) AND C > (Yfl - Yfl*YPARANGE));
+
+Ywh1 = (C < (Ywh+ Ywh*0.005) AND C > (Ywh - Ywh*0.005));
+Ywl1 = (C < (Ywl+ Ywl*0.005) AND C > (Ywl - Ywl*0.005));
+
+
+Yaction =
+WriteIf(Yath1, "All Time High",
+WriteIf(Yatl1, "All Time Low",
+
+WriteIf(Y2yh1, "2year High", 
+WriteIf(Y2yl1, "2year Low",
+
+WriteIf(Y52wh1, "52 Week High", 
+WriteIf(Y52wl1, "52 Week Low", 
+
+WriteIf(Yqh1, "Quarterly High",
+WriteIf(Yql1, "Quarterly Low",
+
+WriteIf(Ymh1, "20 DAY High",
+WriteIf(Yml1, "20 DAY Low",
+
+WriteIf(Yfh1, "10 DAY High",
+WriteIf(Yfl1, "10 DAY Low",
+
+WriteIf(Ywh1, "5 DAY High",
+WriteIf(Ywl1, "5 DAY Low", ""))))))))))))));
+
+Yactionvalue =
+WriteIf(Yath1, ""+Yath,
+WriteIf(Yatl1, ""+Yatl,
+
+WriteIf(Y2yh1, ""+Y2yh, 
+WriteIf(Y2yl1, ""+Y2yl,
+
+WriteIf(Y52wh1, ""+Y52wh, 
+WriteIf(Y52wl1, ""+Y52wl, 
+
+WriteIf(Yqh1, ""+Yqh,
+WriteIf(Yql1, ""+Yql,
+
+WriteIf(Ymh1, ""+Ymh,
+WriteIf(Yml1, ""+Yml,
+
+WriteIf(Yfh1, ""+Yfh,
+WriteIf(Yfl1, ""+Yfl,
+
+WriteIf(Ywh1, ""+Ywh,
+WriteIf(Ywl1, ""+Ywl, ""))))))))))))));
+
+Yactionc = IIf(Yath1 OR Y2yh1 OR Y52wh1 OR Yqh1 OR Ymh1 OR Yfh1 OR Ywh1 , colorGreen, 
+      IIf(Yatl1 OR Y2yl1 OR Y52wl1 OR Yql1 OR Yml1 OR Yfl1 OR Ywl1, colorRed, 0));
+
+
+
+
+Yathv = Ref(HHV(Volume,2500),-1);
+Y52whv = Ref(HHV(Volume,250),-1);
+Yqhv = Ref(HHV(Volume,65),-1);
+Ymhv = Ref(HHV(Volume,23),-1);
+
+
+Yathv1= Volume > Yathv;
+Y52whv1= Volume > Y52whv;
+Yqhv1= Volume > Yqhv;
+Ymhv1= Volume > Ymhv;
+
+Yvolume =
+WriteIf(Yathv1,"All Time High Volume",
+WriteIf(Y52whv1,"52 Week High Volume",
+WriteIf(Yqhv1,"Quarterly High Volume",
+WriteIf(Ymhv1,"Monthly High Volume",""))));
+
+Yvolumec = IIf( Yathv1 OR Y52whv1 OR Yqhv1 OR Ymhv1, colorGreen,0);
+
+
+
+GfxSelectFont("Tahoma", Status("Pxheight")/75 );
+GfxSetTextAlign(0|0);// Center Alignment
+GfxSetTextColor( colorBlue );
+
+if(Ribbon5==0)
+{
+Yrgbody=C>=O; //First Candle Green
+Yrrbody=C<O; // First Candle Red
+Yrhlspread1 = Ref(H, -1)- Ref(L,-1); // Length Of The First Candle
+Yrbclose = C > (Ref(C, -1)+ Yrhlspread1*0.38); // Bullish Close 
+Yrbeclose = C < (Ref (C, -1) - Yrhlspread1*0.38); // Bearish Close 
+Yrrbclose = C > Ref(H, -1); // Bullish Close First Candle
+Yrrbeclose = C < Ref (L, -1); // Bearish Close First Candle
+
+Uptrend=Yrbclose AND Yrgbody AND Yrrbclose ;
+Downtrend=Yrbeclose AND Yrrbody AND Yrrbeclose;
+
+Plot( 1.5, "Ribbon",IIf( Uptrend, colorGreen, IIf( Downtrend, colorRed, 0 )), styleOwnScale|styleArea|styleNoLabel, -7.5, 100 );
+
+GfxTextOut( Interval(2), Status("Pxwidth")/1.1, Status("Pxheight")/1.12 );
+GfxTextOut( ""+Name(), Status("Pxwidth")/1.06, Status("Pxheight")/1.12 );
+if(Sectorribbon5==0)
+{
+
+Yhhsopen = TimeFrameCompress( Open, inWeekly );
+Yhhshigh = TimeFrameCompress( High, inWeekly );
+Yhhslow = TimeFrameCompress( Low, inWeekly );
+Yhhsclose = TimeFrameCompress( Close, inWeekly );
+
+Yhrgbody1=Yhhsclose>=Yhhsopen; //First Candle Green
+Yhrrbody1=Yhhsclose<Yhhsopen; // First Candle Red
+Yhrhlspread2 = Ref(Yhhshigh, -1)- Ref(Yhhslow, -1); // Length Of The First Candle
+Yhrbclose1 = Yhhsclose > (Ref(Yhhsclose, -1)+ Yhrhlspread2*0.38); // Bullish Close 
+Yhrbeclose2 = Yhhsclose < (Ref (Yhhsclose, -1) - Yhrhlspread2*0.38); // Bearish Close 
+Yhrrbclose1 = Yhhsclose > Ref(Yhhshigh,  -1); // Bullish Close First Candle
+Yhrrbeclose1 = Yhhsclose < Ref (Yhhslow,  -1); // Bearish Close First Candle
+
+yhUptrend1=Yhrbclose1 AND Yhrgbody1 AND Yhrrbclose1 ;
+yhDowntrend1=Yhrbeclose2 AND Yhrrbody1 AND Yhrrbeclose1;
+
+Plot( 1.5, "Ribbon",IIf( TimeFrameExpand(yhUptrend1, inWeekly), colorGreen, IIf( TimeFrameExpand(yhDowntrend1, inWeekly), colorRed, 0 )), styleOwnScale|styleArea|styleNoLabel, -4.5, 100 );
+
+GfxTextOut( "Ribbon Weekly: "+Name(), Status("Pxwidth")/1.1, Status("Pxheight")/1.08 );
+
+
+YDhsopen = TimeFrameCompress( Open, inMonthly );
+YDhshigh = TimeFrameCompress( High, inMonthly );
+YDhslow = TimeFrameCompress( Low, inMonthly );
+YDhsclose = TimeFrameCompress( Close, inMonthly );
+
+YDrgbody1=YDhsclose>=YDhsopen; //First Candle Green
+YDrrbody1=YDhsclose<YDhsopen; // First Candle Red
+YDrhlspread2 = Ref(YDhshigh, -1)- Ref(YDhslow, -1); // Length Of The First Candle
+YDrbclose1 = YDhsclose > (Ref(YDhsclose, -1)+ YDrhlspread2*0.38); // Bullish Close 
+YDrbeclose2 = YDhsclose < (Ref (YDhsclose, -1) - YDrhlspread2*0.38); // Bearish Close 
+YDrrbclose1 = YDhsclose > Ref(YDhshigh,  -1); // Bullish Close First Candle
+YDrrbeclose1 = YDhsclose < Ref (YDhslow,  -1); // Bearish Close First Candle
+
+YDUptrend1=YDrbclose1 AND YDrgbody1 AND YDrrbclose1 ;
+YDDowntrend1=YDrbeclose2 AND YDrrbody1 AND YDrrbeclose1;
+
+Plot( 1.5, "Ribbon",IIf( TimeFrameExpand(YDUptrend1, inMonthly), colorGreen, IIf( TimeFrameExpand(YDDowntrend1, inMonthly), colorRed, 0 )),styleOwnScale|styleArea|styleNoLabel, -1.5, 100 );
+GfxTextOut( "Ribbon Monthly: "+Name(), Status("Pxwidth")/1.1, Status("Pxheight")/1.05 );
+}
+
+else
+{
+
+Yfsopen = Foreign(Sectorticker, "O");
+Yfshigh = Foreign(Sectorticker, "H");
+Yfslow = Foreign(Sectorticker, "L");
+Yfsclose = Foreign(Sectorticker, "C");
+Text2 = "Ribbon: ";
+Yrgbody1=Yfsclose>=Yfsopen; //First Candle Green
+Yrrbody1=Yfsclose<Yfsopen; // First Candle Red
+Yrhlspread2 = Ref(Yfshigh, -1)- Ref(Yfslow, -1); // Length Of The First Candle
+Yrbclose1 = Yfsclose > (Ref(Yfsclose, -1)+ Yrhlspread2*0.38); // Bullish Close 
+Yrbeclose2 = Yfsclose < (Ref (Yfsclose, -1) - Yrhlspread2*0.38); // Bearish Close 
+Yrrbclose1 = Yfsclose > Ref(Yfshigh,  -1); // Bullish Close First Candle
+Yrrbeclose1 = Yfsclose < Ref (Yfslow,  -1); // Bearish Close First Candle
+Uptrend1=Yrbclose1 AND Yrgbody1 AND Yrrbclose1 ;
+Downtrend1=Yrbeclose2 AND Yrrbody1 AND Yrrbeclose1;
+
+Plot( 1.5,"Ribbon",IIf( Uptrend1, colorGreen, IIf( Downtrend1, colorRed, 0 )), styleOwnScale|styleArea|styleNoLabel, -4.5, 100 );
+
+GfxTextOut( ""+Sectorticker, Status("Pxwidth")/1.1, Status("Pxheight")/1.08 );
+
+Ynfsopen = Foreign(Indexticker, "O");
+Ynfshigh = Foreign(Indexticker, "H");
+Ynfslow = Foreign(Indexticker, "L");
+Ynfsclose = Foreign(Indexticker, "C");
+
+Ynrgbody1=Ynfsclose>=Ynfsopen; //First Candle Green
+Ynrrbody1=Ynfsclose<Ynfsopen; // First Candle Red
+Ynrhlspread2 = Ref(Ynfshigh, -1)- Ref(Ynfslow, -1); // Length Of The First Candle
+Ynrbclose1 = Ynfsclose > (Ref(Ynfsclose, -1)+ Ynrhlspread2*0.38); // Bullish Close 
+Ynrbeclose2 = Ynfsclose < (Ref (Ynfsclose, -1) - Ynrhlspread2*0.38); // Bearish Close 
+Ynrrbclose1 = Ynfsclose > Ref(Ynfshigh,  -1); // Bullish Close First Candle
+Ynrrbeclose1 = Ynfsclose < Ref (Ynfslow,  -1); // Bearish Close First Candle
+
+
+Ynuptrend1=Ynrbclose1 AND Ynrgbody1 AND Ynrrbclose1 ;
+Yndowntrend1=Ynrbeclose2 AND Ynrrbody1 AND Ynrrbeclose1;
+
+Plot( 1.5, "Ribbon",IIf( Ynuptrend1, colorGreen, IIf( Yndowntrend1, colorRed, 0 )), styleOwnScale|styleArea|styleNoLabel, -1.5, 100 );
+GfxTextOut( ""+Indexticker, Status("Pxwidth")/1.1, Status("Pxheight")/1.05 );
+}}
+
+if (Overlaymode==1)
+{
+GfxSetOverlayMode(1);
+}
+else if(Overlaymode==0)
+
+GfxSetOverlayMode(0);
+
+
+
+
+Barssincebuy = BarsSince( Uptrend ); 
+Barssinceshort = BarsSince( Downtrend ); 
+Lastsignal = IIf( Barssincebuy < Barssinceshort, 1, -1 ); 
+
+if ( SelectedValue( Lastsignal ) == 1 ) 
+    { 
+        GfxSelectSolidBrush( colorDarkTeal ); 
+    } 
+ else
+    { 
+        GfxSelectSolidBrush( colorPlum); 
+        } 
+
+GfxSelectPen( colorLightBlue, 1); // Border Color 
+
+Yx1 = Status("pxchartleft") ;  // left side of chart
+Yy1 = Status("pxcharttop"); // top side of chart
+Yx2 = Status("pxchartright"); // right side of chart
+Yy2 = Status("pxchartbottom"); // bottom side ofthe chart
+Yx3 = Status("pxchartwidth"); // boarder type size
+Yy3 = Status("pxchartwidth"); // boarder type size
+
+GfxRoundRect( Yx1*0.5, Yy1*0.5, Yx2*0.22, Yy2*0.12, Yx3*0.005, Yy3*0.005 ); // price action TOP
+
+GfxRoundRect( Yx1*0.5, Yy2*0.12, Yx2*0.11, Yy2*0.45, Yx3*0.005, Yy3*0.005 ); // price action high
+
+GfxRoundRect( Yx2*0.115, Yy2*0.12, Yx2*0.22, Yy2*0.45, Yx3*0.005, Yy3*0.005 );// price action low
+
+
+
+
+Yh = TimeFrameGetPrice( "H", inDaily, -1 );
+Yc = TimeFrameGetPrice( "C", inDaily, -1 );
+Yl =  TimeFrameGetPrice( "L", inDaily, -1 );
+
+Cqh = TimeFrameGetPrice( "H", inQuarterly, 0 );
+Cql = TimeFrameGetPrice( "L", inQuarterly, 0 );
+
+
+Lqh = TimeFrameGetPrice( "H", inQuarterly, -1 );
+Lql = TimeFrameGetPrice( "L", inQuarterly, -1 );
+
+
+Cyh = TimeFrameGetPrice( "H", inYearly, 0 );
+Cyl = TimeFrameGetPrice( "L", inYearly, 0 );
+
+
+Lyh = TimeFrameGetPrice( "H", inYearly, -1 );
+Lyl = TimeFrameGetPrice( "L", inYearly, -1 );
+
+Lmh = Ref(HHV(H, 21), -1); // Monthly High
+Lml = Ref(LLV(L, 21), -1); // Monthly Low
+
+Cmh = Ref(HHV(H, 10), -1); //Fortnight High
+Cml = Ref(LLV(L, 10), -1); //Fortnight Low
+
+Lwh = Ref(HHV(H, 5), -1); // Weekly High
+Lwl = Ref(LLV(L, 5), -1); // Weekly Low
+
+
+Ath= Highest(H);
+Atl= Lowest(L);
+
+
+
+Ath1 =C < (Ath+ Ath*YPR) AND C > (Ath - Ath*YPR);
+Lyh1 =C < (Lyh+ Lyh*YPR) AND C > (Lyh - Lyh*YPR);
+Cyh1 =C < (Cyh+ Cyh*YPR) AND C > (Cyh - Cyh*YPR);
+Lqh1 =C < (Lqh+ Lqh*YPR) AND C > (Lqh - Lqh*YPR);
+Cqh1 = C < (Cqh+ Cqh*YPR) AND C > (Cqh - Cqh*YPR);
+Lmh1 = C < (Lmh+ Lmh*YPR) AND C > (Lmh - Lmh*YPR);
+Cmh1 = C < (Cmh+ Cmh*YPR) AND C > (Cmh - Cmh*YPR);
+Lwh1 = C < (Lwh+ Lwh*YPR) AND C > (Lwh - Lwh*YPR);
+Yh1 = C < (Yh+ Yh*YPR) AND C > (Yh - Yh*YPR);
+
+Yc1 = C < (Yc+ Yc*YPR) AND C > (Yc - Yc*YPR);
+
+Atl1 =C < (Atl+ Atl*YPR) AND C > (Atl - Atl*YPR);
+Lyl1 =C < (Lyl+ Lyl*YPR) AND C > (Lyl - Lyl*YPR);
+Cyl1 =C < (Cyl+ Cyl*YPR) AND C > (Cyl - Cyl*YPR);
+Lql1 =C < (Lql+ Lql*YPR) AND C > (Lql - Lql*YPR);
+Cql1 =  C < (Cql+ Cql*YPR) AND C > (Cql - Cql*YPR);
+Lml1 = C < (Lml+ Lml*YPR) AND C > (Lml - Lml*YPR);
+Cml1 = C < (Cml+ Cml*YPR) AND C > (Cml - Cml*YPR);
+Lwl1 = C < (Lwl+ Lwl*YPR) AND C > (Lwl - Lwl*YPR);
+Yl1 = C < (Yl+ Yl*YPR) AND C > (Yl - Yl*YPR);
+
+
+FS = (Status("pxchartwidth") + Status("pxchartheight"));
+
+GfxSetTextAlign(0|0);
+GfxSetBkMode(1);
+GfxSelectFont( "Tahoma",FS*0.0078, 800 );
+GfxSetTextColor ( colorTurquoise ); 
+GfxTextOut( ( "TARGET OR ACTION PRICES"),YX2*0.005,YY2*0.001);
+GfxTextOut( ( "YESTERDAY CLOSE:"),YX2*0.005,YY2*0.040);
+GfxSetTextColor ( colorBrightGreen ); 
+GfxTextOut( ( "HIGHS"),YX2*0.03,YY2*0.075);
+GfxSetTextColor ( colorRed); 
+GfxTextOut( ( "LOWS"),YX2*0.15,YY2*0.075);
+GfxSetTextColor ( colorYellow );
+GfxSelectFont( "Tahoma", FS*0.006, 100 );
+
+
+// HIGHS
+GfxTextOut( ( "___________________________"),Yx2*0.005,Yy2*0.015);
+GfxTextOut( ( "___________________________"),Yx2*0.005,Yy2*0.050);
+GfxTextOut( ( "1. YH:"),Yx2*0.005,Yy2*0.13);
+GfxTextOut( ( "______________"),Yx2*0.005,Yy2*0.135);
+GfxTextOut( ( "2. 5DH:"),Yx2*0.005,Yy2*0.165);
+GfxTextOut( ( "______________"),Yx2*0.005,Yy2*0.170);
+GfxTextOut( ( "3. 10DH: "),Yx2*0.005,Yy2*0.200);
+GfxTextOut( ( "______________"),Yx2*0.005,Yy2*0.205);
+GfxTextOut( ( "4. 20DH:"),Yx2*0.005,Yy2*0.235);
+GfxTextOut( ( "______________"),Yx2*0.005,Yy2*0.240);
+GfxTextOut( ( "5. CQH:"),Yx2*0.005,Yy2*0.270);
+GfxTextOut( ( "______________"),Yx2*0.005,Yy2*0.275);
+GfxTextOut( ( "6. LQH: "),Yx2*0.005,Yy2*0.305);
+GfxTextOut( ( "______________"),Yx2*0.005,Yy2*0.310);
+GfxTextOut( ( "7. CYH: "),Yx2*0.005,Yy2*0.340);
+GfxTextOut( ( "______________"),Yx2*0.005,Yy2*0.345);
+GfxTextOut( ( "8. LYH: "),Yx2*0.005,Yy2*0.375);
+GfxTextOut( ( "______________"),Yx2*0.005,Yy2*0.380);
+GfxTextOut( ( "9. ATH: "),Yx2*0.005,Yy2*0.410);
+GfxTextOut( ( "______________"),Yx2*0.005,Yy2*0.415);
+//LOWS
+GfxTextOut( ( "1. YL:"),Yx2*0.12,Yy2*0.13);
+GfxTextOut( ( "______________"),Yx2*0.12,Yy2*0.135);
+GfxTextOut( ( "2. 5DL:"),Yx2*0.12,Yy2*0.165);
+GfxTextOut( ( "______________"),Yx2*0.12,Yy2*0.170);
+GfxTextOut( ( "3. 10DL: "),Yx2*0.12,Yy2*0.200);
+GfxTextOut( ( "______________"),Yx2*0.12,Yy2*0.205);
+GfxTextOut( ( "4. 20DL:"),Yx2*0.12,Yy2*0.235);
+GfxTextOut( ( "______________"),Yx2*0.12,Yy2*0.240);
+GfxTextOut( ( "5. CQL:"),Yx2*0.12,Yy2*0.270);
+GfxTextOut( ( "______________"),Yx2*0.12,Yy2*0.275);
+GfxTextOut( ( "6. LQL: "),Yx2*0.12,Yy2*0.305);
+GfxTextOut( ( "______________"),Yx2*0.12,Yy2*0.310);
+GfxTextOut( ( "7. CYL: "),Yx2*0.12,Yy2*0.340);
+GfxTextOut( ( "______________"),Yx2*0.12,Yy2*0.345);
+GfxTextOut( ( "8. LYL: "),Yx2*0.12,Yy2*0.375);
+GfxTextOut( ( "______________"),Yx2*0.12,Yy2*0.380);
+GfxTextOut( ( "9. ATL: "),Yx2*0.12,Yy2*0.410);
+GfxTextOut( ( "______________"),Yx2*0.12,Yy2*0.415);
+
+
+GfxSelectFont( "Tahoma", FS*0.006, 800 );
+YJ = BarIndex();
+YI= SelectedValue( YJ ) - YJ[ 0 ]; 
+
+if(Messageboardtext==1)
+{
+
+
+
+if (C[YI]>YH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Yh1, ""+Yh,"")), Yx2*0.055,Yy2*0.13);
+if (C[YI]>LWH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Lwh1, ""+Lwh,"")), Yx2*0.055,Yy2*0.165);
+if (C[YI]>cmH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Cmh1, ""+Cmh,"")), Yx2*0.055,Yy2*0.200);
+if (C[YI]>Lmh[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Lmh1, ""+Lmh,"")), Yx2*0.055,Yy2*0.235);
+if (C[YI]>Cqh[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Cqh1, ""+Cqh,"")), Yx2*0.055,Yy2*0.270);
+if (C[YI]>Lqh[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Lqh1, ""+Lqh,"")), Yx2*0.055,Yy2*0.305);
+if (C[YI]>Cyh[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Cyh1, ""+Cyh,"")), Yx2*0.055,Yy2*0.340);
+if (C[YI]>Lyh[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Lyh1, ""+Lyh,"")), Yx2*0.055,Yy2*0.375);
+if (C[YI]>Ath[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Ath1, ""+Ath,"")), Yx2*0.055,Yy2*0.410);
+
+GfxSelectFont( "Tahoma", FS*0.0078, 800 );
+if (C[YI]>Yc[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+
+GfxTextOut ( (" "+Yc), Yx2*0.15,YY2*0.040);
+GfxSelectFont( "Tahoma", FS*0.006, 800 );
+if (C[YI]>Yl[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+
+GfxTextOut ( ("" + WriteIf (Yl1, ""+Yl,"")), Yx2*0.165,Yy2*0.13);
+if (C[YI]>Lwl[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Lwl1, ""+Lwl,"")), Yx2*0.165,Yy2*0.165);
+if (C[YI]>Cml[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Cml1, ""+Cml,"")), Yx2*0.165,Yy2*0.200);
+if (C[YI]>Lml[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Lml1, ""+Lml,"")), Yx2*0.165,Yy2*0.235);
+if (C[YI]>Cql[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Cql1, ""+Cql,"")), Yx2*0.165,Yy2*0.270);
+if (C[YI]>Lql[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Lql1, ""+Lql,"")), Yx2*0.165,Yy2*0.305);
+if (C[YI]>Cyl[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Cyl1, ""+Cyl,"")), Yx2*0.165,Yy2*0.340);
+if (C[YI]>Lyl[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Lyl1, ""+Lyl,"")), Yx2*0.165,Yy2*0.375);
+if (C[YI]>Atl[YI]) 
+GfxSetTextColor(colorLime);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("" + WriteIf (Atl1, ""+Atl,"")), Yx2*0.165,Yy2*0.410);
+
+}
+else
+{
+if (C[YI]>YH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Yh), Yx2*0.055,Yy2*0.13);
+
+if (C[YI]>LWH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+
+GfxTextOut ( (""+Lwh), Yx2*0.055,Yy2*0.165);
+
+if (C[YI]>CMH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Cmh), Yx2*0.055,Yy2*0.200);
+
+if (C[YI]>LMH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Lmh), Yx2*0.055,Yy2*0.235);
+
+if (C[YI]>CQH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Cqh), Yx2*0.055,Yy2*0.270);
+
+if (C[YI]>LQH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Lqh), Yx2*0.055,Yy2*0.305);
+
+if (C[YI]>CYH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Cyh), Yx2*0.055,Yy2*0.340);
+
+if (C[YI]>LYH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Lyh), Yx2*0.055,Yy2*0.375);
+
+if (C[YI]>ATH[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Ath), Yx2*0.055,Yy2*0.410); 
+
+GfxSelectFont( "Tahoma", FS*0.0078, 800 );
+
+if (C[YI]>YC[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( ("  "+Yc), Yx2*0.15,YY2*0.040);
+GfxSelectFont( "Tahoma", FS*0.006, 800 );
+
+if (C[YI]>YL[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Yl), Yx2*0.165,Yy2*0.13);
+
+if (C[YI]>LWL[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Lwl), Yx2*0.165,Yy2*0.165);
+
+if (C[YI]>CML[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Cml), Yx2*0.165,Yy2*0.200);
+
+if (C[YI]>LML[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Lml), Yx2*0.165,Yy2*0.235);
+
+if (C[YI]>CQL[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Cql), Yx2*0.165,Yy2*0.270);
+
+if (C[YI]>LQL[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Lql), Yx2*0.165,Yy2*0.305);
+
+if (C[YI]>CYL[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Cyl), Yx2*0.165,Yy2*0.340);
+
+if (C[YI]>LYL[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Lyl), Yx2*0.165,Yy2*0.375);
+
+if (C[YI]>ATL[YI]) 
+GfxSetTextColor(colorBrightGreen);
+else
+GfxSetTextColor(colorRed);
+GfxTextOut ( (""+Atl), Yx2*0.165,Yy2*0.410);
+
+}
+
+
+if(Messageboard==0)
+{
+
+GfxRoundRect( Yx1*0.5, Yy2, Yx2*0.22, Yy2*0.50, Yx3*0.005, Yy3*0.005 ); // Analysis Windows
+
+
+GfxSetTextAlign(0|24);
+GfxSelectFont( "Tahoma",FS*0.0060, 800 );
+GfxSetTextColor ( colorWhite );
+GfxTextOut( ( "ANALYSIS WITH CANDLE AND PRICE"),Yx2*0.005,Yy2*0.53);
+GfxTextOut( ( "_____________________________"),Yx2*0.005,Yy2*0.54);
+GfxSelectFont( "Tahoma", FS*0.0055, 100 );
+GfxSetTextColor ( colorYellow );
+GfxTextOut( "1. Price Actions:",Yx2*0.005,Yy2*0.57);
+GfxTextOut( ( "______________________________________"),Yx2*0.005,Yy2*0.58);
+
+GfxTextOut( "2. Action Price:",Yx2*0.005,Yy2*0.61);
+GfxTextOut( ( "______________________________________"),Yx2*0.005,Yy2*0.62);
+
+
+
+GfxTextOut( "3. Reversal Candle:",Yx2*0.005,Yy2*0.65);
+GfxTextOut( ( "______________________________________"),Yx2*0.005,Yy2*0.66);
+
+GfxTextOut( "4. Breakout Candle:",Yx2*0.005,Yy2*0.69);
+GfxTextOut( ( "______________________________________"),Yx2*0.005,Yy2*0.70);
+GfxTextOut( "5. Volume Singal:", Yx2*0.005,Yy2*0.73);
+GfxTextOut( ( "______________________________________"),Yx2*0.005,Yy2*0.74);
+GfxTextOut( "6. Close Type:",Yx2*0.005,Yy2*0.77);
+GfxTextOut( ( "______________________________________"),Yx2*0.005,Yy2*0.78);
+
+
+GfxTextOut( ""+Yaction,Yx2*0.11,Yy2*0.57);
+GfxTextOut( ""+Yactionvalue,Yx2*0.11,Yy2*0.61);
+GfxTextOut( ""+Tcandle,Yx2*0.11,Yy2*0.65);
+GfxTextOut( ""+Breakoutcandle,Yx2*0.11,Yy2*0.69);
+GfxTextOut( ""+Yvolume,Yx2*0.11,Yy2*0.73);
+GfxTextOut( ""+Ctype,Yx2*0.11,Yy2*0.77);
+
+
+}
+
+
+
+if(Heading==0)
+{
+
+GfxRoundRect( Yx2*0.25, Yy1*0.5, Yx2*0.85, Yy2*0.1, Yx3*0.005, Yy3*0.005 ); //header Windows
+
+GfxSetTextAlign(6|0);
+GfxSelectFont( "Tahoma",FS*0.0078, 800 );
+GfxSetTextColor ( colorOrange);
+GfxTextOut( Name(), Yx2*0.32, YY2*0.001);
+
+GfxSetTextColor ( colorLime );
+GfxTextOut( Interval(2), Yx2*0.43, YY2*0.001);
+
+GfxSelectFont( "Tahoma",FS*0.0085, 800 );
+GfxSetTextColor ( colorWhite );
+GfxTextOut( "Yogya Daily Trading System", Yx2*0.59, YY2*0.001);
+
+GfxSelectFont( "Tahoma",FS*0.0078, 800 );
+GfxSetTextAlign(0|0);
+GfxSetTextColor ( colorLightOrange );
+GfxTextOut( IndustryID(Mode=1), Yx2*0.72, YY2*0.001);
+
+GfxSetTextColor ( colorYellow );
+GfxTextOut( ( "______________________________________________________________"),Yx2*0.26,YY2*0.011);
+
+GfxSetTextAlign(0|0);
+GfxSelectFont( "Tahoma", FS*0.006, 800 );
+GfxSetTextColor ( colorLime );
+GfxTextOut( Date(), Yx2*0.255, YY2*0.06);
+GfxSetTextColor ( colorYellow );
+Ydo=TimeFrameGetPrice("O",inDaily,0);
+Ydh=TimeFrameGetPrice("H",inDaily,0);
+Ydl=TimeFrameGetPrice("L",inDaily,0);
+Ydc=TimeFrameGetPrice("C",inDaily,0);
+Ydv=TimeFrameGetPrice("V",inDaily,0);
+
+GfxSetTextColor (colorCustom15);
+GfxTextOut( "Open:"+WriteVal(Ydo,1.2), Yx2*0.35, YY2*0.06);
+GfxSetTextColor (colorBrightGreen);
+GfxTextOut( "High:"+WriteVal(Ydh,1.2), Yx2*0.45, YY2*0.06);
+GfxSetTextColor (colorRed);
+GfxTextOut( "Low:"+WriteVal(Ydl,1.2), Yx2*0.55, YY2*0.06);
+GfxSetTextColor (colorCustom11);
+GfxTextOut( "Close:"+WriteVal(Ydc,1.2), Yx2*0.65, YY2*0.06);
+GfxSetTextColor (colorWhite);
+GfxTextOut( "Volume="+WriteVal(Ydv,1.0), Yx2*0.75, YY2*0.06);
+
+}
+
+Yyc=TimeFrameGetPrice("C",inDaily,-1);
+Ydd=Prec(C-Yyc,2);
+Yxx=Prec((Ydd/Yyc)*100,2);
+
+Yto=TimeFrameGetPrice("O",inDaily,0);
+Ydd1=Prec(C-Yto,2);
+Yxx1=Prec((Ydd1/Yto)*100,2);
+
+
+
+//LTP PRICE AND GAIN LOSS
+Bi = BarIndex();
+Ii = SelectedValue( Bi ) - Bi[ 0 ]; 
+if (C[Ii]>Yyc[Ii]) 
+GfxSetTextColor(colorGreen);
+else
+GfxSetTextColor(colorRed); 
+
+GfxSetTextAlign( 2|0 ); 
+GfxSelectFont( "Tahoma",FS*(0.01+Yfont5), 800 );
+
+if(Datetime1==0)
+{
+GfxTextOut( "LTP: "+Close, Yx2*Yhor, Yy1*(16+Yver) );
+GfxSelectFont( "Tahoma",FS*(0.006+Yfont5), 800 );
+GfxTextOut(""+Ydd+"  ("+Yxx+"%)", Yx2*Yhor, Yy1*(24+Yver));
+
+
+
+
+if(Datetime2==0)
+{
+
+//TODAY CHANGE
+
+GfxTextOut(""+Ydd1+"  ("+Yxx1+"%)", Yx2*Yhor, Yy1*(29+Yver));
+
+}}
+
+
+
+
+if(Day1==0)
+{
+Grid_Week = IIf(DayOfWeek() < Ref(DayOfWeek(), -1), 1, 0);
+Plot(Grid_Week,"",colorDarkGrey ,styleHistogram|styleDots|styleNoLabel|styleOwnScale);
+}
+
+
+if(Fullsymbol==0)
+{
+GfxSetTextAlign( 6 |0);
+GfxSelectFont( "Tahoma", FS*0.02, 100 );
+GfxSetTextColor( colorDarkGrey);;
+GfxTextOut( FullName(), Yx2*0.5,Yy2*0.340);
+GfxSelectFont( "Tahoma", FS*0.015, 100 );
+GfxTextOut( IndustryID(Mode=1), Yx2*0.35,Yy2*0.450);
+GfxTextOut( SectorID(Mode=1), Yx2*0.75,Yy2*0.450);
+}
+
+
+SetChartOptions(0,chartShowArrows|chartShowDates);
+SetChartBkColor(ParamColor("Background Color",colorDarkOliveGreen)); // Color Of Outer Border
+SetBarFillColor( IIf( C > O, ParamColor("Up Candle 1", colorBrightGreen), ParamColor("Down Candle 1",colorRed ) ));
+Plot( C, "Price", IIf( C > O, ParamColor("Up Candle", colorBrightGreen), ParamColor("Down Candle",colorRed )), styleCandle );
+GraphXSpace = Status("Pxheight")/Yspace;
+
+Filter = 1;
+SetOption("Nodefaultcolumns", True );
+AddTextColumn( Name(), "TICKER", 1.2,colorDefault, colorDefault, 60); 
+AddTextColumn( FullName(), "Full name",1.2,colorDefault, colorDefault, 90);
+AddColumn( DateTime(), "Date", formatDateTime, colorDefault, colorDefault, 90);
+
+AddColumn(Close, "Close", 1.2);
+AddTextColumn(Ctype, "Close Type   ", 1.0, Ctypec, colorDefault,150);
+AddTextColumn(Tcandle, "Candle At Resistance   ", 1.0, Tcandlec, colorDefault,150);
+AddTextColumn(Breakoutcandle, "Candle At Breakout   ", 1.0, Breakoutcandlec, colorDefault,150);
+AddTextColumn(Yvolume, "Volume Filter", 1.0, Yvolumec, colorDefault,170);
+AddTextColumn(Yaction, "Price Actions", 1.0, Yactionc, colorDefault,150);
+AddTextColumn(Yactionvalue, "Action Price", 1.2);
+
+_SECTION_END();

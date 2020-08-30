@@ -1,0 +1,45 @@
+SetChartBkColor(colorblack);
+
+_SECTION_BEGIN("Frekwensi Analyzer");
+garis = IIf(V==0 AND (Aux1 == Null OR Aux1==0),0,100* V/(Aux1^3));
+Plot(garis,"FQ", IIf(garis==0, colorRed,colorGold),styleLine|styleNoLabel|styleOwnScale,0);
+//Plot(MA(garis,20),"MA(FQ,20)", colorAqua,styleDashed|styleNoLabel|styleOwnScale);
+//PlotGrid(0, colorWhite,1);
+Filter = garis > MA(garis,5);
+_SECTION_END();
+
+_SECTION_BEGIN("FF Terhadap Volume");
+MP = (H + L + C)/3;
+ForVol = abs(Aux2) / MP;
+
+ColFor = IIf(Aux2 <0,colorRed,colorBrightGreen);
+WColFor = WriteIf(Aux2 <0,"EncodeColor(colorRed)","EncodeColor(colorBrightGreen)");
+SetBarFillColor(ColFor);
+PlotOHLC(0,forVol,0,ForVol,"VA",colorWhite,styleCandle);
+
+FPV = (Forvol / Volume)*100;
+_SECTION_END();
+
+_SECTION_BEGIN("Volume");
+//Plot( Volume, _DEFAULT_NAME(), ParamColor("Color", colorBlueGrey ), ParamStyle( "Style", styleHistogram | styleThick, maskHistogram  ) );
+AvgVolumePeriod = Param("Period",21,2,200,1);
+MAvol = WMA(Volume,AvgVolumePeriod);
+LVMAvol = LastValue(MaVol);
+VRatio = Volume / LVMAvol *100;
+Plot(LVMAvol,"Avg Vol",colorYellow,styleLine | styleDashed);
+
+SetBarFillColor(ParamColor("Volume Color",colorBlueGrey));
+PlotOHLC(0,Volume,0,Volume,"Volume",colorWhite,styleCandle);
+_SECTION_END();
+
+
+
+
+
+
+Title = 
+EncodeColor(colorGold)+"Freq = " + WriteVal(garis,1.2) + "x \n" +
+EncodeColor(colorBlueGrey)+"Volume = " + WriteVal(Volume,1.0) + " " +
+EncodeColor(colorYellow)+"Avg.V("+AvgVolumePeriod+") ="+ WriteVal(LVMAvol,1.2) + " (" +WriteVal(VRatio,1.2)+ "%)\n" +
+WriteIf(Aux2<0,EncodeColor(colorRed),EncodeColor(colorBrightGreen))+"Est. Foreign Vol = "+WriteVal(Forvol,1.0) + "  "+
+WriteIf(Aux2<0,EncodeColor(colorRed),EncodeColor(colorBrightGreen))+"For/vol Ratio = "+WriteVal(FPV,1.2)+"%";

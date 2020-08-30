@@ -1,0 +1,52 @@
+//------------------------------------------------------
+//
+//  Formula Name:    Multi Timeframe Exploration
+//  Author/Uploader: Trading Tuitions
+//  E-mail:          support@tradingtuitions.com
+//  Website:         www.tradingtuitions.com
+//------------------------------------------------------
+
+_SECTION_BEGIN("Multi Timeframe Exploration");
+
+SetBarsRequired( sbrAll );
+SetChartOptions(0,chartShowArrows|chartShowDates);
+//_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C ));
+
+Plot( Close, "Price",colorWhite, styleCandle );
+FastEMA = Param("FastEMA",18,3,21,3);
+SlowEMA = Param("SlowEMA",35,20,50,5);
+ADXParam=Param("ADXParam",14,5,5,30);
+
+/* switch to weekly time frame */
+TimeFrameSet( inWeekly );
+wADX = ADX(ADXParam);
+TimeFrameRestore();
+
+/* expand calculated MACD to daily so we can use it with daily signals */
+wADX = TimeFrameExpand( wADX, inWeekly );
+
+
+FastEMADaily = EMA(C,FastEMA);
+SlowEMADaily = EMA(C,SlowEMA);
+BuyDaily = Cross(FastEMADaily,SlowEMADaily);
+ShortDaily = Cross(SlowEMADaily,FastEMADaily);
+
+Buy = BuyDaily AND wADX>30;
+
+Short = ShortDaily AND wADX>30;
+
+Sell=Short;
+Cover=Buy; 
+
+Trade_Signal = WriteIf( Buy, "Buy", "Short" );
+
+Filter = Buy OR Short;
+
+AddColumn(C,"Close",1.2,IIf(C>Ref(C,-1),colorGreen,colorRed));
+AddColumn(wADX,"Weekly ADX");
+AddColumn(FastEMADaily,"Fast EMA");
+AddColumn(SlowEMADaily,"Slow EMA");
+AddTextColumn(Trade_Signal,"Trade_Signal",1,fgcolor = colorDefault, bkcolor=IIf(Buy,colorGreen,colorRed));
+
+
+_SECTION_END();

@@ -1,0 +1,5 @@
+sig1 = Optimize("DEMA Short Periods",9,2,30,1);
+sig2 = Optimize("DEMA Long Periods",14,2,100,1);
+
+Buy=TAS_Buy_2DEMA(sig1,sig2);
+Sell=TAS_Sell_2DEMA(sig1,sig2);

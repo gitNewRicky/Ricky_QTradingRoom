@@ -1,0 +1,34 @@
+// Downloaded From www.WiseStockTrader.com
+_SECTION_BEGIN("MACD TMS");
+//macd invebted by Gerald Appel
+//code by tsunamizawa@yahoo.com
+//combining 3 time frames , 3 histogram in one chart 
+SetChartOptions(chartShowArrows|chartShowDates);
+//SetChartBkColor(ParamColor("Outer Panel",colorBlack));
+SetChartBkGradientFill( ParamColor("BgTop", colorBlack),ParamColor("BgBottom", colorBlack),ParamColor("titleblock",colorBlack)); 
+
+m0 = MACD(6,19) ;
+s0 = Signal(6,19,3) ;
+m1   = MACD(12,26 );
+s1   = Signal(12,26,9);
+m2 = MACD(19,39) ;
+s2 = Signal(19,39,16) ;
+Plot(0,"",colorWhite);
+Plot(m0, "macd1",colorLime,styleLine|styleThick|styleNoLabel ); 
+Plot(s0, "sign1",colorLime,styleLine|styleDashed|styleNoLabel );// 
+Plot( m0-s0,"", colorGreen, styleHistogram | styleThick|styleNoLabel, maskHistogram  ) ;
+Plot( m1 , "macd2",colorGold,styleLine|styleThick|styleNoLabel );
+Plot( s1 ,"sign2", colorGold,styleLine|styleDashed|styleNoLabel );
+Plot( m1-s1,"", colorOrange, styleHistogram | styleThick|styleNoLabel, maskHistogram  ) ;
+Plot(m2, "macd3",colorRed,styleLine|styleThick|styleNoLabel ); 
+Plot(s2, "sign3",colorRed,styleLine|styleDashed|styleNoLabel );// 
+Plot( m2-s2,"", colorBrown, styleHistogram | styleThick|styleNoLabel, maskHistogram  ) ;
+
+Title =
+EncodeColor(colorLime)+"macd1 = "+WriteVal(m0,1)+
+EncodeColor(colorLime)+"  signal1 = "+WriteVal(s0,1)+
+EncodeColor(colorGold)+"\nmacd2 = "+WriteVal(m1,1)+
+EncodeColor(colorGold)+"  signal2 = "+WriteVal(s1,1)+
+EncodeColor(colorRed)+"\nmacd3 = "+WriteVal(m2,1)+
+EncodeColor(colorRed)+"  signal3 = "+WriteVal(s2,1);
+_SECTION_END();

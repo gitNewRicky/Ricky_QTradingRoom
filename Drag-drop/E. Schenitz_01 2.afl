@@ -1,0 +1,31 @@
+_SECTION_BEGIN("Stenitz System");
+ 
+SetChartOptions(0,chartShowArrows|chartShowDates);
+Title = ("Stenitz System " + Name()+"  " + Date() +"  "+Interval(2) +"  "+ EncodeColor(colorLime)+",Open "+Open +" ,High "+H+" ,Low "+L+" ,Close "+C+" "+"{{VALUES}}");
+ 
+per1=Param("First Period",6,2,30,1);
+per2=Param("Second Period",2,2,30,1);
+Om=MA(O,per1);
+hm=MA(H,per1);
+lm=MA(L,per1);
+Cm=MA(C,per1);
+ 
+ 
+ 
+//==============================================================================================================
+HACLOSE=(Om+Hm+Lm+Cm)/4;
+HaOpen = AMA( Ref( HaClose,  -1 ),  0.5 );
+HaHigh = Max( Hm,  Max( HaClose,  HaOpen ) );
+HaLow = Min( Lm,  Min( HaClose,  HaOpen ) );
+//PlotOHLC( HaOpen, HaHigh, HaLow, HaClose, "" + Name(), colorBlack, styleCandle | styleNoLabel );
+ 
+Of=MA(Haopen,per2);
+Cf=MA(Haclose,per2);
+Lf=IIf(haOpen<haClose,MA(Halow,per2),MA(Hahigh,per2));
+Hf=IIf(haOpen<haClose,MA(Hahigh,per2),MA(Halow,per2));
+ 
+PlotOHLC( Of, Hf, Lf, Cf, "" + Name(), colorBlack, styleCandle | styleNoLabel );
+ 
+ 
+ 
+Plot(C,"Close",colorLime,styleLine);

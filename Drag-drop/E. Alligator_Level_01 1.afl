@@ -1,0 +1,169 @@
+// Downloaded From https://www.WiseStockTrader.com
+/*
+   Bill William's Alligator System II
+
+   Reference Website:
+   ==================
+  
+	http://www.alpari-idc.com/en/market-analysis-guide/chaos-theory/alligator-and-gator.html
+   Modified from original formula by Steve Wiser - slwiserr@erols.com
+   Modified by TohMz  on June 9th, 2008
+*/
+SetChartOptions( 0, chartShowArrows|chartShowDates );
+
+_SECTION_BEGIN("Price Chart");
+_N(Title = StrFormat("{{NAME}}- {{INTERVAL}} {{DATE}} O= %g, H= %g, L= %g, C= %g (%.1f%%) V= " +WriteVal( V, 1.0 ) +"\n{{VALUES}}", O, H, L, C, SelectedValue(ROC( C, 1 )) ));
+PriceStyle = GetPriceStyle();
+PriceStyleOpt = ParamStyle("Price Style")|PriceStyle;
+
+if (PriceStyle==styleCandle)
+   Plot( C, "", colorBlack,  PriceStyleOpt); 
+else
+   Plot( C, "", IIf( Close >= Ref(C, -1), colorBlue, colorRed ), PriceStyleOpt);
+_SECTION_END();
+
+_SECTION_BEGIN("BW Alligator");
+/*** The trend indicators ***/
+
+P= ParamList("Price", "Close|(H+L)/2|(H+C+L)/3",1);
+
+if (P=="Close")
+   A = C;
+   
+else
+if (P=="(H+C+L)/3")
+   A = (H+C+L)/3;
+else
+  A = (H+L)/2;
+
+AlligatorJaw   = Ref(Wilders(A,13),-8);
+AlligatorTeeth = Ref(Wilders(A,8), -5);
+AlligatorLips  = Ref(Wilders(A,5), -3);
+
+Plot(AlligatorJaw,  "Jaw", ParamColor("Jaw's Color",colorBlue),
+ParamStyle("Jaw's Style", styleThick));
+Plot(AlligatorTeeth,"Teeth", ParamColor("Teeth's Color",colorRed),
+ParamStyle("Teeth's Style", styleThick));
+Plot(AlligatorLips, "Lips", ParamColor("Lips's Color",colorGreen),
+ParamStyle("Lips's Style", styleThick));
+
+_SECTION_END();
+
+// xxx
+
+_SECTION_BEGIN( "pivot" );
+price = ParamToggle( "Plot Price", "Off|On", 1 );
+num = Param( "trend", 4, 1, 10, 1 );
+dist = 0.5 * ATR( 10 );
+rightfig = Param( "rightfig ", 7, 1, 10, 1 );
+xspace = Param( "GraphXSpace ", 10, 1, 20, 1 );
+ 
+mHHV = HHV( H, num );
+mLLV = LLV( L, num );
+ 
+FirstVisibleBar = Status( "FirstVisibleBar" );
+Lastvisiblebar = Status( "LastVisibleBar" );
+ 
+for ( b = Firstvisiblebar + num; b<= Lastvisiblebar AND b< BarCount -
+num; b++ )
+{
+i = num;
+ml = 0;
+mu = 0;
+ 
+while ( i> 0 )
+{
+ 
+if ( L[b]< L[b+i] )
+{
+ml++;
+}
+ 
+if ( H[b]> H[b+i] )
+{
+mu++;
+}
+ 
+i--;
+}
+ 
+if ( ml == num AND L[B] == mLLV[B] )
+{
+PlotText( "\n *\n", b, L[b], colorGreen );
+ 
+if ( price == 1 )
+{
+p = StrRight( NumToStr( L[b], 4.1 ), rightfig );
+PlotText( "\n\n" + p, b - 2 , L[b] , colorGreen );
+}
+}
+ 
+if ( mu == num AND H[B] == mHHV[B] )
+{
+PlotText( " *\n", b, H[b], colorRed );
+ 
+if ( price == 1 )
+{
+p = StrRight( NumToStr( H[b], 4.1 ), rightfig );
+PlotText( p , b - 2 , H[b] + dist[b] + 1, colorRed );
+}
+}
+}
+_SECTION_END();
+
+// xxx
+_SECTION_BEGIN("BW Fractal");
+
+UpFractal= ValueWhen(
+  (Ref(H,-2) > Ref(H, -4)) AND
+  (Ref(H,-2) > Ref(H, -3)) AND
+  (Ref(H,-2) > Ref(H, -1)) AND
+  (Ref(H,-2) > H), Ref(H,-2));
+
+DownFractal= ValueWhen(
+  (Ref(L,-2) <= Ref(L, -4)) AND
+  (Ref(L,-2) <=  Ref(L, -3)) AND
+  (Ref(L,-2) <=  Ref(L, -1)) AND
+  (Ref(L,-2) <=  L), Ref(L,-2));
+
+
+
+//== Added Crash  crashandburn59 [at] hotmail.com solution
+Plot(Ref(UpFractal,2), "Up Fractal", ParamColor("Up Fractal Color",colorRed),ParamStyle("Up Fractal Style", styleDashed));
+Plot(Ref(DownFractal,2), "Down Fractal",ParamColor("Down Fractal Color",colorBlue), ParamStyle("Down Fractal Style", styleDashed));
+
+Plot(Max(HHV(H,3),Ref(UpFractal,2)), "Up Fractal", ParamColor("Up Fractal Color",colorRed), ParamStyle("Up Fractal Style", styleDashed));
+Plot(Max(HHV(H,3),Ref(UpFractal,2)), "Down Fractal",ParamColor("Down Fractal Color",colorBlue), ParamStyle("Down Fractal Style", styleDashed));
+
+
+
+_SECTION_END();
+
+
+
+_SECTION_BEGIN("Exploration");
+
+Inc = 0.1;  
+
+//== Set the Price Range for stock to scan
+PriceFrom = Param("Price From:", 5,   0.1, 200, Inc); 
+PriceTo   = Param("Price To:",   100, 0.1, 200, Inc); 
+MaxBreakOut = Param("Max Breakout (%)", 5, 1, 30);  
+MaxBreakOut = MaxBreakOut/100;
+
+Buy  = C>UpFractal AND C<=(1+MaxBreakOut)*UpFractal AND
+AlligatorTeeth>AlligatorJaw;
+Sell = C<DownFractal AND C>=(1-MaxBreakOut)*DownFractal AND
+AlligatorTeeth<AlligatorJaw;
+
+Filter = (Buy OR Sell) AND (C>=PriceFrom AND C<=PriceTo) AND V>0;
+ 
+AddTextColumn(FullName(), "Security", 1.0, colorDefault, colorDefault, 200); 
+AddTextColumn( WriteIf(Buy,"Buy", WriteIf(Sell, "Sell", "")), "Trade", 1.0);
+AddColumn( UpFractal, "Up Fratal");
+AddColumn( DownFractal, "Down Fratal");
+//AddColumn( MA(V,3)/EMA(V,17), "MAV(3/17)");
+AddColumn( C, "Today's Close");
+
+
+_SECTION_END(); 

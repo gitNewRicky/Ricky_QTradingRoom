@@ -1,0 +1,94 @@
+/*
+//------------------------------------------------------------------------------
+//
+//  Formula Name: QIsn_NBSStock
+//  Author		: Isnandar 
+//  E-mail		: isnandar2009@gmail.com
+//  Url			: QISignal.com
+//  Date		: Sept 2015
+//  
+//------------------------------------------------------------------------------
+*/
+
+SetBarsRequired(-2);
+QIsnInitialize();
+/*
+	Variable :
+				NBSSVal = NetBuySell Stock by Value
+				NBSSVol = NetBuySell Stock by Volume
+*/
+
+ChartSelect = ParamList("Selected Chart", "CumHistogram|CumLines|AccDistLines|RelativeVolumeRatio",0);
+r1 = Param( "Fast", 3, 3, 200, 1 );
+r2 = Param( "Slow", 10, 3, 200, 1 );
+ratV = Param( "RatioVolume", 1, 1, 7, 0.5 );
+
+
+NetNBSSVal= NBSSVal/1000000000;
+cumNBSSVal = Cum(NetNBSSVal);
+NBSRatio = (abs(NBSSVal)/TradeValue)*100;
+//NBSSColor=IIf(NBSSVal>0,colorGreen,colorRed);
+switch( ChartSelect )
+	{
+		case "RelativeVolumeRatio":
+			
+			dn = DateNum();
+			newday = dn != Ref( dn, -1);
+			avgvol3 = SparseExpand(newday, Ref(MA(SparseCompress(newday, V),3),-1));
+			avgvol5 = SparseExpand(newday, Ref(MA(SparseCompress(newday, V),5),-1));
+			first_bar_vol = IIf(newday, V, Null);
+			//
+			Filter = first_bar_vol > ratV*avgvol3;
+			Filter5= first_bar_vol > 3*avgvol5;		
+			//TodayTotalValue = Aux2;
+			//TodayNBSSVal = Aux1;
+			//NBSSStatus = NumToStr(TodayNBSRatio,1.2) + WriteIf(TodayNBSSVal>0,"%NBuyUp","%NSellDown");
+			//Plot(cumNBSSVal,"",colorBlack,styleLine | styleNoLabel | styleOwnScale  );
+			Color = IIf(NBSSVal==O,colorGrey50,IIf(NBSSVal>O,27,colorRed));
+			//SetBarFillColor(Color);
+			//PlotOHLC(0,NBSRatio,NBSRatio,NBSRatio, "",colorLightGrey,64);	
+			hhvNBSRatio = HighestVisibleValue(NBSRatio);
+			Plot( NBSRatio, "t.me/@MyChartBot", Color, styleNoLabel|styleHistogram, 0, 1, 0, 0, -60 );	
+			ColorShape = IIf(C>Ref(C,-1),colorGreen,IIf(C==Ref(C,-1),colorBlue,colorRed));
+			PlotShapes( Filter * shapeCircle, ColorShape, layer = 0, y = hhvNBSRatio +5, 12 );	
+			//PlotShapes( Filter5* shapeHollowCircle, ColorShape, layer = 0, y = hhvNBSRatio +17, 12 );	
+			break;
+		case "CumHistogram": 
+			BuyVol = (NBSSVol + V)/2;
+			SellVol = abs(V - BuyVol);
+			BuyVal = (NBSSVal + TradeValue)/2;
+			SellVal = abs(TradeValue - BuyVal);		
+			colorNBSSVal = SelectedValue(IIf(NBSSVal > 0,27,32)); 
+			Color= IIf(NBSSVal==O,colorGrey50,IIf(NBSSVal>O,27,colorRed));
+			NetBuySellUpDown = abs(NetNBSSVal);
+
+			Plot(cumNBSSVal,"",colorBlack,styleLine | styleNoLabel | styleOwnScale  );
+			SetBarFillColor(Color);
+			PlotOHLC(0,NetBuySellUpDown,NetBuySellUpDown,NetBuySellUpDown, "",colorLightGrey,64);
+
+			Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}}  Vol= " +WriteVal( V/1000000, 1.2 ) + "M, "+
+				"TVal= " + WriteVal( TradeValue/1000000000, 1.2 )+"B\n"+"{{VALUES}}" +
+				EncodeColor(27) + "BuyUp  " + EncodeColor(colorDefault)  + 
+				EncodeColor(colorDefault) + "Vol= "  + WriteVal( BuyVol/1000000, 1.2 )+"M,  "+
+				EncodeColor(colorDefault) + "TVal= "  + WriteVal( BuyVal/1000000000, 1.2 )+"B\n"+
+				EncodeColor(32) + "SellDown  "  + 
+				EncodeColor(colorDefault) + "Vol= " + WriteVal( SellVol/1000000, 1.2 )+"M,  "+
+				EncodeColor(colorDefault) + "TVal= " +  WriteVal( SellVal/1000000000, 1.2 )+"B\n"+
+				EncodeColor(colorDefault) + "NetBS" +  " ~ Vol= " + EncodeColor(colorNBSSVal) + WriteVal( NBSSVol/1000000, 1.2 )+"M,  "+
+				EncodeColor(colorDefault) + "TVal= " + EncodeColor(colorNBSSVal) + WriteVal( NBSSVal/1000000000, 1.2 )+"B");
+
+			break;
+		case "CumLines": 
+			Plot(EMA(cumNBSSVal,r1),StrFormat("CumNetBS"+"(%g)", r1),ParamColor("CumLines Fast color", colorGreen ),styleLine | styleNoLabel  );
+			Plot(EMA(cumNBSSVal,r2),StrFormat("CumNetBS"+"(%g)", r2),ParamColor("CumLines Slow color", colorRed ),styleLine | styleNoLabel  );
+			Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}}  {{VALUES}}" );
+			break;
+		case "AccDistLines": 
+			PriceFlow = ((C-L)-(H-C))/(H-L);
+			MoneyFlow = Nz(PriceFlow,0)*abs(NBSSVol);
+			ADL = Cum(MoneyFlow);
+			Plot(EMA(ADL,r1),StrFormat("AccDist"+"(%g)", r1),ParamColor("AccDist Fast color", colorGreen ),styleLine | styleNoLabel  );
+			Plot(EMA(ADL,r2),StrFormat("AccDist"+"(%g)", r2),ParamColor("AccDist Slow color", colorRed ),styleLine | styleNoLabel  );
+			break;
+	}
+

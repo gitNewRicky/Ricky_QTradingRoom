@@ -1,0 +1,4 @@
+a=TAS_WAP_IPO();
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style"); 
+Plot(a,"WAP from IPO",iColor,iStyle); 

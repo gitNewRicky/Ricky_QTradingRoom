@@ -1,0 +1,98 @@
+
+
+// Parameters:
+// Beta Period, MktValue, StartPeriod,r2
+// Columns:
+// r2,Period,Slope,Beta,Correlation,Avg.PricePerformance,Volume
+
+//iPrd=Param("Periode (Beta)",10,1,5000,1);
+iMktVal=Param("Mkt. Value (Milyar) >",2,0,1000,1);
+iStrtPrd=Param("Start Periode",30,1,5000,1);
+iMaxR2=Param("r-squared >= ",70,0,100,1);
+sSymbol="^JKSE"; //ParamStr("Symbol","^JKSE");
+
+PR2= TAS_r2_1stPeak_Prd(iStrtPrd,(iMaxR2/100));
+
+
+_SECTION_BEGIN("Tasrul Volatility S&R");
+// Created by: Isfandi 18/05/17
+
+SetBarFillColor( IIf(O>C,colorViolet, colorLime) );
+Plot(Close, "", colorBlack, styleThick + styleCandle);
+
+//pds = Param( "Periods", 5000, 1, 5000);
+
+AP = (H+L+C)/3;
+VLTP = (H-O)/O;
+VLTM = (L-O)/O;
+
+NV= (VLTP + VLTM)/VLTM;
+PV= (VLTP - VLTM)/VLTM;
+
+SumVolPlus = MA(VLTP, PR2);//
+SumVolMin = MA(VLTM, PR2 );//
+RefAP= AP;
+UpperBand= RefAP+(RefAP*SumVolPlus );
+LowerBand= RefAP+(RefAP*SumVolMin );
+Vratio = (SumVolPlus /(SumVolMin*-1)) ;
+
+UB= UpperBand;
+y2 = LastValue(UB);
+LB= LowerBand;
+y12 = LastValue(LB);
+
+Chg = ROC( C, 1 );
+SUL= UB-LB;
+SUB = (UB-C)/SUL*100;
+SLB = (C-LB)/SUL*100;
+
+_SECTION_END();
+
+
+
+//fc=Foreign(sSymbol,"C");
+if (True) { //(!IsNull(fc[0])) {
+	Filter= TAS_MktVal_Filter(iMktVal,5)>0 AND TAS_r2_1stPeak(iStrtPrd,(iMaxR2/100))>=(iMaxR2/100);
+	Clr = IIf(TAS_r2_1stPeak_Slope(iStrtPrd,(iMaxR2/100))<0,colorRed,IIf(TAS_r2_1stPeak_Slope(iStrtPrd,(iMaxR2/100))==0,colorDefault,colorGreen));
+	iPrd = TAS_r2_1stPeak_Symbol_Prd(sSymbol,iStrtPrd,(iMaxR2/100));
+	if (Version(5)<=5.3) {
+		AddColumn(TAS_r2_1stPeak(iStrtPrd,(iMaxR2/100)),"r-squared",1.4,Clr,colorDefault,-1);
+		AddColumn(TAS_r2_1stPeak_Prd(iStrtPrd,(iMaxR2/100)),"Period",1.0,Clr,colorDefault,-1);
+		AddColumn(TAS_r2_1stPeak_Slope(iStrtPrd,(iMaxR2/100)),"Slope",1.4,Clr,colorDefault,-1);
+		//AddColumn(abs(TAS_PBCD_Symbol_Beta(sSymbol,iPrd)),"Beta",1.4,Clr,colorDefault,-1);
+		//AddColumn(TAS_PBCD_Symbol_Correl(sSymbol,iPrd),"Correlation",1.4,Clr,colorDefault,-1);
+		//AddColumn(TAS_PBCD_APP(iPrd),"Avg.Price Performance",1.4,Clr,colorDefault,-1);
+		//AddColumn(Volume,"Volume",1.0,Clr,colorDefault,-1);
+	} else {
+		AddColumn(TAS_r2_1stPeak(iStrtPrd,(iMaxR2/100)),"r-squared",1.4,Clr,colorDefault,-1,Null);
+		AddColumn(TAS_r2_1stPeak_Prd(iStrtPrd,(iMaxR2/100)),"Period",1.0,Clr,colorDefault,-1,Null);
+		AddColumn(TAS_r2_1stPeak_Slope(iStrtPrd,(iMaxR2/100)),"Slope",1.4,Clr,colorDefault,-1,Null);
+		//AddColumn(abs(TAS_PBCD_Symbol_Beta(sSymbol,iPrd)),"Beta",1.4,Clr,colorDefault,-1,Null);
+		//AddColumn(TAS_PBCD_Symbol_Correl(sSymbol,iPrd),"Correlation",1.4,Clr,colorDefault,-1,Null);
+		//AddColumn(TAS_PBCD_APP(iPrd),"Avg.Price Performance (%)",1.4,Clr,colorDefault,-1,Null);
+       //AddColumn(C,"Close",1.0,Clr,colorDefault,-1,Null);
+		//AddColumn(Volume,"Volume",1.0,Clr,colorDefault,-1,Null);
+
+
+//AddColumn(C,"Last",1,IIf(C>Ref(C,-1),colorGreen,colorRed));
+//AddColumn(Chg,"Chg.",1.1,IIf(Chg > 0,colorGreen,colorRed));
+//AddColumn(V,"Vol.",1,IIf(V > Ref(V,-1),colorGreen,colorRed));
+
+AddColumn(LB,"Support",1.1,colorRed);
+AddColumn(y2 ,"Resistance",1.1,colorRed);
+AddColumn(SLB,"% to S",1.1,colorRed);
+AddColumn(SUB,"% to R",1.1,colorRed);
+AddColumn(Vratio ,"V-ratio",1.1,colorRed);
+AddColumn(C,"Close",1.0,Clr,colorDefault,-1,Null);
+AddColumn(Volume,"Volume",1.0,Clr,colorDefault,-1,Null);
+
+SetSortColumns(-5,4);
+
+	}
+} else {
+	if (Version(5)<=5.3) {
+		AddColumn(Volume,"MISSING SYMBOL ===> "+sSymbol,1.0,colorDefault,colorDefault,-1);
+	} else {
+		AddColumn(Volume,"MISSING SYMBOL ===> "+sSymbol,1.0,colorDefault,colorDefault,-1,Null);
+	}
+}

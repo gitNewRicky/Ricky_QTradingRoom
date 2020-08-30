@@ -1,0 +1,8 @@
+_SECTION_BEGIN("Volume Candle");
+
+Vcolor = IIf( V> Ref(V,-1), ParamColor("Up Color", colorGreen ), ParamColor("Down Color", colorRed ));
+
+SetBarFillColor(Vcolor);
+VNorm = Volume /100;
+PlotOHLC(0,VNorm,0,VNorm,"Volume",colorWhite,styleCandle);
+_SECTION_END();

@@ -1,0 +1,10 @@
+Filter=1;
+_SECTION_BEGIN("Foreign Flow");
+
+FF1D = Sum(Aux2,1);
+AddColumn(FF1D,"Foreign 1D",1.0,colorDefault,colorDefault);
+
+FF5D = Sum(Aux2,5);
+AddColumn(FF5D,"Foreign 5D",1.0,colorDefault,colorDefault);
+
+_SECTION_END();

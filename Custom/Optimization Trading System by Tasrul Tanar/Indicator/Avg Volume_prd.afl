@@ -1,0 +1,7 @@
+r1 = Param( "Periode", 100, 1, 1000, 1 );
+
+a=TAS_AverageVolume_prd(r1);
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style",styleThick); 
+
+Plot(a,"Avg.Volume_prd",iColor,iStyle); 

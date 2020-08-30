@@ -1,0 +1,138 @@
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();_SECTION_BEGIN("Price");
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+
+_SECTION_BEGIN("Foreign Flow");
+SumForeign = Cum(Aux2);
+Plot(SumForeign,"C.Foreign",colorDarkYellow,styleStaircase | styleDashed | styleOwnScale);
+_SECTION_END();
+
+_SECTION_BEGIN("RI_Swing_Line");
+no=Param( "Swing", 3, 1, 55 );
+res=HHV(C,no);
+res = IIf(res >= Ref(res,-1),Ref(res,-1),res);
+sup=LLV(C,no);
+sup = IIf(sup <= Ref(sup,-1), Ref(sup,-1),sup);
+tsl=IIf(ValueWhen(IIf(C>Ref(res,-1),1,IIf(C<Ref(sup,-1),-1,0))!=0, IIf(C>Ref(res,-1) ,1,IIf(C<Ref(sup,-1),-1,0)),1)==1,sup,res);
+tsl_col = IIf(Close >= tsl, colorBlue,IIf(Close <= tsl, ParamColor("Down",colorRed), ParamColor("Up",colorGreen)));
+Plot(tsl, _DEFAULT_NAME(), tsl_col, styleStaircase | styleThick);
+
+//Buy / Sell Shapes
+Buy	 = Cover = Cross(C,Ref(tsl,-1));
+Sell = Short = Cross(Ref(tsl,-1),C);
+Buy	 = ExRem(Buy,Sell);
+Sell = ExRem(Sell,Buy);
+
+PlotShapes(shapeUpArrow*Buy, colorGreen, 0, Tsl, Offset=-20);
+PlotShapes(shapeDownArrow*Sell, colorRed, 0, Tsl, Offset=-20);
+PlotShapes(IIf(Cover, shapeHollowCircle, shapeNone),colorBrightGreen, 0,tsl,0);  
+PlotShapes(IIf(Short, shapeHollowCircle, shapeNone),colorRed, 0,tsl,0); 
+
+// Buy / Sell Texts
+Long=Flip(Buy,Sell); 
+Short=Flip(Sell,Buy); 
+
+BuyPrice=ValueWhen(Buy,C);
+SellPrice=ValueWhen(Sell,C);
+
+Edc=(
+WriteIf (Buy AND Ref(short,-1), " Buy @"+IIf(L > Ref(tsl,-1),Open,Ref(tsl,-1))+" / SL "+Tsl,"")+ 
+WriteIf (Sell AND Ref(Long,-1), " Sell @"+IIf(H < Ref(tsl,-1),Open,Ref(tsl,-1))+"  ","")+
+WriteIf(Sell , "/ Profit "+WriteVal((C-BuyPrice)/BuyPrice*100,1.2)+"%",""));
+
+C15=Param("up-down",12,1,20,1 );
+pxwidth = Status("pxwidth");
+pxheight = Status("pxheight");
+GfxTextOut(""+edc+"", Status("pxwidth")/1.3, Status("pxheight")/C15*0.3 );
+
+dist = 1.5*ATR(15);
+dist1 = 1.5*ATR(15);
+for( i = 0; i < BarCount; i++ ) 
+{ 
+ if( Buy[i] ) 
+ {
+  PlotText("" + C[ i ] + "/" + tsl[i], i, tsl[i], colorGreen, colorDefault,-40 );
+ }
+ if( Sell[i] )
+ {
+  PlotText("" + C[ i ], i, tsl[i], colorRed, colorDefault,30 ); 
+ }
+}
+_SECTION_END();
+
+// Downloaded From https://www.WiseStockTrader.com
+_SECTION_BEGIN("Fibo Pivots");
+
+SetChartOptions(0,chartShowDates);
+GraphXSpace=5;
+Plot(C,"",colorBlack,styleCandle);
+
+//by K.Vidyasagar, vkunisetty@yahoo.com
+PH = DayH = TimeFrameGetPrice("H", inDaily, -1);	DayHI = LastValue (DayH,1);   // yesterdays high
+PL = DayL = TimeFrameGetPrice("L", inDaily, -1);	DayLI = LastValue (DayL,1);	// yesterdays low
+PC = DayC = TimeFrameGetPrice("C", inDaily, -1);	// yesterdays close
+PR = PH - PL;
+//DayO = TimeFrameGetPrice("O", inDaily);	// current day open
+
+numbars = LastValue(Cum(Status("barvisible")));
+hts = -33.5;
+R=PH-PL;//range
+P=(PH+PL+PC)/3; pI = LastValue (p,1);// Standard Pivot
+fr1 = p + (R * 0.38); fr1I = LastValue (fr1,1);
+fr2 = p + (R * 0.62); fr2I = LastValue (fr2,1);
+fr3 = p + (R * 0.99); fr3I = LastValue (fr3,1);
+fs1 = p - (R * 0.38); fs1I = LastValue (fs1,1);
+fs2 = p - (R * 0.62); fs2I = LastValue (fs2,1);
+fs3 = p - (R * 0.99); fs3I = LastValue (fs3,1);
+
+Plot(p,"Pivot",colorBlue,styleDots|styleNoLine|styleNoRescale | styleNoLabel);
+Plot(fr1,"R1",colorRed,styleDots|styleNoLine|styleNoRescale | styleNoLabel);
+Plot(fr2,"R2",colorPink,styleDots|styleNoLine|styleNoRescale| styleNoLabel);
+Plot(fr3,"R3",colorRose,styleDots|styleNoLine|styleNoRescale | styleNoLabel);
+Plot(fs1,"S1",colorGreen,styleDots|styleNoLine|styleNoRescale| styleNoLabel);
+Plot(fs2,"S2",colorLime,styleDots|styleNoLine|styleNoRescale | styleNoLabel);
+Plot(fs3,"S3",colorPaleGreen,styleDots|styleNoLine|styleNoRescale | styleNoLabel);
+PlotText(" Pivot ", LastValue(BarIndex())-(numbars/Hts), pI, colorBlue);
+PlotText(" Fib R1 " , LastValue(BarIndex())-(numbars/Hts), fr1I, colorRed);
+PlotText(" Fib R2 " , LastValue(BarIndex())-(numbars/Hts), fr2I, colorPink);
+PlotText(" Fib R3 " , LastValue(BarIndex())-(numbars/Hts), fr3I, colorRose);
+PlotText(" Fib S1 " , LastValue(BarIndex())-(numbars/Hts), fs1I, colorGreen);
+PlotText(" Fib S2 " , LastValue(BarIndex())-(numbars/Hts), fs2I, colorLime);
+PlotText(" Fib S3 " , LastValue(BarIndex())-(numbars/Hts), fs3I, colorPaleGreen);
+_SECTION_END();
+
+//Pixellent
+H1 = Ref( H,-1 );
+Vrt=MA(V,21);
+St = StDev(Vrt,21);
+Vp3 = Vrt + 3*st; 
+Vp2 = Vrt + 2*st;
+Vp1 = Vrt + 1*st;
+
+Warna3 = 
+IIf(C>O AND C>H1 AND V>Vrt,colorGreen,IIf(C>=TSL,colorPaleGreen, IIf(C<O AND C<H1,colorRed,
+IIf(C<TSL,colorRed,
+IIf(C<O OR C<TSL,colorGreen,
+colorRed)))));
+SetBarFillColor(Warna3);
+PlotOHLC(0,2.5,0,2.5, "",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+//Pixel trend harga jangka menengah = batang ke-2
+PV = (Volume / WMA(Volume,21)) * 100;
+VH = 6.5 + (PV/50);
+SetBarFillColor(Warna3);
+PlotOHLC(6.5,VH,6.5,VH,"Volume",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+
+//Pixel trend harga jangka panjang (2-3 bulan) = batang ke-3
+Warna2 = IIf(Aux2 > WMA(Aux2,3),colorGreen,colorRed);
+SetBarFillColor(Warna2);
+PlotOHLC(3,5.5,3,5.5, "",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+
+

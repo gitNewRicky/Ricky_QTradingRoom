@@ -1,0 +1,3 @@
+_SECTION_BEGIN("Volume");
+Plot( Volume, _DEFAULT_NAME(), ParamColor("Color", colorBlack ), ParamStyle( "Style", styleHistogram | styleThick, maskHistogram  ) );
+_SECTION_END();

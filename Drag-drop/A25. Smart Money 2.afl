@@ -1,0 +1,19 @@
+_SECTION_BEGIN(" Smart Money Indicator");
+SetBarsRequired(sbrAll,sbrAll);
+BV = IIf( (H==L), 0, V*(C-L)/(H-L) );
+SV = IIf( (H==L), 0, V*(H-C)/(H-L) );
+PlotOHLC(SV,SV,0,0,"SellVolume",colorRed,styleCandle|styleNoTitle|styleNoLabel );
+PlotOHLC(SV,BV+SV,SV,BV+SV,"BuyVolume",colorBrightGreen ,styleCandle|styleNoTitle|styleNoLabel );
+Va = MA(V,30);
+PlotOHLC( Va, Va, 0, 0, "", ColorBlend( colorWhite , GetChartBkColor(), 0.4 ), styleNoLabel | styleCloud | styleNoRescale, Null, Null, Null, -1 );
+Plot(Va,"Average Volume",colorRose,styleNoLine|styleNoLabel );
+VI = V/Va;
+Title = "SellVolume : "+WriteVal(SV,5.0)+EncodeColor(colorTeal)+
+ "\n"+"BuyVolume : "+WriteVal(BV,5.0)+" "+
+"\n"+"VolumeIndex : "+WriteVal(VI,1.2)+" "+ "\n"
++EncodeColor(colorPink)+
+"BuyVolume : "+WriteVal(100*BV/(BV+SV),2.0)+"%"+" "+ 
+"\n"+"SellVolume : " +WriteVal(100*SV/(BV+SV),2.0)+"%";
+GfxSetOverlayMode(1);
+
+_SECTION_END();

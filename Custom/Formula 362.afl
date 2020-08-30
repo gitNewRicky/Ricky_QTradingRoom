@@ -1,0 +1,39 @@
+#include_once <../Include/FF_Tools.afl>
+#include_once <../Include/Common_Tools.afl>
+
+_SECTION_BEGIN("Volume/Freq Analyzer");
+stSetBackgroundTitle("Foreign Flow");
+
+Freq = fnGetFreq();
+Line = IIf(V==0 AND (Freq == Null OR Freq==0),0,100*Volume/(Freq^3));
+EnablePlot = ParamList("Plot","On|Off",1);
+if(EnablePlot == "On")
+	Plot(Line,"FQ",iif(Line==0,colorRed,colorPaleTurquoise),styleLine|styleNoLabel|styleOwnScale,0);
+
+Filter = Line > MA(Line,5);
+
+_SECTION_END();
+
+_SECTION_BEGIN("FF1");
+
+FF = fnGetNBSVolA();
+Cum_FF = Cum(FF);
+WMA_CumFF = WMA(Cum_FF,Param("WMA",10,5,100,1));
+
+Cum_FF_Col = IIf(Cum_FF >= WMA_CumFF,colorBrightGreen,colorRed);
+
+Plot(Cum_FF,"Foreign Flow",Cum_FF_Col,styleDashed| styleThick |  styleOwnScale);
+
+_SECTION_END();
+
+_SECTION_BEGIN("FF");
+nbsva = fnGetNBSVolA();
+
+nbsva_color = IIf(nbsva<0,colorRed,colorGreen);
+SetBarFillColor(nbsva_color);
+abs_nbsva = abs(nbsva/100);
+PlotOHLC(0,abs_nbsva,0,abs_nbsva,"NetBSVolAsing",colorWhite,styleCandle);
+_SECTION_END();
+
+
+

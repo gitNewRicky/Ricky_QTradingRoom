@@ -1,0 +1,29 @@
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+
+//Coded by Rajandran R
+//Founder of Marketcalls and Co-Founder of Traderscafe
+//Website : www.marketcalls.in
+
+//Note : Code works only in 1min, 2min, 5min timeframe
+//Amibroker Preferences -> Tools -> Intraday -> Select Start time of the Interval
+
+
+_SECTION_BEGIN("How to Estimate the VWAP Settlement Close");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+
+Bars_so_far_today = 1 + BarsSince( TimeNum() == 160000);
+StartBar = ValueWhen(TimeNum() == 160000, BarIndex());
+TodayVolume = Sum(V,Bars_so_far_today);
+average = (H+L+C+C)/4;
+IIf (BarIndex() >= StartBar, VWAP = Sum (average * V, Bars_so_far_today  ) / TodayVolume,0);
+
+
+Plot(VWAP,"VWAP",colorYellow,styleLine | styleThick);
+
+_SECTION_END();

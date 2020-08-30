@@ -1,0 +1,159 @@
+/*******************************************************************************************/
+// SkyQuant for AmiBroker
+// http://skyquant.googlecode.com - HomeSite
+// http://groups.google.com/group/skyquant - Forum
+// You may use, copy, distribute, modify SkyQuant under the terms of
+// the GNU General Public License (GPL) Version 2, 2012
+/*******************************************************************************************/
+#include <SkyQuant\SQ_header.afl>;
+
+PList1 = "0,1,2,3,4,5,6,7,8,9,11";
+PList2 = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30";
+_N( PList1 = ParamStr("Planets", PList1 ) );
+_N( PList2 = ParamStr("Stars", PList2 ) );
+pMax = 0;
+allPl = 0;
+p1Count = 0;
+p1arr = p2arr = -1;
+for( pp = 0; StrExtract( PList1, pp ) != ""; pp++ )
+{
+	p = StrToNum( StrExtract( PList1, pp ) );
+	allPl[p] = 1;
+	if( p > pMax ) pMax = p;
+	p1arr[pp] = p;
+	p1Count++;
+}
+for( pp2 = 0; StrExtract( PList2, pp2 ) != ""; pp2++ )
+{
+	p = StrToNum( StrExtract( PList2, pp2 ) );
+	allPl[p] = 1;
+	if( p > pMax ) pMax = p;
+	p2arr[pp2] = p;
+}
+
+fh = fopen( ABpath + "SkyQuant\\ephe\\fixstars.cat", "r");
+if( fh ) 
+{ 
+	s = 1;
+   while( ! feof( fh ) ) 
+   { 
+		str = fgets( fh );
+		sName = StrExtract( str, 0 ) + "," + StrExtract( str, 1 );
+		VarSetText( "star_" + s++, sName );
+	}
+	fclose( fh );
+}
+
+for( pp1 = 0; p2arr[pp1] >= 0; pp1++ )
+{
+	p = p2arr[pp1];
+	eph = EPHEMERIS( "S", p, iflag, cpos );
+
+	showarrow = 0;
+	if( showarrow )
+	{
+		zch = Param( "ZigZag Change", 0.005, 0, 5, 0.001 );
+		fSHOWARROWS( p, seph, zch );
+	}
+		printf( VarGetText( "star_" + p ) + "\t|  " + ZODIACNAME(zod[bx]) + 
+		" %0.0f°%0.0f'\n(#%0.0f)\t|   %0.5f\n---------------------------------------\n",
+			 floor(grad1), grad2, p, eph[bx] ); 
+}
+
+
+GfxSetBkMode(1); 
+GfxSetTextColor(colorBlue);
+//GfxSetTextAlign( 2 ); 
+y1 = 24;
+//ys = (pxchartbottom - y1) / (p1Count + 1) / 4.2;
+Hfont = ys * 1.8;
+bx = SelectedValue(BarIndex()); 
+nl = 0;
+Color = colorLightGrey;
+ElementChoice = 1;
+CrossChoice = 0;
+smax = smin = 0;
+FireA = EarthA = AirA = WaterA = CardinalA = FixA = MutableA = Retro = 0;
+
+for( pp1 = 0; p1arr[pp1] >= 0; pp1++ )
+{
+	p = p1arr[pp1];
+	eph = EPHEMERIS( "P", p, iflag, cpos );
+
+	for( i = 2; i < Min( Lvb - fvb, BarCount - fvb ) ; i++ ) 
+	{
+		b = i + fvb;
+		z = ceil( eph[b] / 30 );
+		if( ElementChoice )
+			Color = fELEMENT(z,1);
+		else
+			fELEMENT(z,1);
+		FireA[b] += Fire;
+		EarthA[b] += Earth;
+		AirA[b] += Air;
+		WaterA[b] += Water;
+
+		if( CrossChoice )
+			Color = fCROSS(z,1);
+		else
+			fCROSS(z,1);
+		CardinalA[b] += Cardinal;
+		FixA[b] += Fix;
+		MutableA[b] += Mutable;
+
+		GfxSelectSolidBrush( Color );
+		GfxSelectPen( Color );  
+ 		x = pxchartleft + i  * pxchartwidth / ( lvb - fvb + 1 );
+ 		y = y1 + ys * nl * 4; 
+		GfxRectangle( x - barw/2, y-ys, x + barw/2, y+ys*2 );
+
+		ssh = 0;
+		if( z != ceil( eph[b - 1] / 30 ) )
+		{
+			GfxSetTextColor(colorBlue); 
+			gx = 30;
+			gy = y - ys;
+			Hfont = ys * 1.8;
+			SYMBOL( z * -1, Hfont, x-gx, gy );
+			gx -= 18;
+			GfxSelectFont("Tahoma", Hfont*0.5, 700 );
+			GfxTextOut( " >>", x-gx, gy + ys );
+			ssh = ys;
+		}
+
+		xslope = 0;
+		for( pp2 = 0; p2arr[pp2] >= 0; pp2++ )
+		{
+			sp = p2arr[pp2];
+			seph = VarGet("ephS" + sp);
+
+			if( eph[b -1] < seph[b -1] && eph[b] >= seph[b])
+			{
+				GfxSetTextAlign( 2 );
+				GfxSetTextColor(colorBlue);
+				Hfont = ys * 1.25;
+				GfxSelectFont("Tahoma", Hfont, 500, 0, 0, -450-xslope );
+				sName = StrExtract( VarGetText( "star_" + sp ), 0 );
+				sName = StrReplace( sName, " ", "" );
+				GfxTextOut( sName + " *", x, y-ssh );
+				xslope += 300;
+			}
+		}
+ 		y = y + ys;
+	}
+	GfxSetTextAlign( 0 );
+	GfxSetTextColor( pColors[p] ); 
+	y = y1 + ys * nl * 4;
+	Hfont = ys * 1.8;
+	SYMBOL( p, Hfont, 0, y - ys );
+	nl++;
+
+	printf( SQname(p) + "\t|  " + ZODIACNAME(zod[bx]) + 
+		" %0.0f°%0.0f' - " + fELEMENT(zod[bx]+1,0) + " - " + fCROSS(zod[bx]+1,0) + "\n", floor(grad1), grad2 ); 
+}
+
+_N(Title = StrFormat("INFO: Fire %0.0f%% | Earth %0.0f%% | Air %0.0f%% | Water %0.0f%% || Cardinal %0.0f%% |  Fix %0.0f%% |  Mutable %0.0f%% |", 
+	FireA[bx]/p1Count*100, EarthA[bx]/p1Count*100, AirA[bx]/p1Count*100, WaterA[bx]/p1Count*100, 
+	CardinalA[bx]/p1Count*100, FixA[bx]/p1Count*100, MutableA[bx]/p1Count*100 ) );
+
+//

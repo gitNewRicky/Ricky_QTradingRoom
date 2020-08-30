@@ -1,0 +1,3 @@
+P = ParamField("Price field",-1);
+Periods = Param("MA Periods", 20, 1, 10000, 1, 1 );
+Plot( TAS_EMA( P, Periods ), _DEFAULT_NAME(), ParamColor( "Color", colorBlack ), ParamStyle("Style",styleThick) ); 

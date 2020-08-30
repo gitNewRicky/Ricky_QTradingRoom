@@ -1,0 +1,45 @@
+#include_once <../Include/BS_Tools.afl>
+#include_once <../Include/Common_Tools.afl>
+
+function StatusTextAccDist(NetRatioAD)
+{
+	MDist = (NetRatioAD <= -35);
+	BDist = (NetRatioAD <= -20);
+	SDist = (NetRatioAD <= -5);
+	MAcc = (NetRatioAD >= 35);
+	BAcc = (NetRatioAD >= 20);
+	SAcc = (NetRatioAD >= 5);
+	Result = WriteIf(MDist,"Massive Distribution",WriteIf(BDist,"Big Distribution",WriteIf(SDist,"Small Distribution",WriteIf(Macc,"Massive Accumulation",WriteIf(Bacc,"Big Accumulation",WriteIf(Sacc,"Small Accumulation","Netral"))))));
+	return Result;
+}
+
+_SECTION_BEGIN("Price");
+stSetBackgroundTitle(Name());
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+
+_SECTION_BEGIN("Net Volume");
+NetVol = fnGetNetVol() / 1000;
+VolRatio = Volume / NetVol / 100000;
+
+	Top3AccDist = fnGetTop3BrokerAcD();
+	Top5AccDist = fnGetTop5BrokerAcD();
+	Top10AvgAccDist = fngetAvg10AccDist();
+	AvgAccDist = (Top3AccDist + Top5AccDist + Top10AvgAccDist) /3;
+	
+	VolonLot = Volume / 100;
+	NRTop3 = Top3AccDist / NetVol / 10;
+	NRtop5 = Top5AccDist / Netvol /10;
+	NRAvg10 = Top10AvgAccDist / NetVol / 10;
+	NRAvgAD = AvgAccDist / Netvol / 10;
+
+_SECTION_END();
+
+Title = Title + "\n"+
+		EncodeColor(colorWhite)+"Volume = "+WriteVal(VolonLot,1.0)+", Net Volume = "+WriteVal(NetVol)+"  |  "+WriteVal(VolRatio,1.1)+"X"+
+		EncodeColor()+"\nTop 3 Broker = "+WriteVal(Top3AccDist,1.0)+"  |  "+WriteVal(NRTop3,1.1)+ "  |  " + StatusTextAccDist(NRTop3) +
+		EncodeColor()+"\nTop 5 Broker = "+WriteVal(Top5AccDist,1.0)+"  |  "+WriteVal(NRtop5,1.1)+ "  |  " + StatusTextAccDist(NRTop5) +
+		EncodeColor()+"\nAvg 10 AccDist = "+WriteVal(Top10AvgAccDist,1.0)+"  |  "+WriteVal(NRAvg10,1.1)+ "  |  " + StatusTextAccDist(NRAvg10) +
+		EncodeColor()+"\nAvg AccDist = "+WriteVal(AvgAccDist,1.0)+"  |  "+WriteVal(NRAvgAD,1.1)+ "  |  " + StatusTextAccDist(NRAvgAD) ;

@@ -1,0 +1,41 @@
+_SECTION_BEGIN("MACD Colour");
+r1 = Param( "Fast avg", 12, 2, 200, 1 );
+r2 = Param( "Slow avg", 26, 2, 200, 1 );
+r3 = Param( "Signal avg", 2, 2, 200, 1 );
+
+ML = MACD(r1,r2);
+SL = Signal(r1,r2,r3);
+MH = ML-SL;
+ROMH = MH - Ref(MH,-1);
+
+PB = (ML < SL) AND (ML > Ref(ML,-1));
+Buy = (Cross(ML,SL)) OR (ML > SL);
+PS = (ML > SL) AND (ML < Ref (ML,-1));
+Sell = Cross(SL,ML) OR (ML < SL);
+
+M1 = (MH > Ref(MH,-1)) AND (Ref(MH,-1) < Ref(MH,-2));
+M2 = (MH > Ref(MH,-1)) AND (Ref(MH,-1) > Ref(MH,-2));
+M3 = (MH < Ref(MH,-1)) AND (Ref(MH,-1) > Ref(MH,-2));
+M4 = (MH < Ref(MH,-1)) AND (Ref(MH,-1) < Ref(MH,-2));
+
+ROCHUP = ROMH > 0;
+ROCHDW = ROMH < 0;
+
+MLC = IIf(PB,colorBrightGreen,IIf(Buy,colorGreen,IIf(PS,colorRed,IIf(Sell,colorDarkRed,colorGrey50))));
+MHC = IIf(M1,colorBrightGreen,IIf(M2,colorGreen,IIf(M3,colorRed,IIf(M4,colorDarkRed,colorGrey50))));
+
+
+TMLC = WriteIf(PB,EncodeColor(colorBrightGreen),WriteIf(Buy,EncodeColor(colorGreen),WriteIf(PS,Encodecolor(colorRed),WriteIf(Sell,EncodeColor(colorDarkRed),EncodeColor(colorGrey50)))));
+TMHC = WriteIf(M1,EncodeColor(colorBrightGreen),WriteIf(M2,EncodeColor(colorGreen),WriteIf(M3,Encodecolor(colorRed),WriteIf(M4,EncodeColor(colorDarkRed),EncodeColor(colorGrey50)))));
+TROCHC = WriteIf(ROCHUP,EncodeColor(colorBrightGreen),WriteIf(ROCHDW,EncodeColor(colorRed),EncodeColor(colorGrey50)));
+
+Plot( ML , "MACD = ", MLC, styleLine | styleThick | styleOwnScale );
+Plot( SL, "Signal", ParamColor("Signal color", colorBlueGrey ), ParamStyle("Signal style") | styleOwnScale );
+Plot( MH, "MACD Histogram = ", MHC, styleHistogram | styleOwnScale);
+
+Title = TMLC +"MACD = "+ ML +
+		EncodeColor(colorBlueGrey)+"  Signal = "+SL+
+		TMHC + "\nHistogram = "+ MH +
+		TROCHC + "  ROC = "+ROMH;
+
+_SECTION_END();

@@ -1,0 +1,221 @@
+_SECTION_BEGIN("Trend Lines");
+p1 = Param("TL 1 Periods", 20, 5, 50, 1);
+p2 = Param("TL 2 Periods", 5, 3, 25, 1);
+TL1 = LinearReg(C, p1);
+TL2 = EMA(TL1, p2);
+Col1 = IIf(TL1 > TL2, ParamColor("TL Up Colour", colorGreen), ParamColor("TL Dn Colour", colorRed));
+Plot(TL1, "TriggerLine 1", Col1, styleLine|styleThick|styleNoLabel);
+Plot(TL2, "TriggerLine 2", Col1, styleLine|styleThick|styleNoLabel);
+_SECTION_END();
+
+_SECTION_BEGIN("Linear Regression Channel");
+//CyberMan's Linear Regression Channel.
+
+//Linear Regression Line with 2 Standard Deviation Channels Plotted Above and Below 
+//The original was written by Patrick Hargus, with critical hints from Marcin Gorzynski, Amibroker.com Technical Support 
+//Wysiwyg coded the angle in degrees part
+//I modified the original Linear Regression code so that the line will change color based on the degree of the Linear Regression slope.
+//I combine this with my trading system.
+//When my system gives an entry signal I look at the Linear Regression Line and I will only take long positions if the Linear Regression line is green and the entry price is below the LR line.
+//When my system gives an entry signal I look at the Linear Regression Line and I will only take short positions if the Linear Regression line is red and the entry price is above the LR line.
+//It is usefull for filtering out lower probability trades.
+
+
+//================================================Start Chart Configuration============================================================================
+
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) Vol " +WriteVal( V, 1.0 ) +" {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 )) ));
+SetChartBkGradientFill(ParamColor("Top", colorTeal), ParamColor("Bottom", colorLightGrey), ParamColor("Title", colorTeal));
+SetChartBkColor(colorTeal);
+
+
+Plot( C, "Close", colorWhite, styleCandle, Zorder = 1);
+SetChartOptions(0,chartShowArrows | chartShowDates);
+
+//================================================End Chart Configuration===============================================================================
+
+
+//====================================Start of Linear Regression Code==================================================================================
+
+P = ParamField("Price field",-1);
+
+Length = 150;
+
+Daysback = Param("Period for Liner Regression Line",Length,1,240,1);
+shift = Param("Look back period",0,0,240,1);
+
+//=============================== Math Formula ========================================================================================================
+
+x = Cum(1);
+lastx = LastValue( x ) - shift;
+aa = LastValue( Ref(LinRegIntercept( p, Daysback), -shift) );
+bb = LastValue( Ref(LinRegSlope( p, Daysback ), -shift) );
+y = Aa + bb * ( x - (Lastx - DaysBack +1 ) );
+
+//==================Plot the Linear Regression Line ====================================================================================================
+
+LRColor = ParamColor("LR Color", colorCycle ); 
+LRStyle = ParamStyle("LR Style");
+
+LRLine =  IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y, Null );
+
+LRStyle = ParamStyle("LR Style");
+Angle = Param("Angle", 0.05, 0, 1.5, 0.01);// A slope higher than 0.05 radians will turn green, less than -0.05 will turn red and anything in between will be white.
+
+LRLine = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y, Null );
+
+Pi = 3.14159265 * atan(1); // Pi
+SlopeAngle = atan(bb)*(180/Pi);
+
+LineUp = SlopeAngle > Angle;
+LineDn = SlopeAngle < - Angle;
+
+if(LineUp)
+{
+Plot(LRLine, "Lin. Reg. Line Up", IIf(LineUp, colorBrightGreen, colorWhite), LRStyle);
+}
+else
+{
+Plot(LRLine, "Lin. Reg. Line Down", IIf(LineDn, colorDarkRed, colorWhite), LRStyle);
+} 
+
+//==========================  Plot 1st SD Channel ======================================================================================================
+
+SDP = Param("Standard Deviation", 1.5, 0, 6, 0.1);
+SD = SDP/2;
+
+width = LastValue( Ref(SD*StDev(p, Daysback),-shift) ); //Set width of inside chanels here.
+SDU = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y+width , Null ) ;
+SDL = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y-width , Null ) ;
+
+SDColor = ParamColor("SD Color", colorCycle );
+SDStyle = ParamStyle("SD Style");
+
+Plot( SDU , "Upper Lin Reg", colorWhite,SDStyle ); //Inside Regression Lines
+Plot( SDL , "Lower Lin Reg", colorWhite,SDStyle ); //Inside Regression Lines
+
+//==========================  Plot 2d SD Channel ========================================================================================================
+
+SDP2 = Param("2d Standard Deviation", 2.0, 0, 6, 0.1);
+SD2 = SDP2/2;
+
+width2 = LastValue( Ref(SD2*StDev(p, Daysback),-shift) ); //Set width of outside chanels here. 
+SDU2 = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y+width2 , Null ) ;
+SDL2 = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y-width2 , Null ) ;
+
+SDColor2 = ParamColor("2 SD Color", colorCycle );
+SDStyle2 = ParamStyle("2 SD Style");
+
+Plot( SDU2 , "Upper Lin Reg", colorWhite,SDStyle2 ); //OutSide Regression Lines
+Plot( SDL2 , "Lower Lin Reg", colorWhite,SDStyle2 ); //OutSide Regression Lines
+
+Trend = IIf(LRLine > Ref(LRLine,-1),colorGreen,colorRed);//Changes LR line to green if sloping up and red if sloping down.
+
+Plot( LRLine , "LinReg", Trend, LRSTYLE );
+
+//============================ End Indicator Code =========
+
+
+
+_SECTION_BEGIN("MAMA");
+SetBarsRequired( 10000, 10000 );
+SetChartOptions(0,chartShowArrows|chartShowDates);
+prc = ( High + Low ) / 2;
+fastlimit = 0.5;
+slowlimit = 0.05;
+pi=4*atan(1);
+    RTD=180/pi;
+    DTR=pi/180;
+
+Cyclepart=Param("Alpha",0.5,0.1,1,0.1);
+   
+Smooth[0] = Period = Detrender[0] = I1[0] = Q1[0] = 0;
+phase[0]=deltaphase[0]=MAMA[0]=FAMA[0]=0;
+for ( i = 6; i < BarCount; i++ )
+{
+Smooth[i] = ( 4 * prc[i] + 3 * prc[i-1] + 2 * prc[i-2] + prc[i-3] ) / 10;
+AmpCorr[i] = 0.075 * Period[i-1] + 0.54;
+Detrender[i] = ( 0.0962 * Smooth[i] + 0.5769 * Smooth[i-2] - 0.5769 * Smooth[i-4] - 0.0962 * Smooth[i-6] ) * AmpCorr[i];
+Q1[i] = ( 0.0962 * Detrender[i] + 0.5769 * Detrender[i-2] - 0.5769 * Detrender[i-4] - 0.0962 * Detrender[i-6] ) * AmpCorr[i];
+I1[i] = Detrender[i-3];
+if (I1[i] != 0) phase[i] = DTR*360/atan(q1[i]/I1[i]);
+deltaphase[i]=phase[i-1]-phase[i];
+if (deltaphase[i] <1) deltaphase[i]=1;
+alpha[i]=fastlimit[i]/deltaphase[i];
+if (alpha[i] < slowlimit[i]) alpha[i]=slowlimit[i];
+MAMA[i]=alpha[i] * prc [i] +(1-alpha[i])*MAMA[i-1];
+FAMA[i]=Cyclepart*alpha[i] * prc [i] +(1-Cyclepart*alpha[i])*FAMA[i-1];
+}
+
+_SECTION_END();
+
+_SECTION_BEGIN("SYSTEM");
+BuySetupValue=ValueWhen(Cross(MAMA,FAMA),H,1);
+SellsetupValue=ValueWhen(Cross(FAMA,MAMA),L,1);
+Buysetup =Cross(MAMA,FAMA) ;
+Sellsetup = Cross(FAMA,MAMA);
+Longa = Flip(Buysetup,Sellsetup);
+shrta = Flip(Sellsetup,Buysetup);
+Buy=Longa AND Cross(C,BuySetupValue);
+Sell=shrta AND Cross(SellsetupValue,C);
+Buy = ExRem(Buy,Sell);
+Sell = ExRem(Sell,Buy);
+t1= Flip(Buy,Sell);
+t2= Flip(Sell,Buy);
+BPrice=ValueWhen(t1 AND Ref(t1,-1)==0,C,1);
+SPrice=ValueWhen(t2 AND Ref(t2,-1)==0,C,1);
+GraphXSpace = 5;
+dist = 1.5*ATR(20); 
+for( i = 0; i < BarCount; i++ ) 
+{ 
+if( Buy[i] ) PlotText( "" + C[ i ], i, L[ i ]-dist[i], colorLime ); 
+if( Sell[i] ) PlotText( "" + C[ i ], i, H[ i ]+dist[i], colorYellow ); 
+} 
+_SECTION_END();
+//=================TITLE================================================================================================
+_SECTION_BEGIN("Title");
+if( Status("action") == actionIndicator ) 
+(
+Title = EncodeColor(colorWhite)+ "MAMA Poistional System" + " - " +  Name() + " - " + EncodeColor(colorRed)+ Interval(2) + EncodeColor(colorWhite) +
+ "  - " + Date() +" - "+"\n" +EncodeColor(colorYellow) +"Op-"+O+"  "+"Hi-"+H+"  "+"Lo-"+L+"  "+
+"Cl-"+C+"  "+ "Vol= "+ WriteVal(V)+"\n"+ 
+EncodeColor(colorLime)+
+WriteIf (Buy , " GO LONG / Reverse Signal at "+C+"  ","")+
+WriteIf (Sell , " EXIT LONG / Reverse Signal at "+C+"  ","")+"\n"+EncodeColor(colorWhite)+
+WriteIf(Sell , "Total Profit/Loss for the Last Trade Rs."+(C-BPrice)+"","")+
+WriteIf(Buy  , "Total Profit/Loss for the Last trade Rs."+(SPrice-C)+"","")+
+WriteIf(Longa AND NOT Buy, "Trade : Long - Entry price Rs."+(BPrice),"")+
+WriteIf(shrta AND NOT Sell, "Trade : Short - Entry price Rs."+(SPrice),"")+"\n"+ 
+WriteIf(Longa AND NOT Buy, "Current Profit/Loss Rs."+(C-BPrice)+"","")+
+WriteIf(shrta AND NOT Sell, "Current Profit/Loss Rs."+(SPrice-C)+"",""));
+PlotShapes(IIf(Buy, shapeSquare, shapeNone),colorGreen, 0, L, Offset=-40);
+PlotShapes(IIf(Buy, shapeSquare, shapeNone),colorLime, 0,L, Offset=-50);                      
+PlotShapes(IIf(Buy, shapeUpArrow, shapeNone),colorWhite, 0,L, Offset=-45); 
+PlotShapes(IIf(Sell, shapeSquare, shapeNone),colorRed, 0, H, Offset=40);
+PlotShapes(IIf(Sell, shapeSquare, shapeNone),colorOrange, 0,H, Offset=50);                      
+PlotShapes(IIf(Sell, shapeDownArrow, shapeNone),colorWhite, 0,H, Offset=-45);
+_SECTION_END();
+WriteVal(BuyPrice);
+WriteVal(Longa);
+WriteVal(t1);
+WriteVal(SellPrice);
+WriteVal(shrta);
+_SECTION_END();
+//=========================== Back ground Text ===================
+_SECTION_BEGIN("Background text");
+GfxSetOverlayMode(1);
+GfxSelectFont("Tahoma", Status("pxheight")/6 );
+GfxSetTextAlign( 6 );// center alignment
+//GfxSetTextColor( ColorRGB( 60, 45, 80 ) );
+GfxSetTextColor( ColorHSB( 42, 42, 42 ) );
+//GfxSetTextColor( ColorHSB( 5, 5,242) );
+GfxSetBkMode(0); // transparent
+GfxTextOut( Name(), Status("pxwidth")/2, Status("pxheight")/12 );
+GfxSelectFont("Tahoma", Status("pxheight")/12 );
+GfxTextOut( "", Status("pxwidth")/2, Status("pxheight")/3 );
+GfxSelectFont("Tahoma", Status("pxheight")/20 );
+GfxTextOut( "", Status("pxwidth")/2, Status("pxheight")/2 );
+GfxSelectFont("Tahoma", Status("pxheight")/40);
+GfxTextOut( "", Status("pxwidth")/7, Status("pxheight")/6);
+
+_SECTION_END();

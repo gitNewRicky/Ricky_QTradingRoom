@@ -1,0 +1,8 @@
+Periods = Param("Will%R Periods", 14, 2, 1000, 1, 1 );
+iColor=ParamColor( "Will%R Color", colorRed );
+iStyle=ParamStyle("Will%R Style"); 
+Periods2 = Param("MA Periods", 10, 2, 1000, 1, 1 );
+iColor2=ParamColor( "MA Color", colorBlue );
+iStyle2=ParamStyle("MA Style",styleDashed); 
+
+a=TAS_WilliamsR_EMA(Periods,Periods2,iColor,iStyle,iColor2,iStyle2);

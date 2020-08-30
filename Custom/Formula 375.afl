@@ -1,0 +1,14 @@
+#include_once <../Include/BS_Tools.afl>
+
+_SECTION_BEGIN("NTOP AccDist");
+	NetVol = fnGetNetVol() * 100;
+	pTopN = Param("TOP N Broker?",10,3,10,1);
+	NTopAccDist = fnGetNTopBrokerAcD();
+	
+	abs_NTopAccDist = abs(NTopAccDist);
+	color_NTopAccDist = IIf(NTopAccDist > 0,colorBrightGreen,colorRed);
+	SetBarFillColor(color_NTopAccDist);
+	PlotOHLC(0,abs_NTopAccDist,0,abs_NTopAccDist,"Broker TOP "+pTopN,colorWhite,styleCandle);
+	
+
+_SECTION_END();

@@ -1,0 +1,163 @@
+/* 
+ * Copyright (C)2017 PT. Stosia Teknologi Investasi
+ *
+ * This file is licensed under  GNU GPL (General Public License) version 3.
+ *
+ * File ini dilisensikan kepada Anda, bukan  Anda miliki.  Pemilik file ini
+ * adalah pemegang  hak cipta ("copyright holder") di atas. Gunakanlah file
+ * ini sesuai dengan lisensi yang telah ditetapkan untuk file ini.
+ *
+ * File ini  berlisensi  GNU GPL (General Public License)  versi 3. Artinya
+ * kalau Anda  memodifikasi file ini, atau membuat karya lain yang berbasis
+ * file ini  ("derivative work"),  maka Anda  wajib  mendistribusikan  kode
+ * modifikasi atau karya tersebut kepada publik. Hal ini untuk menjaga agar
+ * pengetahuan yang ada di sini menjadi lebih berkembang  di masa mendatang 
+ * untuk kemajuan kita bersama.
+ *
+ * Silakan memakai kode ini untuk kepentingan apapun termasuk untuk mencari
+ * profit di pasar saham baik secara perorangan atau organisasi, asal tidak
+ * jahat. Sebagai tambahan permintaan, kami menghimbau untuk TIDAK  menjual
+ * kode/file  ini secara  apa adanya  atau dalam bundel  produk yang dijual
+ * secara komersial, karena hal itu tidak etis.
+ *
+ * Untuk penjelasan lebih lanjut silakan bertanya kepada kami.  Untuk detil
+ * lisensi GPLv3  silakan lihat file GPLv3-LICENSE.md  yang didistribusikan
+ * bersama file ini.
+ *
+ * Author: Benny Prijono <benny@stosia.com>
+ * Contributors:
+ *  - 
+ */
+#include_once <..\Quant.id\AFL\Tools.afl>
+
+//
+// Foreign flow interval value is the foreign NET buy/sell for each
+// interval, where interval can be intraday or daily. Interval greater than
+// one day is not supported yet.
+//
+// Return:
+//   foreign flow NET value array for each interval (in milyar Rp)
+//
+function stGetFFIntervalValue()
+{
+	if (Interval() < inDaily) {
+		_N( sql = " SELECT INT_NET_VALUE, dtime " + 
+					" FROM v_adj_intraday_foreign " +
+					" WHERE ticker='" + Name() + "' " +
+					stSQLDateTimeFilter() +
+					" ORDER BY dtime ASC");
+	} else {
+		if (Interval() > inDaily) {
+			stAlert("Error: Interval greater than daily is not supported yet");
+		}
+		
+		_N( sql = " SELECT DAY_NET_VALUE, dtime " + 
+					" FROM v_adj_intraday_foreign " +
+					" WHERE ticker='" + Name() + "' " + 
+					stSQLDateTimeFilter() +
+					" ORDER BY dtime ASC");
+	}
+	
+	ffIntVal = stCachedSQL("stFFIntervalValue", sql) / MILYAR;
+	return ffIntVal;
+}
+
+//
+// Get foreign BUY value (in milyar Rp) for each interval
+//
+function stGetFFIntervalBuyValue()
+{
+	if (Interval() < inDaily) {
+		_N( sql = " SELECT int_buy_value, dtime " + 
+					 " FROM v_adj_intraday_foreign " +
+					 " WHERE ticker='" + Name() + "' AND " + 
+					 "       dtime > '" + stLatestDateStr() + " 00:00:00' " +
+					 " ORDER BY dtime ASC");
+	} else {
+		if (Interval() > inDaily) {
+			stAlert("Error: Interval greater than daily is not supported yet");
+		}
+		
+		_N( sql = " SELECT day_buy_value, dtime " + 
+					 " FROM v_adj_intraday_foreign " +
+					 " WHERE ticker='" + Name() + "' AND " + 
+ 					 "       (TIME(dtime)='16:14:59' OR dtime = '" + stLatestTimestampStr() + "') " + 
+					 " ORDER BY dtime ASC");
+	}
+
+	ffIntBuyValue = stCachedSQL( "stFFIntervalBuyValue", sql) / MILYAR;
+	return ffIntBuyValue;
+}
+
+//
+// Get number of shares that foreign has bought for each interval
+//
+function stGetFFIntervalBuyShares()
+{
+	typPrice = stTypicalPrice();
+	ffIntBuyValue = stGetFFIntervalBuyValue() * MILYAR;
+	return ffIntBuyValue / typPrice;
+}
+
+//
+// Get foreign SELL value (in milyar Rp) for each interval
+//
+function stGetFFIntervalSellValue()
+{
+	if (Interval() < inDaily) {
+		_N( sql = " SELECT int_sell_value, dtime " + 
+					" FROM v_adj_intraday_foreign " +
+					" WHERE ticker='" + Name() + "' AND " + 
+					"       dtime > '" + stLatestDateStr() + " 00:00:00' " +
+					" ORDER BY dtime ASC");
+	} else {
+		if (Interval() > inDaily) {
+			stAlert("Error: Interval greater than daily is not supported yet");
+		}
+		
+		_N( sql = " SELECT day_sell_value, dtime " + 
+					" FROM v_adj_intraday_foreign " +
+					" WHERE ticker='" + Name() + "' AND " + 
+					"       (TIME(dtime)='16:14:59' OR dtime = '" + stLatestTimestampStr() + "') " + 
+					" ORDER BY dtime ASC");
+	}
+
+	ffIntBuyValue = stCachedSQL( "stFFIntervalSellValue", sql) / MILYAR;
+	return ffIntBuyValue;
+}
+
+//
+// Get number of shares that foreign has bought for each interval
+//
+function stGetFFIntervalSellShares()
+{
+	typPrice = stTypicalPrice();
+	ffIntSellValue = stGetFFIntervalSellValue() * MILYAR;
+	return ffIntSellValue / typPrice;
+}
+
+//
+// Get total number of shares that foreign owns at any time. This is 
+// accummulation of buy and sell activities of the investor.
+//
+function stGetFFHolding()
+{
+	buyShares = stGetFFIntervalBuyShares();
+	sellShares = stGetFFIntervalSellShares();
+	return stGetHolding(buyShares, sellShares);
+}
+
+//
+// Get average price value of foreign ownership
+//
+function stGetFFAverage()
+{
+	ffIntBuyValue = stGetFFIntervalBuyValue() * MILYAR;
+	ffIntSellValue = stGetFFIntervalSellValue() * MILYAR;
+	typ = stTypicalPrice();
+	sharesBought = ffIntBuyValue / typ;
+	sharesSold = ffIntSellValue / typ;
+
+	return stGetAvgPrice(ffIntBuyValue, sharesBought, ffIntSellValue, sharesSold);
+}
+

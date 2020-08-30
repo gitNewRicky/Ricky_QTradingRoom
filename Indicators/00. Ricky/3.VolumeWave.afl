@@ -1,0 +1,28 @@
+//||===================================================================================||
+//|| Volume Wave V.1.0 -  by Karthimarar                                               ||
+//|| www.karthikmarar.blogspot.com                                                     ||
+//|| Public release for personal use only.                                             ||
+//|| Please do not commercialize this indicator in its original or modified form       ||
+//||===================================================================================||
+
+SetChartBkColor(colorBlack);
+_SECTION_BEGIN("Volume Wave V.1.0");
+percent = Param("Change %",1,0.1,3,0.1);
+barcomplete = BarIndex() < LastValue(BarIndex());
+j = Zig(C,percent);
+Vw[0] = 0;
+for(i = 3; i < BarCount; i++)
+{
+if (j[i]>j[i-1] AND j[i-1]<j[i-2] AND barcomplete[i]) Vw[i]=V[i];
+else
+{
+if (j[i]<j[i-1] AND j[i-1]>j[i-2] AND barcomplete[i]) Vw[i]=V[i];
+else
+Vw[i] =V[i]+Vw[i-1];
+}
+}
+SetBarFillColor( IIf(j>Ref(j,-1),colorWhite,colorRed) ); 
+PlotOHLC(0,Vw,0,Vw,"Volume Wave",IIf(j>Ref(j,-1),colorBrightGreen,colorWhite) , ParamStyle("Histogram style", styleCandle|styleThick | styleNoLabel, maskHistogram ) ) ;
+_SECTION_END();
+
+

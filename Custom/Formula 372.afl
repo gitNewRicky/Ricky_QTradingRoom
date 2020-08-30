@@ -1,0 +1,16 @@
+#include_once <../Include/BS_Tools.afl>
+
+_SECTION_BEGIN("Others Broker");
+
+SumOtherBroker = -1 * (fnGetNetVolAllBigBroker() + fnGetNetVolAllRetailBroker());
+SumOtherBrokerCol = IIf(SumOtherBroker > 0, colorBrightGreen,colorRed);
+abs_SumOtherBroker = abs(SumOtherBroker);
+
+CumOtherBroker = Cum(SumOtherBroker);
+Plot(CumOtherBroker,"",colorWhite,styleDashed | styleOwnScale);
+SetBarFillColor(SumOtherBrokerCol);
+PlotOHLC(0,abs_SumOtherBroker,0,abs_SumOtherBroker,"Sum Other Broker",colorWhite,styleCandle);
+
+
+
+_SECTION_END();

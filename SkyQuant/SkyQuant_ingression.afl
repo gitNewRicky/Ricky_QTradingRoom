@@ -1,0 +1,179 @@
+/*******************************************************************************************/
+// SkyQuant for AmiBroker
+// http://skyquant.googlecode.com - HomeSite
+// http://groups.google.com/group/skyquant - Forum
+// You may use, copy, distribute, modify SkyQuant under the terms of
+// the GNU General Public License (GPL) Version 2, 2012
+/*******************************************************************************************/
+#include <SkyQuant\SQ_header.afl>;
+
+showretro = ParamToggle( "Show Retrosigns", "No|Yes", defaultval = 1 );
+PList1 = "0,1,2,3,4,5,6,7,8,9,11,12,15";
+_N( PList1 = ParamStr("Planets", PList1 ) );
+pMax = 0;
+p1Count = 0;
+p1arr = -1;
+for( pp = 0; StrExtract( PList1, pp ) != ""; pp++ )
+{
+	p = StrToNum( StrExtract( PList1, pp ) );
+	p1Count++;
+	if( p > pMax ) pMax = p;
+	p1arr[pp] = p;
+}
+
+GfxSetBkMode(1); 
+GfxSetTextColor(colorBlue); 
+y1 = 24;
+//ys = (pxchartbottom - y1) / (p1Count + 1) / 4.2;
+Hfont = ys * 1.8;
+GfxSelectFont("Tahoma", Hfont, 500 );
+bx = SelectedValue(BarIndex()); 
+nl = 0;
+Color = colorLightGrey;
+ElementChoice = 1;
+CrossChoice = 0;
+smax = smin = 0;
+FireA = EarthA = AirA = WaterA = CardinalA = FixA = MutableA = Retro = 0;
+
+
+mode = "P";
+for( pp1 = 0; p1arr[pp1] >= 0; pp1++ )
+{
+	p = p1arr[pp1];
+	// Longitude
+	iflag = 256;
+	Cpos = 0;
+	eph = EPHEMERIS( mode, p, iflag, cpos );
+
+	// Speed
+	iflag = 2 | 256;
+	Cpos = 3;
+	sysID2 = NumToStr ( iflag, 1.0, False ) + "_" + NumToStr ( Cpos, 1.0, False ) + 
+		Name() + "_" + Interval( format = 2 ) + "_N" + NumToStr ( p, 1.0, False );
+
+	speed = StaticVarGet( sysID2 );
+	if( IsNull(speed[BarCount-1]) || IsNull(speed[0]) )
+	{
+		speed = SQeph(TZ , p, iflag, cpos);
+		StaticVarRemove( "speed" + p );
+		for(i = 0; i < BarCount; i++)
+		{
+			if( speed[i] > smax[p] )
+				smax[p] = speed[i];
+			if( speed[i] < smin[p] )
+				smin[p] = speed[i];
+		}
+		StaticVarSet( "ssmax"+sysID2, smax );
+		StaticVarSet( "ssmin"+sysID2, smin );
+	}
+		VarSet( "speed" + p, speed );
+		StaticVarSet( sysID2, speed );
+	smax = StaticVarGet( "ssmax"+sysID2 );
+	smin = StaticVarGet( "ssmin"+sysID2 );
+
+
+	for( i = 2; i < Min( Lvb - fvb, BarCount - fvb ) ; i++ ) 
+	{
+		b = i + fvb;
+		z = ceil( eph[b] / 30 );
+		if( ElementChoice )
+			Color = fELEMENT(z,1);
+		else
+			fELEMENT(z,1);
+		FireA[b] += Fire;
+		EarthA[b] += Earth;
+		AirA[b] += Air;
+		WaterA[b] += Water;
+
+		if( CrossChoice )
+			Color = fCROSS(z,1);
+		else
+			fCROSS(z,1);
+		CardinalA[b] += Cardinal;
+		FixA[b] += Fix;
+		MutableA[b] += Mutable;
+
+		GfxSelectSolidBrush( Color );
+		GfxSelectPen( Color );  
+ 		x = pxchartleft + i  * pxchartwidth / ( lvb - fvb + 1 );
+
+ 		y = y1 + ys * nl * 4; 
+		GfxRectangle( x - barw/2, y-ys, x + barw/2, y+ys*2 );
+
+ 		y = y + ys;
+		if( speed[b] >= 0 )
+			Color = ColorBlend( Color, colorGreen, speed[b] / smax[p] );
+		if( speed[b] < 0 )
+		{
+			Color = ColorBlend( Color, colorRed, speed[b] / smin[p] );
+			Retro[b]++;
+		}
+		GfxSelectSolidBrush( Color );
+		GfxSelectPen( Color );
+		GfxRectangle( x - barw/2, y, x + barw/2, y+ys );
+
+		if( z != ceil( eph[b - 1] / 30 ) )
+		{
+			GfxSetTextColor(colorBlue); 
+			gx = 30;
+			gy = y - ys * 2.7;
+			SYMBOL( z * -1, Hfont, x-gx, gy );
+			gx -= 18;
+			GfxSelectFont("Tahoma", Hfont*0.5, 700 );
+			GfxTextOut( " >>", x-gx, gy + ys );
+		}
+
+		if( speed[b] >= 0 && speed[b - 1] < 0 && showretro )
+		{
+			GfxSetTextColor(colorGreen); 
+			gx = 40;
+			gy = y - ys * 2.7;
+			SYMBOL( -20, Hfont, x-gx, gy );
+			gx -= 18;
+			SYMBOL( -22, Hfont, x-gx, gy );
+			GfxSelectPen( colorGreen ); 
+			GfxSelectSolidBrush( colorGreen );
+			GfxRoundRect( x - barw/4, y-ys*2.5, x + barw/4, y+ys*0.5, 10, 10 ); 
+
+		}
+
+		if( speed[b] <= 0 && speed[b - 1] > 0 && showretro )
+		{
+			GfxSetTextColor(colorRed); 
+			gx = 40;
+			gy = y - ys * 2.7;
+			SYMBOL( -20, Hfont, x-gx, gy );
+			gx -= 18;
+			SYMBOL( -21, Hfont, x-gx, gy );
+			GfxSelectPen( colorRed ); 
+			GfxSelectSolidBrush( colorRed );
+			GfxRoundRect( x - barw/4, y-ys*2.5, x + barw/4, y+ys*0.5, 10, 10 ); 
+
+		}
+	}
+	GfxSetTextAlign( 0 );
+	GfxSetTextColor( pColors[p] ); 
+	y = y1 + ys * nl * 4;
+	SYMBOL( p, Hfont, 0, y - ys );
+	nl++;
+ 
+	zod = floor(eph/30);
+	grad1 = eph - zod * 30;
+	grad2 = 60 * frac(grad1);
+	bx = SelectedValue(BarIndex());
+	if( speed[bx] > 0 )
+		spsymb = ">";
+	else
+		spsymb = "<";
+	printf( SQname(p) + "\t" + spsymb + "  |  " + ZODIACNAME(zod[bx]) + 
+		" %0.0f°%0.0f' - " + fELEMENT(zod[bx]+1,0) + " - " + fCROSS(zod[bx]+1,0) + "\n", floor(grad1), grad2 ); 
+}
+
+//
+_N(Title = StrFormat("Element & angle distribution: Retrograde %0.0f%% || Fire %0.0f%% | Earth %0.0f%% | Air %0.0f%% | Water %0.0f%% || Cardinal %0.0f%% |  Fix %0.0f%% |  Mutable %0.0f%% |", 
+	Retro[bx]/p1Count*100,
+	FireA[bx]/p1Count*100, EarthA[bx]/p1Count*100, AirA[bx]/p1Count*100, WaterA[bx]/p1Count*100, 
+	CardinalA[bx]/p1Count*100, FixA[bx]/p1Count*100, MutableA[bx]/p1Count*100 ) );
+
+
+//

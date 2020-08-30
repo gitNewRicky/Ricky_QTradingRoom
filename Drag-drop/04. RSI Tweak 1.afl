@@ -1,0 +1,21 @@
+_SECTION_BEGIN("RSI");
+periods = Param( "Periods", 8, 1, 200, 1 );
+
+RSILine = RSI(periods);
+RSIOver = (RSI(periods) < 20) OR (RSI(periods) > 80);
+RSIColor = IIf(Ref(RSILine,-1) < 20, colorGreen,IIf(Ref(RSILine,-1) > 80, colorRed,colorWhite));
+
+RSIOverColor = IIf(RSIOVER, styleArea, styleLine);
+
+RSIOS = RSILine < 20;
+RSIOB = RSILine > 80;
+
+ERSI = TEMA(RSILine,3);
+
+Plot( RSILine , "RSI = ",RSIColor,styleLine);
+Plot( ERSI, "EMA RSI(5) = ",colorBlue,styleLine);
+Plot(20,"",colorGreen,styleLine);
+Plot(80,"",colorRed,styleLine);
+
+
+_SECTION_END();

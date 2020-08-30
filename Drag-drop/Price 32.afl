@@ -1,0 +1,27 @@
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+
+_SECTION_BEGIN("Percent Bands");
+P = ParamField("Price field",-1);
+Periods = Param("Periods", 3, 2, 300, 1 );
+Width = Param("Width%", 3, 0, 10, 0.05 );
+Style = ParamStyle("Style", styleLine | styleDashed | styleNoLabel );
+CenterLine = MA( P, Periods );
+
+ColorBand = IIf(CenterLine > Ref(CenterLine,-1),colorGreen,colorRed);
+
+Plot( (1 + Width * 0.01) * CenterLine, "%EnvTop" + _PARAM_VALUES(), ColorBand, Style ); 
+Plot( (1 - Width * 0.01) * CenterLine, "%EnvBot" + _PARAM_VALUES(), ColorBand, Style ); 
+_SECTION_END();
+
+//-----------------
+
+//-----------------

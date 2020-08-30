@@ -1,0 +1,34 @@
+_SECTION_BEGIN("RSI with Dynamic Levels");
+SetChartBkColor(colorWhite); 
+
+periods = Param( "Periods", 15, 1, 200, 1 );
+Ksmooth = Param( "%K avg", 3, 1, 200, 1 );
+Dsmooth = Param( "%D avg", 3, 1, 200, 1 );
+Plot( StochK( periods , Ksmooth), "StorchK",ParamColor("Stochastic K%",colorBlue),styleLine);
+Plot( StochD( periods , Ksmooth, DSmooth ), "StorchD", ParamColor("Stochastic D%",colorBlue), styleDashed );
+
+DZbuy = Param("Buy Zone Probability",0.1,0.1,0.5,0.1);
+DZsell = Param("Sell Zone Probability",0.1,0.1,0.5,0.1);
+Period = Param("Period", 14, 2, 30, 1);
+Lb = Param("LookBack Period",60,40,120,1);
+mySig = RSI(Period);
+jh = HHV(mySig,Lb);
+jl = LLV(mySig,Lb);
+jc = (WMA((jh-jl),Period)*0.5)+WMA(jl,Period);
+Hiline = jh-jc*DZbuy;
+Loline = jl+jc*DZsell;
+midline = (jh-jl)/2;
+//Plot(HiLine,"",colorRed,1|styleDashed);
+//Plot(LoLine,"",colorGreen,1|styleDashed);
+//Plot(jc,"",colorWhite,1| styleDashed);
+R =  ( 4 * mySig + 3 * Ref(mysig,-1) + 2 * Ref(mysig,-2) + Ref(mysig,-3) ) / 10;;
+Plot(R,"",IIf(R>jc,colorLime,colorRed),1|styleThick);
+kh = IIf(R>Hiline, R,Hiline);
+//PlotOHLC( kh,kh,Hiline,Hiline, "", IIf(R>HiLine,colorLime,colorBlack), styleCloud  );
+kl = IIf(R <Loline, R,Loline);
+PlotOHLC( Loline,Loline,kl,kl, "", IIf(R<HiLine,colorRed,colorBlack), styleCloud  );
+
+Plot(20,"",colorBlack,styleDashed | styleNoLabel);
+//Plot(50,"",colorBlack,styleDashed | styleNoLabel);
+Plot(80,"",colorBlack,styleDashed | styleNoLabel);
+

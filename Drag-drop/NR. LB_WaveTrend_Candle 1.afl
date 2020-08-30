@@ -1,0 +1,68 @@
+SetChartBkColor( colorBlack ) ;
+
+_SECTION_BEGIN("WaveTrend[LazyBear]");
+
+n1 = Param("Channel Length",10,5,100,1);
+n2 = Param("Average Length",21,5,100,1);
+obLevel1 = Param("Overbought L1",60,50,100,1);
+obLevel2 = Param("Overbought L2",53,50,100,1);
+osLevel1 = Param("Oversold L1",-60,-100,0,1);
+osLevel2 = Param("Oversold L2",-53,-100,0,1);
+
+ap = (H + L + C) / 3;
+esa = EMA(ap,n1);
+d = EMA(abs(ap - esa),n1);
+ci = (ap - esa) / (0.015 * d);
+tci = EMA(ci, n2);
+
+wt1 = tci;
+wt2 = MA(wt1,4);
+Histogram = WT1 - WT2;
+ROC_Histogram = ROC(Histogram,1,True);
+ROC_Histogram = IIf(Volume == 0,Ref(ROC_Histogram,-1),ROC_Histogram);
+
+Plot(0,"",colorGrey40);
+Plot(oblevel1,"",colorRed,styleLine | styleDashed);
+Plot(oslevel1,"",colorGreen,styleLine | styleDashed);
+Plot(oblevel2,"",colorRed,styleDots);
+Plot(oslevel2,"",colorGreen,styleDots);
+
+LineCol = IIf(WT1 > WT2, colorBrightGreen, colorDarkRed);
+
+HistoRed    = (Histogram < Ref(Histogram,-1)) AND (Histogram < 0);
+HistoBGreen   = (Histogram > Ref(Histogram,-1)) AND (Histogram < 0);
+HistoGreen  = (Histogram > Ref(Histogram,-1)) AND (Histogram > 0);
+HistoYellow   = (Histogram < Ref(Histogram,-1)) AND (Histogram > 0);
+Histogram_Color = IIf(HistoRed,colorDarkGrey,IIf(HistoBGreen,colorBrightGreen,IIf(HistoGreen,colorLime,IIf(HistoYellow,colorRed,colorBlue))));
+HTColor = WriteIf(Histored,EncodeColor(colorDarkGrey),WriteIf(HistoBGreen,EncodeColor(colorBrightGreen),WriteIf(HistoGreen,EncodeColor(colorLime),WriteIf(Histoyellow,EncodeColor(colorRed),EncodeColor(colorDarkGrey)))));
+ROC_HCol = WriteIf(ROC_Histogram > Ref(ROC_Histogram,-1),EncodeColor(colorLime),EncodeColor(colorDarkRed));
+//Plot(wt1,"", LineCol, styleLine);
+//Plot(wt2, "", LineCol, styleDots);
+
+SetBarFillColor(Linecol);
+PlotOHLC(WT2,WT1,WT2,WT1,"",colorLightGrey,styleCandle);
+
+WT1color = WriteIf(WT1 > WT2,EncodeColor(colorBrightGreen),EncodeColor(colordarkRed));
+Plot(Histogram,"",LineCol,styleHistogram);
+
+
+Title = EncodeColor(colorWhite) + Name() + "  " + Date() + "  " + Interval(2) + " - " +
+		EncodeColor(colorGold) + "WTrend = " + WT1color + WriteVal(WT1,1.0) + "  "+  
+		EncodeColor(colorGold) + "Signal = " + WT1color + WriteVal(WT2,1.0) + "  " +
+		EncodeColor(colorGold) + "RoC = " + ROC_HCOL + WriteVal(ROC_Histogram,1.0);
+
+Filter = 1;
+
+BGreen = Cross(WT1,WT2) AND (WT1 < -60);
+Green = (WT1 < -60) AND (WT1 > Ref(WT1,-1));
+PaleGreen = Cross(WT1,WT2);
+SRed = Cross(WT2,WT1) AND (WT1 > 60);
+Red = (WT1 > 60) AND (WT1 < Ref(WT1,-1));
+Rose = Cross(WT2,WT1);
+
+Fillcolor = IIf(BGreen,colorBrightGreen,IIf(Green,colorGreen,IIf(PaleGreen,colorPaleGreen,IIf(SRed,colorDarkRed,IIf(Red,colorRed,IIf(Rose,colorRose,colorDefault))))));
+AddColumn(WT1,"WT1",1.0,colorBlack,Fillcolor);
+FillcolorH = IIf(ROC_Histogram > Ref(ROC_Histogram,-1), colorBrightGreen,IIf(ROC_Histogram < Ref(ROC_Histogram,-1),colorRed,colorBlue));
+AddColumn(ROC_Histogram,"RoC Bar",1.0, colorBlack,FillcolorH);
+
+_SECTION_END();

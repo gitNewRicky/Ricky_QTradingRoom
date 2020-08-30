@@ -1,0 +1,6 @@
+iPrd=Param("Periode",10,1,1000,1);
+iMktVal=Param("Mkt. Value (Milyar) >",10,0,1000,1);
+AddColumn(TAS_PBCD_BEI_APP(iPrd),"Avg.Price Performance (%)");
+AddColumn(TAS_PBCD_BEI_Beta(iPrd),"Beta");
+AddColumn(TAS_PBCD_BEI_Correl(iPrd),"Correlation");
+Filter=TAS_MktVal_Filter(iMktVal,iPrd)>0; 

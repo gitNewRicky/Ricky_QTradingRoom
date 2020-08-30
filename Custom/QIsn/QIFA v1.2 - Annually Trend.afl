@@ -1,0 +1,408 @@
+/*
+//------------------------------------------------------------------------------
+//
+//  Formula Name: QIFA - Annually Trend Ver. 1.2 (Quantitative Intelligent Fundamental Analysis)
+//  Author		: Isnandar 
+//  E-mail		: isnandar2009@gmail.com
+//  Url			: QISignal.com
+//  Date		: May 2016
+//  Flags		: Indicator & Exploration
+//  
+//------------------------------------------------------------------------------
+*/
+
+/*
+Disclaimer :
+	Data maupun rekomendasi yang dihasilkan oleh Quantitative Intelligent Fundamental Analysis (QIFA) berdasarkan Financial Data, dan merupakan informasi semata. 
+	Segala keputusan dalam membeli atau menjual saham memiliki resiko yang harus dipahami sebelum pengambilan keputusan.
+	QISignal.com sebagai penyedia data dan pengembang QIFA tidak bertanggung jawab terhadap kerugian baik langsung maupun 
+	tidak langsung yang timbul dari tindakan membeli atau menjual saham.
+	
+	Rencanakan investasi anda dengan manajemen yang baik. 
+	Setiap keputusan investasi menjadi tanggung jawab pemilik investasi atau pemilik modal.
+*/
+
+/*
+New Update :
+v.1.2 : 2017-01-03
+- Coded : Fixed Bug. Data lapkeu terakhir ditampilkan berulang bilamana lebih kecil dari tahun berjalan (current date).
+
+v.1.1 : 2016-08-26
+- Coded : Perbaikan pada function Growth Rate, bilamana terdapat EPS minus dalam periode tertentu maka GrowthRate = 0 
+		  (meskipun secara matematis EPS minus dapat dihitung namun secara financial hal ini tidak dapat diterima.
+- Explore : Penambahan filter EPS:GrowthRate, guna meng-explore saham2 yg mempunyai tingkat pertumbuhan yg ditentukan
+
+v.1.0 : 2016-05-12
+- Explore : Menambahkan kolom EPS (MRQ) ~ QIsnMRQ("EPS")
+- Coded : Menambahkan TitleWidth untuk membagi kolom header
+- AFL    : Modifikasi dari QIFA v1.3 - Financial Trend.AFL 
+*/
+
+
+AflTitle = "QIFA - Annually Trend Ver.1.2";
+
+yr = Year();
+YearChange = yr != Ref( yr, -1 );
+
+paramGR=0;
+FirstYr = 0;
+LastYr = 0;
+QIFALastYr = 0;
+
+startbar = 0;
+nLastReported = 0;
+FinGrowth = 0 ;
+AvgFin = 0 ;
+
+plPeriodType = "Annually";
+period = Hor=Param("Annually Period",5,1,8,1);
+FiscalYr = QIsnFAHistory("Period",plPeriodType,period);
+
+
+plFinancial = ParamList("Financials","EPSttm|ForwardEPS|BookValuePerShare|RevenuePerShare|DividendPerShare|"+
+						"NetProfitMargin|OperatingMargin|ReturnOnAssets|ReturnOnEquity|"+
+						"CurrentAssets|TotalAssets|CurrentLiabilities|TotalLiabilities|TotalEquity|OperatingCashFlow|NetIncome",0);
+QIFA = QIsnFAHistory(plFinancial,plPeriodType,period);
+
+if( Status("action") == actionExplore || IsIndex()) 
+{
+titleheader = "" ;
+}
+else
+{
+titleheader = QIsnFA("Asofdate")+"      "+Name()+ " - "+ plFinancial ;
+}
+
+FromYr=yr[0]-period;
+
+PriceScale = 1;
+plScale = ParamList("Amount (Rp.) ","In Million|In Billion|In Trillion",1);
+if(plFinancial == "CurrentAssets" || plFinancial == "TotalAssets" || plFinancial == "CurrentLiabilities" || plFinancial == "TotalLiabilities" || 
+				plFinancial == "TotalEquity" || plFinancial == "OperatingCashFlow" || plFinancial == "NetIncome")
+{
+	PriceScale = IIf(plScale=="In Billion",1000,IIf(plScale=="In Trillion",1000000,1)) ; //In Bio
+}
+ShowGridLine = ParamToggle("Show Grid ?","Yes|No",0);
+
+for( i = 0; i < BarCount; i++ )
+{
+  if( QIFA[ i ] && yr[ i ] > FromYr )
+  {
+    startbar = i;
+    break;
+  } 
+}
+
+_SECTION_BEGIN("Explore Filter");
+	paramGR=Param("EPS:GrowthRate(%) >=",0,-15,100,5);	
+_SECTION_END();
+
+LastYrValue = QIFA[ startbar  ];
+LastMoValue = QIFA[ startbar  ];
+
+MaxYrProfit = MinYrProfit = 0;
+MaxMoProfit = MinMoProfit = 0;
+Chg = FinYr = 0;
+LastQIFA = 1 ;
+
+for( i = startbar ; i < BarCount; i++ )
+{
+  if( YearChange[ i ] || i == BarCount - 1 )  
+  {
+    
+    if(QIFA[ i ] ) 
+    {
+		FinYr = QIFA[ i ] / PriceScale ;
+	}
+	else
+	{
+		FinYr = QIFA[ i ] ;
+	}	
+    
+    VarSet("FinYear"+ yr[ i - 1 ], FinYr );
+
+    MaxYrProfit = Max( MaxYrProfit, FinYr );
+    MinYrProfit = Min( MinYrProfit, FinYr );
+
+    if( FirstYr == 0 ) FirstYr = yr[ i - 1 ];
+ 	if (FiscalYr[i] != yr[ i - 1 ]) nLastReported++; 
+    
+
+	LastYr = yr[ i ] - nLastReported ;
+	LastQIFA = FinYr ; 
+	FinYr=0;
+    QIFALastYr = FiscalYr[i]; //Update 2017-01-03	
+  }
+  if(QIFALastYr != LastYr ) LastYr--; //Update 2017-01-03  
+}
+
+
+
+/* Drawing code & helper functions */
+
+GfxSetOverlayMode( 2 );
+CellHeight = (Status("pxheight")-1)/(LastYr - FirstYr + 3 ); 
+CellWidth = (Status("pxwidth")-1)/3;//14; 
+GfxSelectFont( "Tahoma", 8.5 ); 
+GfxSelectSolidBrush( colorDarkOliveGreen );
+GfxRectangle( 0, 0, Status("pxwidth"), Status("pxheight"));
+GfxSetBkMode( 1 );
+
+function PrintInCell( string, row, Col ) 
+{
+ Color =  ColorRGB( IIf( row == 0 || col == 0 || col == 13, 220, 255 ), 255, IIf( row % 2, 255, 220 ) );
+ GfxSelectSolidBrush( Color   );
+ GfxDrawText( string, Col * CellWidth + 1, row * CellHeight + 1, (Col + 1 ) * CellWidth, (row + 1 ) * CellHeight, 32+5 ); 
+} 
+
+YOffset = 25;
+XOffset = 15;
+
+function DrawBar( text, bar, numbars, y, Miny, Maxy )
+{
+ BarWidth = (Status("pxwidth") - 4 * XOffset )/( numbars + 1 ); 
+ BarHeight = Status("pxheight") - 2 * YOffset;
+ relpos = ( y - Miny ) / (Maxy - Miny );
+
+ xp = XOffset + ( bar + 0.5 ) * BarWidth;
+ yp = YOffset + BarHeight * ( 1 - relpos );
+ xe = XOffset + ( bar + 1 ) * BarWidth;
+ ye = YOffset + BarHeight * ( 1 - ( -miny )/( maxy - miny ) );
+  
+ if( y > 0 )
+ {
+ GfxGradientRect( xp, yp, 
+                  xe , ye,
+                  ColorHSB( 70, 255 * relpos, 255 ), ColorHSB( 70, 20, 255 ) ); 
+
+	GfxSetTextColor( ColorHSB( 60, 20, 255 ) );
+	GfxTextOut( text, xp, ye ); //Annually or Quarterly
+ 	GfxSetTextColor( colorBlack );
+	GfxTextOut( StrFormat("%.2f", y ), xp, yp );
+ }
+ else
+ {
+	GfxGradientRect( xp, ye, 
+                  xe , yp,
+                  ColorHSB( 0, 20, 255 ), ColorHSB( 0, 255 * ( 1 - relpos ), 255 ) ); 
+ 
+	GfxTextOut( text, xp, ye ); //Annually or Quarterly
+	GfxTextOut( StrFormat("%.2f", y ), xp, yp );
+ }
+}    
+
+function DrawLevels( Miny, Maxy )
+{
+  range = Maxy - Miny;
+
+  grid = 100;
+  if( range < 10 ) grid = 1;
+  else 
+  if( range < 20 ) grid = 2;
+  else 
+  if( range < 50 ) grid = 5;
+  else 
+  if( range < 100 ) grid = 10;
+  else 
+  if( range < 200 ) grid = 20;
+  else 
+  if( range < 500 ) grid = 50;
+  else 
+  if( range < 1000 ) grid = 100;
+  else 
+  if( range < 5000 ) grid = 500;
+  else 
+  if( range < 10000 ) grid = 1000;
+  else 
+  if( range < 30000 ) grid = 3000;
+  else 
+  if( range < 50000 ) grid = 5000;
+  else 
+  if( range < 100000 ) grid = 10000;
+  else 
+  if( range < 1000000 ) grid = 100000;
+  else 
+  if( range < 5000000 ) grid = 500000;
+
+  _TRACE("grid = "+grid +" range "+range );
+  
+  width = Status("pxwidth") - 4 * XOffset;
+  height = Status("pxheight") - 2 * YOffset;
+
+  GfxSelectPen( colorBlack, 1, 2 );
+  for( y = grid * ceil( Miny / grid ); y <= grid * floor( Maxy / grid ); y += grid )
+  {
+    yp =  YOffset + Height * ( 1 -  ( y - Miny ) / (Maxy - Miny ) );
+
+    GfxMoveTo( XOffset, yp );
+    if(ShowGridLine==1) GfxLineTo( XOffset + width , yp );
+    GfxTextOut( " "+ y, XOffset + 2 + width, yp );
+  }
+
+  GfxSelectPen( colorBlack, 1, 0 );
+  GfxMoveTo( XOffset, YOffset );
+  GfxLineTo( XOffset + width, YOffset );
+  GfxLineTo( XOffset + width, YOffset + Height );
+  GfxLineTo( XOffset , YOffset + Height );
+  GfxLineTo( XOffset , YOffset );
+}
+
+LastFinYear = 0 ;
+function DisplayAnnuallyTrend()
+{
+ Bar = 0;
+ 
+ for( y = FirstYr; y <= LastYr ; y++ )
+ {
+   NoGrowth=False;
+   Chg = VarGet("FinYear" + y );
+   DrawBar( ""+y, Bar++, ( LastYr - FirstYr + 1 ), Chg, MinYrProfit, MaxYrProfit );
+   
+   if (y>FirstYr)
+   {
+		FinGrowth += IIf(Chg>0 && LastFinYear>0,100 * ( -1 + Chg / LastFinYear ),0);
+		AvgFin += Chg;
+		if(Chg<0) NoGrowth=True;
+   }
+	LastFinYear = Chg ;
+ }
+ 
+ if(NoGrowth)
+ {
+ 	AvgFin=0;
+	FinGrowth=0;
+ }
+ 
+ TitleWidth = (Status("pxwidth")-1)/3;//14; 
+
+ GfxSetTextColor( colorYellow );
+ GfxSelectFont( "Tahoma", 10 ); 
+ GfxTextOut(AflTitle, 15, 5 );
+
+ 
+ GfxSetTextColor( colorAqua );
+ GfxTextOut(titleheader, 15+TitleWidth, 5 );
+ GfxSetTextColor( colorWhite );
+ 
+ if( plFinancial != "NetProfitMargin" && plFinancial !="OperatingMargin" && plFinancial != "ReturnOnAssets" && plFinancial != "ReturnOnEquity" )
+ {
+	if( plFinancial !="Dividend" )
+	{
+		GfxTextOut( StrFormat("%g", FinancialRange-1)+" Yr. Growth Rate  "+StrFormat("%.2f%%", FinGrowth/(FinancialRange-1) ), 15+(TitleWidth*2), 5 );
+	}
+ }
+ else
+{
+	GfxTextOut(  StrFormat("%g", FinancialRange )+ " Yr. Avg.  "+StrFormat("%.2f%%", AvgFin/FinancialRange ), 15+(TitleWidth*2), 5 );
+
+}
+	
+
+ GfxSelectFont( "Tahoma", 8.5 ); 
+ 
+ DrawLevels( MinYrProfit, MaxYrProfit ); 
+}
+
+function FinancialGrowth(Fin,YrRange,a,b)
+{
+	NoGrowth=False;
+	Yr0EPS = a;
+	Yr1EPS = b;
+	if(Yr0EPS<0 OR Yr1EPS<0) NoGrowth=True;
+	EPSFinGrowth = IIf(Yr0EPS>0 && Yr1EPS>0,Nz(100 * ( -1 + Yr0EPS / Yr1EPS )),0);
+	if( YrRange<2 ) break;
+	for( y = 2; y <= YrRange ; y++ )
+	{
+		Yr0EPS = QIsnFA(Fin,-1 * y );
+		if(Yr0EPS<0) NoGrowth=True;
+		
+		EPSFinGrowth += IIf(Yr0EPS>0 && Yr1EPS>0,100 * ( -1 + Yr1EPS / Yr0EPS ),0);
+		Yr1EPS = Yr0EPS ;
+	}
+	if(NoGrowth) EPSFinGrowth=0;
+
+	return EPSFinGrowth / YrRange ;
+ }
+
+
+
+if( Status("action") == actionExplore ) 
+{
+	bkColorDefault = 54;
+	Chg = C - Ref(C,-1);
+	MRQorFY  =  QIsnFA("AsOfDate");
+	
+	currentEPS = Nz(QIsnFA("EPS"),0);
+	YrAgoEPS = Nz(QIsnFA("EPS",-1),0);
+	Yr1EPSGrowth =IIf(YrAgoEPS>0 && currentEPS>0,Nz(100 * ( -1 + currentEPS / YrAgoEPS )),0);
+	EPSFinGrowth = FinancialGrowth("EPS",period,currentEPS,YrAgoEPS);
+	PER = C/currentEPS;
+	PEG = IIf(PER>0 && EPSFinGrowth>0 ,Nz(PER / EPSFinGrowth),0) ;
+	
+	
+	CRR = Nz(QIsnFA("CurrentAssets") / QIsnFA("CurrentLiabilities")) ; //Current Ratio
+	DER = QIsnFA("TLiab")/QIsnFA("TEquity") ;
+	PCF = Nz(C/(QIsnFA("OCF")*1000/QIsnFA("sharesOut")),0) ;
+	
+	Dividend = QIsnFA("Dividend") ;
+	
+	PEGbkColor = IIf(PEG<3 AND PEG>0,ColorHSB( 72, 255 * (3-PEG), 255 ),ColorHSB( 0, 255 * ( 1 - PEG ), 255 )) ;
+	
+	AddColumn(C,"Close",1,IIf(Chg>0,colorGreen,colorRed),colorDefault,60);		
+	if( Nz(QIsnFA("EPS"),0) == 0)
+	{	
+		MRQorFY ="N/A";
+	}
+	
+	valueGR = paramGR; 
+	switch( valueGR )
+	{
+	  case 0:
+			Filter = (GroupID() == 2 OR GroupID() == 3 ) AND FinancialRange>0 ;
+			break;
+
+	  default:
+			Filter = (GroupID() == 2 OR GroupID() == 3 ) AND FinancialRange>0 AND EPSFinGrowth>= paramGR; 
+			break;
+	}
+
+
+	AddTextColumn(MRQorFY, "Period",1.0,colorDefault,bkColorDefault,70);	
+
+	boolCumDate = Iif(QIsnFA("CumDateNum")>=LastValue(DateNum())+10000*1900,true , false)  ;
+	//AddColumn(Dividend,"Dividend",1.2,colorDefault,IIf(Dividend>0 && boolCumDate ,colorbrightgreen,bkColorDefault),55);
+	AddColumn(C*QIsnFA("SharesOut")/1000000,"M.Cap.(Bio) ",1.2,colorDefault,bkColorDefault,85);
+
+	AddColumn(Nz(EPSFinGrowth,0),"EPS:GrowthRate",1.2,colorDefault,bkColorDefault,80);
+	AddColumn(Nz(Yr1EPSGrowth,0),"1YrEPSGrowth",1.2,colorDefault,bkColorDefault,85);
+	AddColumn(QIsnFA("QRG"),"QtrRevG",1.2,colorDefault,bkColorDefault,55);
+	AddColumn(QIsnFA("QEG"),"QtrEPSG",1.2,colorDefault,bkColorDefault,55);
+	
+	AddColumn(QIsnMRQ("EPS"),"EPS (MRQ)",1.2,colorDefault,bkColorDefault,55);
+		
+	AddColumn(C/QIsnFA("ForwardEPS"),"ForwardPE",1.2,colorDefault,bkColorDefault,55);
+	AddColumn(PER,"PE~ttm",1.2,colorDefault,bkColorDefault,55);
+	AddColumn(PEG,"PEG",1.2,colorDefault,PEGbkColor,55);
+			
+	AddColumn(C/QIsnFA("BV"),"PBV",1.2,colorDefault,bkColorDefault,50);
+	AddColumn(PCF,"PCF",1.2,colorDefault,bkColorDefault,50);	
+	AddColumn(QIsnFA("PM"),"NPM",1.2,colorDefault,bkColorDefault,50);
+	AddColumn(QIsnFA("ROE"),"ROE",1.2,colorDefault,bkColorDefault,50);
+	AddColumn(QIsnFA("ROA"),"ROA",1.2,colorDefault,bkColorDefault,50);
+	AddColumn(DER,"DER",1.2,colorDefault,bkColorDefault,50);
+	AddColumn(CRR,"CRR",1.2,colorDefault,bkColorDefault,50);
+	//AddTextColumn(SectorID(1), "Sector",1.0,colorDefault,bkColorDefault,90);
+	AddTextColumn(IndustryID(1), "Industry",1.0,colorDefault,bkColorDefault,100);
+}
+
+/* Main program */
+if(!IsIndex()) 
+{DisplayAnnuallyTrend();}
+else{
+	GfxSelectFont("Tahoma", 10, 100);
+	GfxSetTextColor(colorYellow); 		
+	GfxTextOut("Symbol: "+Name(), 5, 5 ); 
+	GfxTextOut("QIFA - Annually Trend: N/A", 5, 25 ); 
+	GfxSetTextColor(colorDefault); 
+	GfxSelectFont("Verdana", 8, 100);
+}

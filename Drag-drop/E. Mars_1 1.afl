@@ -1,0 +1,78 @@
+//Mars-1
+
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g,Hi %g,Lo %g, Close %g (%.1f%%) 
+Vol " +WriteVal( V, 1.0 ) +" {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 )) ));
+barcolor =IIf(C>O, ParamColor("Up candlestick", colorBrightGreen ), ParamColor("Down candlestick", colorOrange )); 
+Plot( C, "Close", barColor, 64);
+
+BuyOffSet = 18;
+SellOffset = 18;
+RegLength = 5;
+BuyATRPeriod = 2;
+SellATRPeriod = BuyATRPeriod;
+ATRMultiplier = 0.5;
+
+G8 = HHV(H-ATRMultiplier*ATR(BuyATRPeriod),BuyOffset);
+G9 = LLV(L+ATRMultiplier*ATR(SellATRPeriod),SellOffset);
+ave=(G8+G9)/2;
+
+Var1=(Open+Low+High+Close)/4;
+Var2=EMA(EMA(Close, 2), 2); 
+Var3=EMA(EMA(Var2, 5), 5); 
+sup1=EMA(EMA(Var1,5),2);
+sup2= LLV(sup1,13);
+sup3= LLV(Low,60)*1.02;
+res1= HHV(sup1,13);
+res2= HHV(sup1,60);
+res3= HHV(High,60)*0.98;
+
+Plot(5, "",
+IIf(sup1>Ref(sup1,-1),colorGreen,
+IIf(sup2>Ref(sup2,-1),colorGrey50,
+IIf(res1>Ref(res1,-1),colorBlue,
+IIf(res2>Ref(res2,-1),colorYellow,
+IIf(sup2=Ref(sup2,-1),colorRed,
+IIf(res1=Ref(res1,-1),colorPink,
+IIf(res2=Ref(res2,-1),colorLightBlue,
+IIf(res3=Ref(res3,-1),colorBlue,colorWhite)))))))),
+styleOwnScale|styleArea|styleNoLabel,-0.5, 350 );
+
+nn=20;
+mmm=120;
+Ttt= ( H + L + 2 * C ) / 4;
+CI= (Ttt -MA(Ttt,14)) / (0.015*StDev(Ttt,14));
+CCCI=EMA(EMA(CI,3),3)+mmm;
+Hh=HHV(H,nn);
+Ll=LLV(L,nn);
+MM=(Hh+Ll)/2;
+CCCC=EMA(CCCI*(Hh-Ll)/(2*mmm)+Ll,3);
+Plot(Hh,"Resistance",11,styleLine);
+Plot(Ll,"Support",14,styleLine);
+Plot(CCCC,"CNC",colorYellow,styleLine+4);
+
+Buy = Cccc>Ref(Cccc,-1) AND ((Cccc>Ref(Cccc,-1) AND Ref(Cccc,-1)<Ref(Cccc,-2) AND Cccc<ave) OR Cross(Cccc,Ll) OR Cross(Cccc,G9));
+Sell= Cccc<Ref(Cccc,-1) AND ((Cccc<Ref(Cccc,-1) AND Ref(Cccc,-1)>Ref(Cccc,-2) AND Cccc>ave) OR Cross(Hh,Cccc) OR Cross(G8,Cccc));
+PlotShapes( IIf( Buy, shapeHollowUpArrow, shapeNone ), 10, layer = 0, yposition = L, offset = -15  ); 
+PlotShapes( IIf( Sell, shapeHollowDownArrow, shapeNone ), 13, layer = 0, yposition = H, offset = -15  );
+
+_SECTION_BEGIN("Exploration");
+pfrom = Param("Price From", 0, 0, 1000, 0.5 );
+pto = Param("Price To", 1000, 0, 1000, 0.5 );
+Minv = Param("Minimum Volume (K)", 500, 0, 1000, 50);
+dd = Param("Decimal Digits", 1.2, 1, 1.7, 0.1 );
+
+Filter = (Buy OR Sell) AND C>pfrom AND C<pto AND V>1000*Minv;
+Color = IIf(Close>Open, colorGreen, colorRed);
+bcolor = IIf(Buy, colorGreen, 1);
+scolor = IIf(Sell, colorRed, 1);
+
+AddColumn(Buy , "Buy" , 1.1, bcolor);
+AddColumn(Sell , "Sell", 1.1, scolor);
+AddColumn(O, "Open", dd, textColor = Color);
+AddColumn(C, "Close", dd, textColor = Color);
+AddColumn(Ll, "Support", dd, textColor = Color);
+AddColumn(Hh, "Resistance", dd, textColor = Color);
+AddColumn(V, "Volume", 1, textColor = Color);
+AddTextColumn(FullName(),"Name");
+_SECTION_END();

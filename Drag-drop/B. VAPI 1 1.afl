@@ -1,0 +1,22 @@
+_SECTION_BEGIN("VAPI");
+Length = 10;
+x = (2*Close-High-low) / (High - low);
+tva = Sum(Volume * x,length);
+tv = Sum(Volume,length);
+va = 100 * tva / tv;
+Plot(0,"",styleLine);
+mva = Wilders(va,10);
+
+vac1 = (va < 0) AND (va > Ref(va,-1));
+vac2 = (va > 0) AND (va > Ref(va,-1));
+vac3 = (va > 0) AND (va < Ref(va,-1));
+vac4 = (va < 0) AND (va < Ref(va,-1));
+vac = IIf(vac1,colorRed,IIf(vac2,colorBrightGreen,IIf(vac3,colorGreen,IIf(vac4,colorDarkRed,colorBlue))));
+
+mvac1 = mva > ref(mva,-1);
+mvac2 = mva < Ref(mva,-1);
+mvac  =  IIf(mvac1,colorLime,IIf(mvac2,colorBrown,colorBlue)); 
+Plot(va,"volume accumulation",vac,styleHistogram);
+Plot(mva,"Weight volume accumulation",mvac,styleLine);
+_SECTION_END();
+

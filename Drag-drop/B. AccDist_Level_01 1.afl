@@ -1,0 +1,58 @@
+_SECTION_BEGIN("MA AccDist");
+
+Short = Param("Short Period",3,2,200,1);
+Long = Param("Long Period",5,5,200,1);
+
+AD = AccDist();
+MSAD = WMA(AD,Short);
+MLAD = WMA(AD,Long);
+MVLAD = WMA(AD,34);
+
+Acc  = MSAD > MLAD;
+Dist = MSAD < MLAD;
+
+MSADUP = MSAD > Ref(MSAD,-1);
+MSADDW = MSAD < Ref(MSAD,-1);
+
+MLADUP = MLAD > Ref(MLAD,-1);
+MLADDW = MLAD < Ref(MLAD,-1);
+
+CrossUp = Cross(MSAD,MLAD);
+CrossDw = Cross(MLAD,MSAD);
+GreenArea = MSAD > MLAD;
+RedArea = MLAD > MSAD;
+
+Histogram = MSAD - MLAD;
+Histo_color = IIf(Acc,colorBrightGreen,IIf(Dist,colorRed,colorBlue)); 
+
+Plot(MSAD,"AccDist ("+Short+")",colorBrightGreen,styleLine | styleThick);
+Plot(MLAD,"AccDist ("+Long+")",colorRed,styleLine);
+Plot(MVLAD,"",colorBlue,styleLine);
+Plot(Histogram,"Histogram",Histo_color,styleHistogram | styleOwnScale);
+
+Title = EncodeColor(colorBrightGreen)+
+"AccDist("+Short+") ="+ WriteVal(MSAD,1.0)+
+WriteIf(MSADUP,EncodeColor(colorGreen),WriteIf(MSADDW,EncodeColor(colorDarkRed),EncodeColor(colorYellow)))+
+" -- "+WriteIf(MSADUP,"Accumulation",WriteIf(MSADDW,"Distribution","Netral"))+"\n"+
+EncodeColor(colorRed)+
+"AccDist("+Long+") ="+ WriteVal(MLAD,1.0)+
+WriteIf(MLADUP,EncodeColor(colorGreen),WriteIf(MLADDW,EncodeColor(colorDarkRed),EncodeColor(colorYellow)))+
+" -- "+WriteIf(MLADUP,"Accumulation",WriteIf(MLADDW,"Distribution","Netral"));
+
+Title = Title +
+WriteIf(CrossUp,EncodeColor(colorBrightGreen),WriteIf(CrossDw,EncodeColor(colorRed),WriteIf(GreenArea,EncodeColor(colorGreen),WriteIf(RedArea,EncodeColor(colorDarkRed),EncodeColor(colorYellow)))))+
+"\nStatus : " +
+WriteIf(CrossUp,"Accumulation Warning",WriteIf(CrossDw,"Distribution Warning",WriteIf(GreenArea,"Accumulation Phase",WriteIf(RedArea,"Distribution Phase","Netral"))));
+
+// Exploration
+Filter = 1;
+StatMSAD = WriteIf(MSAD > Ref(MSAD,-1),"Accumulation",WriteIf(MSAD < Ref(MSAD,-1),"Distribution","Netral"));
+StatMLAD = WriteIf(MLAD > Ref(MLAD,-1),"Accumulation",WriteIf(MLAD < Ref(MLAD,-1),"Distribution","Netral"));
+
+StatCross = WriteIf(CrossUp,"01. Cross_Acc",WriteIf(CrossDw,"04. Cross_Dist",WriteIf(GreenArea,"02. Accumulation",WriteIf(RedArea,"03. Distribution","03. No OP"))));
+
+AddTextColumn(StatCross,"AccDist(5)",1,colorBlack);
+AddTextColumn(StatMSAD,"AccDist(3)",1,colorBlack);
+AddTextColumn(StatMLAD,"AccDist(5)",1,colorBlack);
+
+_SECTION_END();

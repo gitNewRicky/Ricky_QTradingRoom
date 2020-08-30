@@ -1,0 +1,5 @@
+Periods = Param("Will%R Periods", 14, 2, 1000, 1, 1 );
+Periods2 = Param("Smoothing Periods", 2, 2, 5, 1, 1 );
+
+a=TAS_WilliamsR_Smooth(Periods,Periods2);
+Plot( a, "Will%R Smoothed", ParamColor( "Color", colorRed ), ParamStyle("Style") ); 

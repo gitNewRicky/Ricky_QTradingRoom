@@ -1,0 +1,9 @@
+_SECTION_BEGIN("CCI");
+periods = Param( "Periods", 50, 2, 200, 1 );
+
+CCIP = CCI( periods );
+
+Plot(CCIP , _DEFAULT_NAME(), ParamColor( "Color",  colorCycle ), ParamStyle("Style")  );
+Plot(WMA(CCIP,20),"",colorBlack,styleLine);
+
+_SECTION_END();

@@ -1,0 +1,123 @@
+/* 
+ * Copyright (C)2017 PT. Stosia Teknologi Investasi
+ *
+ * This file is licensed under  GNU GPL (General Public License) version 3.
+ *
+ * File ini  berlisensi  GNU GPL (General Public License)  versi 3. Artinya
+ * kalau Anda  memodifikasi file ini, atau membuat karya lain yang berbasis
+ * file ini  ("derivative work"),  maka Anda  wajib  mendistribusikan  kode
+ * sumber ("source code")  modifikasi  atau karya  tersebut  kepada publik.
+ * Hal ini untuk menjaga keterbukaan pengetahuan di masa mendatang.
+ *
+ * Silakan memakai kode ini untuk kepentingan apapun termasuk untuk mencari
+ * profit,  asal tidak jahat.  Sebagai tambahan permintaan, kami menghimbau
+ * untuk  TIDAK  menjual kode/file ini secara apa adanya  atau dalam bundel
+ * produk yang dijual secara komersial, karena hal itu tidak etis.
+ *
+ * Untuk penjelasan lebih lanjut silakan bertanya kepada kami.  Untuk detil
+ * lisensi GPLv3  silakan lihat file GPLv3-LICENSE.md  yang didistribusikan
+ * bersama file ini.
+ *
+ * Author: Benny Prijono <benny@stosia.com>
+ */
+ 
+#include_once <..\Quant.id\AFL\Tools.afl>
+#include_once <..\Quant.id\AFL\ForeignFlow\ForeignFlowCommon.afl>
+
+#pragma maxthreads 4
+ 
+// All symbols and quotes accepted.
+// Control which symbols are included/excluded from the Exploration filter settings
+Filter = 1;
+
+// Set to daily since the datasource is intraday
+TimeFrameSet(inDaily);
+
+// Get the start and end period
+startDate = Status("rangefromdate");
+endDate = Status("rangetodate");
+
+// Some symbols don't have data and they cause us trouble unless we do this
+if (BarCount > 0) {
+
+	ffDayNetValue = stGetFFIntervalValue();
+	ffBalance = Cum(ffDayNetValue);
+
+	dn = DateNum();
+	tn = TimeNum();
+
+	// startIndex is the bar just prior to startDate
+	for (startIndex=0; startIndex < BarCount; ++startIndex) {
+		if (dn[startIndex] >= startDate) {
+			if (startIndex > 0)
+				startIndex -= 1;
+			break;
+		}
+	}
+
+	// endIndex is the bar when endDate happens
+	for (endIndex = startIndex; endIndex < BarCount; ++endIndex) {
+		if (dn[endIndex] == endDate) {
+			break;
+		} else if (DateTimeDiff(dn[endIndex], endDate) > 0) {
+			if (endIndex > 0)
+				endIndex -= 1;
+			break;
+		}
+	}
+
+	if (startIndex >= BarCount)
+		startIndex = 0;
+
+	if (endIndex >= BarCount) {
+		endIndex = BarCount - 1;
+	}
+
+	// Ret is the return/yield of the stock from startDate to endDate
+	Ret = (C - C[startIndex]) * 100 / C[startIndex];
+	
+	// NetFlow is the foreign flow balance from startDate to endDate
+	NetFlow = ffBalance - ffBalance[startIndex];
+
+	// color based on net flow. Positive net flow is green, negative is red
+	if (NetFlow[endIndex] >= 0) {
+		clr = NetFlow[endIndex] * 255 / 100;
+		if (clr > 255)
+			clr = 255;
+		flowClr = ColorRGB(0, clr, 0);
+	} else {
+		clr = NetFlow[endIndex] * 255 / (-100);
+		if (clr > 255)
+			clr = 255;
+		flowClr = ColorRGB(clr, 0, 0);
+	}
+
+	// color based on yield. Positive yield is green, negative is red
+	if (Ret[endIndex] >= 0) {
+		clr = Ret[endIndex] * 255 / 5;
+		if (clr > 255)
+			clr = 255;
+		retClr = ColorRGB(0, clr, 0);
+	} else {
+		clr = Ret[endIndex] * 255 / (-5);
+		if (clr > 255)
+			clr = 255;
+		retClr = ColorRGB(clr, 0, 0);
+	}
+
+	// The dot color is the combination of flow color and return color
+	clr = (flowClr + retClr) / 2;
+	
+	// Columns
+	AddColumn(NetFlow, "Net Flow (B)");
+	AddColumn(Ret, "Return (%)");
+
+	// Add text column for debugging
+	dt = DateTime();
+	comment = "From " + stDateTimeToISODateTime(dt[startIndex]) + " to " + stDateTimeToISODateTime(dt[endIndex]);
+	AddTextColumn(comment, "Comment");
+	
+	// Plot the point
+	XYChartAddPoint( "Return/Foreign Flow", Name(), Netflow[endIndex], Ret[endIndex], clr, clr); 
+	XYChartSetAxis("Return/Foreign Flow", "Netflow[B]", "Return[%]", styleDots);	
+}

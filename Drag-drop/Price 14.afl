@@ -1,0 +1,16 @@
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+
+_SECTION_BEGIN("STIX");
+function STIX()
+{
+  ADRatio = 100 * AdvIssues()/( AdvIssues() + DecIssues() );
+
+  return EMA( ADRatio, 21 );
+}
+
+Plot( STIX(), _DEFAULT_NAME(), ParamColor("Color", ColorCycle ) );
+_SECTION_END();

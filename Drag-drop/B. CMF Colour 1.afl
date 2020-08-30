@@ -1,0 +1,15 @@
+// Downloaded From www.WiseStockTrader.com
+_SECTION_BEGIN("Chaikin Money Flow");
+
+function CMF(r1)
+{
+Graph0=Sum(IIf( H>L && V>0,((( C-L )-( H-C )) / ( H-L ))*V,0),r1) / Sum(V,r1);
+
+dynamic_color = IIf( Graph0> 0, colorGreen, colorRed ); 
+
+Plot(Graph0, "Chaikin Money Flow ("+r1+")", dynamic_color, styleHistogram | styleThick); 
+
+}
+
+r1=Param("Periods", 13);
+CMF(r1);

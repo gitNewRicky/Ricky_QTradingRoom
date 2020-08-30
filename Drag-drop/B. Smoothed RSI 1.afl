@@ -1,0 +1,9 @@
+_SECTION_BEGIN("B. Smoothed RSI");
+// Downloaded From www.WiseStockTrader.com
+SetChartOptions(0,0,chartGrid20|chartGrid80);
+periods = Param( "Periods", 8, 0, 200, 1 );
+
+Plot(RSIa(WMA(C, 4), periods), _DEFAULT_NAME(), ParamColor( "Color2", colorCycle ), ParamStyle("Style")  );
+Plot(80, _DEFAULT_NAME(), colorWhite, styleDashed);
+Plot(20, _DEFAULT_NAME(), colorWhite, styleDashed);
+_SECTION_END();

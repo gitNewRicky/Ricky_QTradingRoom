@@ -1,0 +1,24 @@
+_SECTION_BEGIN("A. Accurate Pivot System");
+//www.aflcode.com
+SetBarsRequired( sbrAll,sbrAll) ;
+nbar = Param("nbar" ,4,2,50,1) ;
+PHigh = H > Ref(HHV(H,nbar) ,-1) AND Ref(HHV(H,nbar) ,nbar) < H;
+PHighPrice0 = ValueWhen(PHigh, H);
+PHighPrice1 = IIf(PHighPrice0 AND BarsSince(PHigh) > nbar,PHighPrice0, Null);
+PHighPrice2 = IIf(PHighPrice0 AND BarsSince(PHigh) <= nbar,PHighPrice0, Null);
+PLow = L < Ref(LLV(L,nbar) ,-1) AND Ref(LLV(L,nbar) ,nbar) > L;
+PLowPrice0 = ValueWhen(PLow, L);
+PLowPrice1 = IIf(PLowPrice0 AND BarsSince(Plow) > nbar,PLowPrice0, Null);
+PLowPrice2 = IIf(PLowPrice0 AND BarsSince(Plow) <= nbar,PLowPrice0, Null);
+GraphXSpace = 5;
+SetChartOptions( 0, chartShowDates) ;
+Plot(C,"\nLast close " ,colorGreen, styleCandle) ;
+PlotShapes(shapeSmallCircle* PLow,colorGreen, 0,L,-10);
+PlotShapes(shapeSmallCircle* PHigh,colorRed, 0,H,10);
+PlotShapes(shapeUpArrow*PLow, colorGreen, 0,L,-25);
+PlotShapes(shapeDownArrow*PHigh, colorRed, 0,H,-25);
+Plot(PHighPrice1, "\nPHighPrice" ,colorOrange, styleThick) ;
+Plot(PHighPrice2, "",colorOrange, styleDots | styleNoLine) ;
+Plot(PLowPrice1, "\nPLowPrice" ,colorGreen,styleThick) ; 
+Plot(PLowPrice2,"",colorGreen,styleDots,styleNoLine);
+_SECTION_END();

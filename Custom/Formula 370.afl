@@ -1,0 +1,15 @@
+#include_once <../Include/BS_Tools.afl>
+
+_SECTION_BEGIN("Retail Broker");
+
+SumRetailBroker = fnGetNetVolAllRetailBroker();
+
+CumREtailBroker = Cum(SumRetailBroker);
+Plot(CumREtailBroker,"",colorWhite,styleDashed | styleOwnScale);
+
+SumRetailBrokerCol = IIf(SumRetailBroker > 0, colorBrightGreen,colorRed);
+abs_SumRetailBroker = abs(SumRetailBroker);
+SetBarFillColor(SumRetailBrokerCol);
+PlotOHLC(0,abs_SumRetailBroker,0,abs_SumRetailBroker,"Sum Retail Broker",colorWhite,styleCandle);
+
+_SECTION_END();

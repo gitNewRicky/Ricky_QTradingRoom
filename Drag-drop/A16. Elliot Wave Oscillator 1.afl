@@ -1,0 +1,161 @@
+// Downloaded From www.WiseStockTrader.com
+/// PROGRAMME MODIFIED BY PRASAD RAO FOR MASTER PLOTTER ///
+
+_SECTION_BEGIN("BACK COLR");
+_SECTION_BEGIN("PRASAD SYSTEMS");
+Param("DEDICATED TO MY FATHER",5);
+_SECTION_END();
+ 
+
+SetChartBkColor( ParamColor("Chart Color", colorBlack));
+
+
+
+_SECTION_BEGIN("BACKGROUD LTRS");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+GfxSetOverlayMode(1);
+
+GfxSetTextAlign( 6 );// center alignment
+GfxSetTextColor( ParamColor("Text Color", ColorHSB( 42, 42, 42 ) ));
+GfxSetBkMode(0); // transparent
+
+
+
+GfxSelectFont("Tahoma", Status("pxheight")/12);
+GfxTextOut( "PRASAD ANALYTICS ©", Status("pxwidth")/2, Status("pxheight")/14);
+
+GfxSelectFont("Tahoma", Status("pxheight")/9 );
+GfxTextOut( Name(), Status("pxwidth")/2, Status("pxheight")/4.1 );
+
+
+GfxSelectFont("arial narrow", Status("pxheight")/27 );
+GfxTextOut( "Dedicated to MY FATHER : BALKRISHNA RAO", Status("pxwidth")/2, Status("pxheight")/1.15);
+_SECTION_END();
+ 
+
+
+
+_SECTION_BEGIN("MACD Plotter ver 3");
+
+/**********************************************************
+ /MACD Cross
+***********************************************************/ 
+
+
+
+StartBar=SelectedValue(BarIndex());
+FinishBar = EndValue( BarIndex() );
+i = Startbar;
+
+
+
+
+EWODAILY =  EMA(C,5) - EMA(C,34);
+
+SIG =  EMA(EWODAILY,5);
+
+GfxSelectFont("Tahoma", 11, 700 ); 
+
+todayEWODAILY    = EWODAILY  ; 
+onedaybackEWODAILY    =Ref(EWODAILY  ,-1);
+twodaybackEWODAILY   =  Ref(EWODAILY  ,-2)  ;
+
+if( (todayEWODAILY   [i] > onedaybackEWODAILY   [i])   AND (onedaybackEWODAILY   [i] <= twodaybackEWODAILY  [i]))
+{
+GfxSetTextColor(ColorRGB(186,236,94)); 
+GfxTextOut("New Trend Up",400,1);
+}
+if( (todayEWODAILY   [i] < onedaybackEWODAILY  [i])   AND (onedaybackEWODAILY   [i] >= twodaybackEWODAILY  [i]) )
+{
+GfxSetTextColor(colorRed); 
+GfxTextOut("New Trend Dn",400,1);
+}
+
+if((todayEWODAILY   [i] > onedaybackEWODAILY  [i])   AND (onedaybackEWODAILY   [i] >= twodaybackEWODAILY   [i])
+)
+{
+GfxSetTextColor(ColorRGB(221,248,112)); 
+GfxTextOut("Trend Up",400,1);
+}
+
+if( (todayEWODAILY   [i]< onedaybackEWODAILY  [i])   AND (onedaybackEWODAILY   [i] <= twodaybackEWODAILY   [i])
+                       )
+{
+GfxSetTextColor(ColorRGB(248,113,113)); 
+GfxTextOut("Trend Dn",400,1);
+}
+
+
+
+EWODAILY_ZEROCRUP = Cross(EWODAILY ,0);
+EWODAILY_ZEROCRDN = Cross(0,EWODAILY );
+
+
+if(EWODAILY_ZEROCRUP[I])
+{
+GfxSetTextColor(ColorRGB(221,248,112)); 
+GfxTextOut("Zero Cross Up",550,1);
+}
+
+
+if(EWODAILY_ZEROCRDN[I])
+{
+GfxSetTextColor(ColorRGB(248,113,113)); 
+GfxTextOut("Zero Cross Dn",550,1);
+}
+
+
+
+mycolor=IIf(EWODAILY <0 ,ColorRGB(275,175,255),IIf(EWODAILY >0 ,ColorRGB(151,220,150),colorWhite));
+
+Plot(EWODAILY , "EWODAILY ", mycolor, styleHistogram | styleThick| styleNoLabel, styleOwnScale);
+
+
+
+ 
+Plot(SIG ,"",colorRed,styleLine|styleThick);
+
+
+
+
+
+/****************************************************
+                   CHART TITLES
+****************************************************/
+
+ 
+/****************************************************
+                   CHART TITLES
+****************************************************/
+
+
+GfxSetTextAlign( TA_left = 0);
+GfxSelectFont("Tahoma", 11, 700 ); 
+GfxSetTextColor(ColorRGB(209,191,255)); 
+GfxTextOut("PRASAD ANALYTICS - EWO ",07, 0); 
+
+
+
+
+
+GfxSetTextAlign( TA_LEFT = 0 );
+GfxSelectFont("Tahoma", 11, 700 ); 
+GfxSetTextColor(ColorRGB(255,180,61)); 
+GfxTextOut(Name()+ "   " + Date(),07,20); 
+
+
+
+
+
+ 
+
+
+Title =
+
+"\n";
+ 
+ 
+ 
+  
+
+_SECTION_END();

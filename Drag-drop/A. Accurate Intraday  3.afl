@@ -1,0 +1,54 @@
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorBlack ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+_SECTION_BEGIN("Background_Setting");
+SetChartBkGradientFill( ParamColor("BgTop", colorBlack),
+ParamColor("BgBottom", colorBlack),ParamColor("titleblock",colorDarkTeal ));
+_SECTION_END();
+_SECTION_BEGIN("Time Left");
+function GetSecondNum()
+{
+Time = Now( 4 );
+Seconds = int( Time % 100 );
+Minutes = int( Time / 100 % 100 );
+Hours = int( Time / 10000 % 100 );
+SecondNum = int( Hours * 60 * 60 + Minutes * 60 + Seconds );
+return SecondNum;
+}
+RequestTimedRefresh( 1 );
+TimeFrame = Interval();
+SecNumber = GetSecondNum();
+Newperiod = SecNumber % TimeFrame == 0;
+SecsLeft = SecNumber - int( SecNumber / TimeFrame ) * TimeFrame;
+SecsToGo = TimeFrame - SecsLeft;
+x=Param("xposn",300,0,1000,1);
+y=Param("yposn",50,0,1000,1);
+GfxSelectSolidBrush( ColorRGB( 230, 230, 230 ) );
+GfxSelectPen( ColorRGB( 230, 230, 230 ), 2 );
+if ( NewPeriod )
+{
+GfxSelectSolidBrush( colorYellow );
+GfxSelectPen( colorYellow, 2 );
+Say( "New period" );
+}
+GfxRoundRect( x+45, y+17, x-3, y-2, 0, 0 );
+GfxSetBkMode(1);
+GfxSelectFont( "Arial", 12, 700, False );
+GfxSetTextColor( colorBlack );
+GfxTextOut( ""+SecsToGo+" / "+NumToStr( TimeFrame, 1.0 ), x, y );
+_SECTION_END();
+_SECTION_BEGIN("swing line");
+no=Param( "Swing", 3, 1, 55 );
+tsl_col=ParamColor( "Color", colorCycle );
+res=HHV(H,no);
+sup=LLV(L,no);
+avd=IIf(C>Ref(res,-1),1,IIf(C<Ref(sup,-1),-1,0));
+avn=ValueWhen(avd!=0,avd,1);
+tsl=IIf(avn==1,sup,res);
+Plot(tsl, _DEFAULT_NAME(), tsl_col, styleStaircase);
+Buy=Cross(C,tsl);
+Sell=Cross(tsl,C);
+shape=Buy*shapeUpArrow + Sell*shapeDownArrow;
+PlotShapes(shape,IIf(Buy,tsl_col,tsl_col),0,IIf(Buy,Low,High));

@@ -1,0 +1,70 @@
+_SECTION_BEGIN("FF");
+
+FF = Cum(Aux2);
+Plot(FF,"Foreign Flow",colorBlack,styleStaircase|styleOwnScale);
+
+_SECTION_END();
+
+_SECTION_BEGIN("RI_Swing_Line");
+no=Param( "Swing", 3, 1, 55 );
+res=HHV(C,no);
+res = IIf(res >= Ref(res,-1),Ref(res,-1),res);
+sup=LLV(C,no);
+sup = IIf(sup <= Ref(sup,-1), Ref(sup,-1),sup);
+tsl=IIf(ValueWhen(IIf(C>Ref(res,-1),1,IIf(C<Ref(sup,-1),-1,0))!=0, IIf(C>Ref(res,-1) ,1,IIf(C<Ref(sup,-1),-1,0)),1)==1,sup,res);
+tsl_col = IIf(Close >= tsl, colorBlue,IIf(Close <= tsl, ParamColor("Down",colorRed), ParamColor("Up",colorGreen)));
+Plot(tsl, _DEFAULT_NAME(), tsl_col, styleStaircase | styleThick);
+
+//Buy / Sell Shapes
+Buy	 = Cover = Cross(C,Ref(tsl,-1));
+Sell = Short = Cross(Ref(tsl,-1),C);
+Buy	 = ExRem(Buy,Sell);
+Sell = ExRem(Sell,Buy);
+
+PlotShapes(shapeUpArrow*Buy, colorGreen, 0, Tsl, Offset=-20);
+PlotShapes(shapeDownArrow*Sell, colorRed, 0, Tsl, Offset=-20);
+PlotShapes(IIf(Cover, shapeHollowCircle, shapeNone),colorBrightGreen, 0,tsl,0);  
+PlotShapes(IIf(Short, shapeHollowCircle, shapeNone),colorRed, 0,tsl,0); 
+
+// Buy / Sell Texts
+Long=Flip(Buy,Sell); 
+Short=Flip(Sell,Buy); 
+
+BuyPrice=ValueWhen(Buy,C);
+SellPrice=ValueWhen(Sell,C);
+
+
+Edc=(
+WriteIf (Buy AND Ref(short,-1), " Buy @"+IIf(L > Ref(tsl,-1),Open,Ref(tsl,-1))+" / SL "+Tsl,"")+ 
+WriteIf (Sell AND Ref(Long,-1), " Sell @"+IIf(H < Ref(tsl,-1),Open,Ref(tsl,-1))+"  ","")+
+WriteIf(Sell , "/ Profit "+WriteVal((C-BuyPrice)/BuyPrice*100,1.2)+"%",""));
+
+C15=Param("up-down",12,1,20,1 );
+pxwidth = Status("pxwidth");
+pxheight = Status("pxheight");
+//GfxSelectFont("Arial",Font, 100);
+GfxTextOut(edc, Status("pxwidth")*0.84, Status("pxheight")*0.88 );
+
+dist = 1.5*ATR(15);
+dist1 = 1.5*ATR(15);
+for( i = 0; i < BarCount; i++ ) 
+{ 
+ if( Buy[i] ) 
+ {
+  PlotText("" + C[ i ] + "/" + tsl[i], i, tsl[i], colorGreen, colorDefault,-40 );
+ }
+ if( Sell[i] )
+ {
+  PlotText("" + C[ i ], i, tsl[i], colorRed, colorDefault,30 ); 
+ }
+}
+_SECTION_END();
+
+
+//---------------------------------PRICE
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+

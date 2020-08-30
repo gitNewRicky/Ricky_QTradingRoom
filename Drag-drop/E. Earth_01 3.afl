@@ -1,0 +1,71 @@
+_SECTION_BEGIN("Earth-1");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g,Hi %g,Lo %g, Close %g (%.1f%%) 
+Vol " +WriteVal( V, 1.0 ) +" {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 )) ));
+
+var1=Close>Ref(Close,-1) AND Close>Ref(Close,-2);
+var2=Ref(var1,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+var3=Ref(var2,-1) AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+var4=Ref(var3,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+var5=Ref(var4,-1) AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+var6=Ref(var5,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+var7=Ref(var6,-1) AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+var8=Ref(var7,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+var9=Ref(var8,-1) AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+varA=Ref(var9,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+varB=Ref(varA,-1) AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+varC=Ref(varB,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+varD=Close<Ref(Close,-1) AND Close<Ref(Close,-2);
+varE= Ref(varD,-1)  AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+varF= Ref(varE,-1)  AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+var10=Ref(varF,-1)  AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+var11=Ref(var10,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+var12=Ref(var11,-1) AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+var13=Ref(var12,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+var14=Ref(var13,-1) AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+var15=Ref(var14,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+var16=Ref(var15,-1) AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+var17=Ref(var16,-1) AND Close<=Ref(Close,-1) AND Close>=Ref(Close,-2);
+var18=Ref(var17,-1) AND Close>=Ref(Close,-1) AND Close<=Ref(Close,-2);
+down=varD OR varE OR varF OR var10 OR var11 OR var12 OR var13 OR var14 
+     OR var15 OR var16 OR var17 OR var18;
+
+var19=Ref(varD OR varE OR varF OR var10 OR var11 OR var12 OR var13 OR 
+     var14 OR var15 OR var16 OR var17 OR var18,-1) AND var1;
+
+var1A=Ref(var1 OR var2 OR var3 OR var4 OR var5 OR var6 OR var7 OR 
+     var8 OR var9 OR varA OR varB OR varC,-1) AND varD;
+
+up=IIf(var1 OR var2 OR var3 OR var4 OR var5 OR var6 OR var7 OR var8 OR var9 OR varA OR varB OR varC,1,0);
+top=Max(Close,Ref(Close,-1));
+bot=Min(Close,Ref(Close,-1));
+barcolor =IIf(up, ParamColor("Up candlestick", colorBrightGreen ), ParamColor("Down candlestick", colorOrange )); 
+//PlotOHLC( bot,top,bot,top, "Close", barColor);
+
+Buy = Close > Ref(Close, -1) AND Ref(Close, -1) > Ref(Close, -2) AND Ref(Close, -1) < Ref(Close, -3) AND IIf(Ref(Close, -3) < Ref(Close, -4), 1, IIf(Ref(Close, -4) < Ref(Close, -5),Ref(Close, -1) < Ref(Close, -4) OR( Ref(Close, -2) < Ref(Close, -4) AND Ref(Close, -3) >= Ref(Close, -5) ),IIf(Ref(Close, -5) < Ref(Close, -6), 1,Ref(Close, -6) < Ref(Close, -7))));
+Sell = Close < Ref(Close, -1) AND Ref(Close, -1) < Ref(Close, -2) AND Ref(Close, -1) > Ref(Close, -3) AND IIf(Ref(Close, -3) > Ref(Close, -4), 1, IIf(Ref(Close, -4) > Ref(Close, -5),Ref(Close, -1) > Ref(Close, -4) OR( Ref(Close, -2) > Ref(Close, -4) AND Ref(Close, -3) <= Ref(Close, -5) ),IIf(Ref(Close, -5) > Ref(Close, -6), 1,Ref(Close, -6) > Ref(Close, -7))));
+PlotShapes( IIf( Buy, shapeHollowUpArrow, shapeNone ), 10, layer = 0, yposition = bot, offset = -15  ); 
+PlotShapes( IIf( Sell, shapeHollowDownArrow, shapeNone ), 13, layer = 0, yposition = top, offset = -15  );
+
+
+MaxGraph = 12;
+
+BuyOffSet = 18;//Optimize("BuyOffSet",-18,-15,-20,-1);
+SellOffset = BuyOffSet;//Optimize("SellOffset",-2,-2,-14,-2);
+RegLength = 5;//Optimize("RegLength",5, 2,-11,-2);
+BuyATRPeriod = 2;//Optimize("BuyATRPeriod",-2,-2,5,-1);
+SellATRPeriod = BuyATRPeriod;//Optimize("SellATRPeriod",4,-2,-11,-2);
+ATRMultiplier = 0.5;//Optimize("ATRMultiplier",-1,0.7,-1.25,.05);
+
+Graph8 = HHV(H-ATRMultiplier*ATR(BuyATRPeriod),BuyOffset);
+Graph9 = LLV(L+ATRMultiplier*ATR(SellATRPeriod),SellOffset); 
+ave=(Graph8+Graph9)/2;
+
+Graph8Style=Graph9Style = 1;
+Graph9Color=  7;
+Graph8Color = 6;
+
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();

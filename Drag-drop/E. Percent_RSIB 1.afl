@@ -1,0 +1,96 @@
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+
+_SECTION_BEGIN("Percent Bands");
+P = ParamField("Price field",-1);
+Periods = Param("Periods", 3, 2, 300, 1 );
+Width = Param("Width%", 3, 0, 10, 0.05 );
+Style = ParamStyle("Style", styleLine | styleDashed | styleNoLabel );
+CenterLine = MA( P, Periods );
+
+ColorBand = IIf(CenterLine > Ref(CenterLine,-1),colorGreen,colorRed);
+
+Plot( (1 + Width * 0.01) * CenterLine, "%EnvTop" + _PARAM_VALUES(), ColorBand, Style ); 
+Plot( (1 - Width * 0.01) * CenterLine, "%EnvBot" + _PARAM_VALUES(), ColorBand, Style ); 
+_SECTION_END();
+
+//-----------------
+
+_SECTION_BEGIN("swing line");
+no=Param( "Swing", 3, 1, 55 );
+res=HHV(H,no);
+sup=LLV(L,no);
+avd=IIf(C>Ref(res,-1),1,IIf(C<Ref(sup,-1),-1,0));
+avn=ValueWhen(avd!=0,avd,1);
+tsl=IIf(avn==1,sup,res);
+
+tsl_blue = O > Tsl;
+tsl_Pink = O < Tsl;
+tsl_Grey = (O < Tsl) AND (C > tsl);
+tsl_Red = (O > Tsl) AND (C < tsl);
+
+tsl_col = IIf(tsl_blue,colorBlue,IIf(tsl_Pink,colorPink,IIf(tsl_Grey,colorGrey40,IIf(Tsl_red,colorRed,colorBlack))));
+
+Plot(tsl, _DEFAULT_NAME(), tsl_col, styleStaircase | styleThick);
+Buy=Cross(C,tsl);
+Sell=Cross(tsl,C);
+shape=Buy*shapeUpArrow + Sell*shapeDownArrow;
+PlotShapes(shape,IIf(Buy,tsl_col,tsl_col),0,IIf(Buy,Low,High));
+_SECTION_END();
+
+//-----------------
+
+_SECTION_BEGIN("RSI Bands");
+Filter = 1;
+
+PeriodRSI = Param("Period/Length",8,8,1,20);
+OBLevel = Param("OverBought",80,1,1,100);
+OSLevel = Param("OverSold",20,1,1,100);
+
+src = Close;
+ep = 2 * PeriodRSI;
+auc = WMA(Max(src - Ref(src,-1),0),ep);
+adc = WMA(Max(Ref(src,-1) - src,0),ep);
+
+x1 = (PeriodRSI) * (adc * obLevel / (100-oblevel) - auc);
+ub = IIf(x1 >= 0, src + x1, src + x1 * (100-oblevel) / oblevel);
+
+x2 = (PeriodRSI) * (adc * oslevel / (100 - oslevel) - auc);
+lb = IIf( x2 >= 0, src + x2, src + x2 * (100 - oslevel) / oslevel);
+
+UB = EMA(ub, 5);
+LB = EMA(LB,5);
+Xm = (ub + lb) / 2;
+
+
+Plot(ub, "Resistance", colorRed, styleStaircase);
+Plot(lb,"Support", colorGreen, styleStaircase);
+Plot(xm , "Midband", colorGrey40, styleLine );
+
+Overbought = (C > UB);
+NormalTop = (C > xm) AND (C < ub);
+NormalDown = (C < xm) AND (C > lb);
+Oversold = (C < lb);
+Stat = WriteIf(Overbought,"4. OverBought",WriteIf(NormalTop,"3. Normal high",WriteIf(NormalDown,"2. Normal Low",WriteIf(Oversold,"1. OverSold","Normal"))));
+BreakoutOS = (Ref(C,-1) < Ref(Lb,-1)) AND NormalDown;
+BreakoutOB = (Ref(C,-1) > Ref(Ub,-1)) AND NormalTop;
+BreakoutMidUp   = (Ref(C,-1) < Ref(xm,-1)) AND NormalTop;
+BreakoutMidDown = (Ref(C,-1) > Ref(xm,-1)) AND NormalDown;
+Progress = WriteIf(BreakoutOS,"1. OS up",WriteIf(BreakoutOB,"4. OB down",WriteIf(BreakoutMidUp,"2. Brkout Midup",WriteIf(BreakoutMidDown,"3. Brkout MidDown","5. Normal"))));
+
+PlotShapes( IIf( BreakoutOS, shapeUpArrow, shapeNone ), colorGreen, layer = 0,yposition = Low, offset = -30);
+PlotShapes( IIf( BreakoutMidUp, shapeSmallUpTriangle, shapeNone ), colorGreen, layer = 0,yposition = Low, offset = -30);
+PlotShapes( IIf( BreakoutOB, shapeDownArrow, shapeNone ), colorRed, layer = 0,yposition = High, offset = -30);
+PlotShapes( IIf( BreakoutMidDown, shapeSmallDownTriangle, shapeNone ), colorRed, layer = 0,yposition = Low, offset = -30);
+
+
+AddColumn(UB,"Upper Band",1,colorBlack);
+AddColumn(lb,"Support Band",1,colorblack);
+AddColumn(xm,"mid Band",1, colorblack);
+AddTextColumn(Stat,"Status",1,colorblack);
+AddTextColumn(Progress,"Progress",1,colorBlack);
+
+
+_SECTION_END();

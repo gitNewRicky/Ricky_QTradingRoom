@@ -1,0 +1,1261 @@
+/* 
+ * Copyright (C)2017 PT. Stosia Teknologi Investasi
+ *
+ * This file is licensed under  GNU GPL (General Public License) version 3.
+ *
+ * File ini dilisensikan kepada Anda, bukan  Anda miliki.  Pemilik file ini
+ * adalah pemegang  hak cipta ("copyright holder") di atas. Gunakanlah file
+ * ini sesuai dengan lisensi yang telah ditetapkan untuk file ini.
+ *
+ * File ini  berlisensi  GNU GPL (General Public License)  versi 3. Artinya
+ * kalau Anda  memodifikasi file ini, atau membuat karya lain yang berbasis
+ * file ini  ("derivative work"),  maka Anda  wajib  mendistribusikan  kode
+ * modifikasi atau karya tersebut kepada publik. Hal ini untuk menjaga agar
+ * pengetahuan yang ada di sini menjadi lebih berkembang  di masa mendatang 
+ * untuk kemajuan kita bersama.
+ *
+ * Silakan memakai kode ini untuk kepentingan apapun termasuk untuk mencari
+ * profit di pasar saham baik secara perorangan atau organisasi, asal tidak
+ * jahat. Sebagai tambahan permintaan, kami menghimbau untuk TIDAK  menjual
+ * kode/file  ini secara  apa adanya  atau dalam bundel  produk yang dijual
+ * secara komersial, karena hal itu tidak etis.
+ *
+ * Untuk penjelasan lebih lanjut silakan bertanya kepada kami.  Untuk detil
+ * lisensi GPLv3  silakan lihat file GPLv3-LICENSE.md  yang didistribusikan
+ * bersama file ini.
+ *
+ * Author: Benny Prijono <benny@stosia.com>
+ * Contributors:
+ *  - 
+ */
+ 
+_N(QID_VERSION_STR = "0.9");
+_N(QID_VERSION_LINE = "Quant.id v" + QID_VERSION_STR + " ?2017 Stosia TI");
+
+MILYAR = 1000000000.0;
+LOT = 100.0;
+
+/* Analysis status/recommendation constants */
+ST_STRONG_SELL = ST_STATUS_VBAD = -2;
+ST_SELL = ST_STATUS_BAD = -1;
+ST_HOLD = ST_STATUS_NOP = 0;
+ST_BUY = ST_STATUS_GOOD = 1;
+ST_STRONG_BUY = ST_STATUS_VGOOD = 2;
+
+Open = Ref(Close, -1);
+
+// Enable or disable database caching
+ST_SQL_CACHING_ENABLED = True;
+
+SetChartOptions(0, 0, chartGridMiddle, 0, 0, 5);
+
+// Error messages
+stAlertCnt = 0;
+
+// Chart wants all bars otherwise holdings balance etc will be wrong
+if (Status("action") == actionIndicator) {
+	SetBarsRequired( sbrAll, sbrAll );
+} else if (Interval() >= inDaily) {
+	_TRACE("Not all bars calculated");
+}
+
+//
+// Display MessageBox in the chart
+//
+function stMessageBoxYFs( txt, color, bkcolor, y, fontSize )
+{
+	_N(fontFace = "Arial");
+	
+	x = Status("pxwidth")/2;
+	
+	if (stAlertCnt)
+		GfxSetOverlayMode(0);
+	GfxSelectFont(fontFace, fontSize);
+	GfxSetTextAlign( 6 );// center alignment
+	GfxSetTextColor(color);
+	GfxSetBkColor(bkcolor);
+	GfxSetBkMode(2); // opaque
+	GfxTextOut( txt, x,  y);
+
+}
+
+//
+// Display MessageBox in the chart
+//
+function stMessageBoxY( txt, color, bkcolor, y )
+{
+	stMessageBoxYFs(txt, color, bkcolor, y, 12);
+}
+
+//
+// Display MessageBox in the chart
+//
+function stMessageBox( txt, color, bkcolor )
+{
+	stMessageBoxY(txt, color, bkcolor, 20);
+}
+
+//
+// Get color for recommendation
+//
+function stStatusColor(score)
+{
+	color = 0;
+	if (score <= ST_STATUS_VBAD)
+		color = colorRed;
+	else if (score <= ST_STATUS_BAD)
+		color = ColorBlend(colorRed, colorWhite, 0.5);
+	else if (score == 0)
+		color = colorDarkGrey;
+	else if (score >= ST_STATUS_VGOOD)
+		color = colorGreen;
+	else 
+		color = ColorBlend(colorGreen, colorWhite, 0.5);
+		
+	return color;
+}
+
+//
+// Get recommendation name
+//
+function stRecText(score)
+{
+	if (score <= ST_STATUS_VBAD)
+		_N(txt = "VSELL");
+	else if (score == ST_STATUS_BAD)
+		_N(txt = "SELL");
+	else if (score == 0)
+		_N(txt = "NOP");
+	else if (score == ST_STATUS_GOOD)
+		_N(txt = "BUY");
+	else
+		_N(txt = "VBUY");
+		
+	return txt;
+}
+
+function stDisplayRec( score, line )
+{
+	_N(txt = stRecText(score) );
+	if (score >= 2) {
+		color = colorWhite;
+		bkColor = colorBrightGreen;
+	} else if (score >= 1) {
+		color = colorWhite;
+		bkColor = colorGreen;
+	} else if (score == 0) {
+		color = colorWhite;
+		bkColor = colorLightGrey;
+	} else if (score == -1) {
+		color = colorWhite;
+		bkColor = colorLightOrange;
+	} else {
+		color = colorWhite;
+		bkColor = colorRed;
+	}
+	
+	GfxSetOverlayMode(1);
+	GfxSelectFont("Lucida Console", 10, 800 );
+	GfxSetTextAlign( 2  );
+	GfxSetTextColor( color );
+	GfxSetBkColor( bkColor );
+	GfxSetBkMode( 2 );
+	GfxTextOut( txt, Status("pxwidth")-62, line*16 );
+}
+
+//
+// Get the lowest value of the array.
+// As additional result, stLowestBar indicates the index when the
+// lowest value happened
+//
+function stLowestValue(arr, last)
+{
+	global stLowestBar;
+	
+	for (i=0; i<BarCount; ++i) {
+		if (!IsEmpty(arr[i]))
+			break;
+	}
+	
+	if (i==BarCount) {
+		lowestValue = Null;
+		stLowestBar = Null;
+	} else {
+		lowestValue = arr[i];
+		stLowestBar = i;
+		if (Last) {
+			for (; i<BarCount; ++i) {
+				if (arr[i] <= lowestValue) {
+					lowestValue = arr[i];
+					stLowestBar = i;
+				}
+			}
+		} else {
+			for (; i<BarCount; ++i) {
+				if (arr[i] < lowestValue) {
+					lowestValue = arr[i];
+					stLowestBar = i;
+				}
+			}
+		}
+	}
+	return lowestValue;
+}
+
+//
+// Get the highest value of the array.
+// As additional result, stHighestBar indicates the index when the
+// highest value happened
+//
+function stHighestValue(arr, last)
+{
+	global stHighestBar;
+	
+	for (i=0; i<BarCount; ++i) {
+		if (!IsEmpty(arr[i]))
+			break;
+	}
+	
+	if (i==BarCount) {
+		highestValue = Null;
+		stHighestBar = Null;
+	} else {
+		highestValue = arr[i];
+		stHighestBar = i;
+		if (Last) {
+			for (; i<BarCount; ++i) {
+				if (arr[i] >= highestValue) {
+					highestValue = arr[i];
+					stHighestBar = i;
+				}
+			}
+		} else {
+			for (; i<BarCount; ++i) {
+				if (arr[i] > highestValue) {
+					highestValue = arr[i];
+					stHighestBar = i;
+				}
+			}
+		}
+	}
+	return highestValue;
+}
+
+//
+// Display error message
+//
+function stAlert(txt)
+{
+	global stAlertCnt;
+	
+	stAlertCnt += 1;
+	stMessageBoxY(txt, colorWhite, colorRed, stAlertCnt*20 );
+	
+}
+
+
+// Try to lock the mutex, keep trying for the specified timeout in seconds
+// Returns True if successful, False if failed.
+function stStaticMutexLock( varName, timeout ) 
+{ 
+	count = (timeout * 1000) / 100;
+	result = False;
+	
+	mutexName = varName + "-mutex";
+	
+	// try obtaining semaphore for 1000 ms 
+	for( i = 0; i < count; i++ )  {
+		if( StaticVarCompareExchange( mutexName, 1, 0 ) == 0 )  { 
+			result = True;
+			break;
+		} else 
+			ThreadSleep( 100 ); 
+	}
+
+	return result; 
+} 
+
+//
+// Unlock static mutex
+//
+function stStaticMutexUnlock( varName )
+{
+	mutexName = varName + "-mutex";
+	
+	if (StaticVarGet(mutexName) == 1) {
+		StaticVarSet(mutexName, 0);
+	} else {
+		Error("Logic error: mutex " + mutexName + " is not held in stStaticMutexUnlock()");
+	}
+}
+
+
+//
+// State is a string that uniquely identifies current chart state. When two states are
+// the same, we can conclude that nothing (seem to) have changed in the chart.
+//
+function stGetState()
+{
+	_N(state = Name() + Interval(2) + LastValue(DateTime()) + SelectedValue(DateTime()));
+	return state;
+}
+
+//
+// Connect to ODBC database
+//
+function stConnectDatabase()
+{
+	odbcOpenDatabase( "ODBC;DSN=quant.id");
+}
+
+//
+// Get array from SQL query and save it to the cache. As long as chart's state 
+// doesn't change, subsequent calls will fetch data from the cache instead.
+//
+function stCachedSQL(varName, sql)
+{
+	_N(varName = Name() + "-" + varName);
+
+	if (ST_SQL_CACHING_ENABLED == False) {
+		_TRACE(Name() + " " + varName + " not cached");
+		stConnectDatabase();
+		arr = odbcGetArraySQL(sql);
+	} else {
+		// Name of the static variable that holds the state
+		_N(stateVar = varName + "-state");
+		
+		// Name of the static variable that holds the cached value
+		_N(valueVar = varName + "-value");
+		
+		if (stStaticMutexLock(varName, 10) == False) {
+			_TRACE(Name() + " " + varName + " MUTEX ERROR");
+			stAlert("Error: timeout locking SQL data: " + varName);
+			arr = 0;
+		} else {
+			_N(state = stGetState() + sql);
+			
+			if (StaticVarGetText(stateVar) != state) {
+				//_TRACE(Name() + " " + varName + " cache miss");
+				// State has changed, fetch the SQL and save it to the cache
+				stConnectDatabase();
+				arr = odbcGetArraySQL(sql);
+				StaticVarSet(valueVar, arr);
+				// Update the state
+				StaticVarSetText(stateVar, state);
+			} else {
+				//_TRACE(Name() + " " + varName + " cache hit");
+				// State has NOT changed, get the cached data
+				arr = StaticVarGet(valueVar);
+			}
+			
+			stStaticMutexUnlock(varName);
+		}
+	}
+	
+	return arr;
+}
+
+//
+// Get the latest timestamp in intraday_foreign table in database
+//
+function stLatestTimestampStr()
+{
+	stStaticMutexLock("stLatestTimestamp", 30);
+	n = Now(4);
+	latestUpdate = StaticVarGet("stLatestTimestampUpdated");
+	if (True OR IsEmpty(latestUpdate) OR  n - latestUpdate >= 30) {
+		_N(sql = "SELECT DATE_FORMAT(MAX(dtime),'%Y-%m-%d %T') FROM intraday_foreign WHERE ticker='BBRI'");
+		latestTimestampStr = odbcGetValueSQL(sql);
+		StaticVarSet("stLatestTimestampUpdated", n);
+		StaticVarSetText("stLatestTimestampStr", latestTimestampStr);
+		_TRACE("Latest dtime is " + latestTimestampStr);
+	} else {
+		latestTimestampStr = StaticVarGet("stLatestTimestampStr");
+	}
+	stStaticMutexUnlock("stLatestTimestamp");
+	
+	return latestTimestampStr;
+}
+
+//
+// Get the latest date in intraday_foreign table in database
+//
+function stLatestDateStr()
+{
+	latestTimestampStr = stLatestTimestampStr();
+	return StrLeft(latestTimestampStr, 10);
+}
+
+//
+// Get SQL expression to filter datetime to minimize the amount of data
+// returned back from the server
+//
+function stSQLDateTimeFilter()
+{
+	if (Interval() < inDaily) {
+		// Must return ALL rows for current day
+		_N(sql = " AND dtime > '" + stLatestDateStr() + " 00:00:00' ");
+	} else {
+		// Only return one last value for each day
+		_N(sql = " AND (TIME(dtime)='16:14:59' OR dtime = '" + stLatestTimestampStr() + "') ");
+	}
+	return sql;
+}
+
+//
+// Set the text to be put as chart background
+//
+function stSetBackgroundTitle( txt )
+{
+	height = Status("pxheight");
+	titleFontHeight = height/3;
+	
+	GfxSetOverlayMode(1);
+	GfxSelectFont("Tahoma", titleFontHeight );
+	GfxSetTextAlign( 6 );// center alignment
+	GfxSetTextColor( ColorRGB( 220, 220, 220 ) );
+	GfxSetBkMode(1); // transparent
+	GfxTextOut( txt, Status("pxwidth")/2, height/8 - titleFontHeight/8);
+}
+
+//
+// Set the second line in of the text to be put as chart background
+//
+function stSetBackgroundSubtitle( txt )
+{
+	height = Status("pxheight");
+	titleFontHeight = height/3;
+	subtitleFontHeight = height/10;
+	spacing = height/100;
+	
+	GfxSetOverlayMode(1);
+	GfxSelectFont("Tahoma",  subtitleFontHeight);
+	GfxSetTextAlign( 6 );// center alignment
+	GfxSetTextColor( ColorRGB( 220, 220, 220 ) );
+	GfxSetBkMode(1); // transparent
+	GfxTextOut( txt, Status("pxwidth")/2,  
+				height/8 + titleFontHeight + subtitleFontHeight + spacing);
+}
+
+//
+// Set the third line in of the text to be put as chart background
+//
+function stSetBackgroundSubSubtitle( txt )
+{
+	height = Status("pxheight");
+	titleFontHeight = height/3;
+	subtitleFontHeight = height/10;
+	subsubtitleFontHeight = height/15;
+	spacing = height/100;
+	
+	GfxSetOverlayMode(1);
+	GfxSelectFont("Tahoma", subsubtitleFontHeight );
+	GfxSetTextAlign( 6 );// center alignment
+	GfxSetTextColor( ColorRGB( 220, 220, 220 ) );
+	GfxSetBkMode(1); // transparent
+	GfxTextOut( txt, Status("pxwidth")/2,  
+				height/8 + titleFontHeight + 2*subtitleFontHeight + 
+					2*spacing + subsubtitleFontHeight);
+}
+
+//
+// Display recommendation in the chart.
+//
+// Parameters:
+//  - goodness: range from -2 to +2, where -2 is strong sell and +2 is strong buy
+//  - txt: OPTIONAL text. If empty, default is set based on goodness:
+//          - -2: "SSELL"
+//          - -1: "SELL"
+//          - 0: "HOLD"
+//          - +1: "BUY"
+//          - +2: "SBUY"
+//
+function stDisplaySignal( goodness, txt )
+{
+	if (goodness >= 2) {
+		color = colorWhite;
+		bkColor = colorBrightGreen;
+		myText = "SBUY";
+	} else if (goodness >= 1) {
+		color = colorWhite;
+		bkColor = colorGreen;
+		myText = "BUY";
+	} else if (goodness == 0) {
+		color = colorWhite;
+		bkColor = colorLightGrey;
+		myText = "HOLD";
+	} else if (goodness == -1) {
+		color = colorWhite;
+		bkColor = colorLightOrange;
+		myText = "SELL";
+	} else {
+		color = colorWhite;
+		bkColor = colorRed;
+		myText = "SSELL";
+	}
+	
+	if (txt == "")
+		txt = myText;
+		
+	GfxSetOverlayMode(1);
+	GfxSelectFont("Lucida Console", 10, 800 );
+	GfxSetTextAlign( 2  );
+	GfxSetTextColor( color );
+	GfxSetBkColor( bkColor );
+	GfxSetBkMode( 2 );
+	GfxTextOut( txt, Status("pxwidth")-62, 0 );
+}
+
+//
+// Convert DateTime to ISO date string ("YYYY-mm-dd")
+//
+function stDateTimeToISODate(dt)
+{
+	if (Version() >= 6.15) {
+		_N(result = DateTimeToStr(dt, 4));
+	} else {
+		dn = DateTimeConvert(0, dt);
+		yyyy  = Floor( dn / 10000 ) + 1900;
+		mm = floor((dn - (yyyy - 1900) * 10000) / 100);
+		dd = (dn % 100);
+		
+		_N(Year_str = NumToStr(yyyy, 4.0, False));
+		_N(Mon_str = NumToStr(mm, 1.0, False));
+		if (StrLen(Mon_str) < 2)
+			_N(Mon_str = "0" + Mon_str);
+		_N(Day_str = NumToStr(dd, 1.0, False));
+		if (StrLen(Day_str) < 2)
+			_N(Day_str = "0" + Day_str);
+		
+		_N(result = Year_str + "-" + Mon_str + "-" + Day_str);
+	}
+	
+	return result;
+}
+
+//
+// Convert timenum value to str
+//
+function stTimeNumToStr(tn)
+{
+	_N( tn_str = NumToStr(tn, 1.0, False) );
+	if (StrLen(tn_str) < 6)
+		_N( tn_str = "0" + tn_str );
+	
+	_N( str_time = StrMid(tn_str, 0, 2) + ":" + StrMid(tn_str, 2, 2) + ":" + StrMid(tn_str, 4, 2) );
+	return str_time;
+}
+
+//
+// Convert DateTime to ISO date time string ("YYYY-mm-DD HH:MM:SS")
+//
+function stDateTimeToISODateTime(dt)
+{
+	if (Version() >= 6.15) {
+		_N( result = DateTimeToStr(dt, 3));
+	} else {
+		_N( str_date = stDateTimeToISODate(dt) );
+		
+		tn = DateTimeConvert(1, dt);
+		_N(str_time = stTimeNumToStr(tn));
+		_N( result = str_date + " " + str_time );
+	}
+	
+	return result;
+}
+
+//
+// Convert DateNum to ISO date string ("YYYY-mm-dd")
+//
+function stDateNumToISODate(dn)
+{
+	dt = DateTimeConvert(2, dn);
+	return stDateTimeToISODate(dt);
+}
+
+//
+// Get current date in ISO format ("YYYY-mm-dd")
+//
+function stISOToday()
+{
+	n = Now(5);
+	return stDateTimeToISODate(n);
+}
+
+//
+// For intraday, the MA should not use value from previous day
+//
+function stIntradayMA(arr, range)
+{
+	prev_dn = -1;
+	dn = DateNum();
+	
+	for (i=0; i<BarCount; ++i) {
+		if (dn[i] != prev_dn) {
+			total = arr[i];
+			count = 1;
+		} else {
+			if (count < range) {
+				count += 1;
+				total += arr[i];
+			} else {
+				total = total - arr[i - range] + arr[i];
+			}
+		}
+		
+		result[i] = total * 1.0 / count;
+	}
+
+	return result;
+}
+
+//
+// Calculate simple MA for the array with provision for intraday.
+//
+function stMA(arr, range)
+{
+	if (Interval() >= inDaily) {
+		result = MA(arr, range);
+	} else {
+		result = stIntradayMA(arr, range);
+	}
+	return result;
+}
+
+//
+// Return the typical price (i.e. (H + L + C) / 3)
+//
+function stTypicalPrice()
+{
+	return (H + L + C) / 3;
+}
+
+//
+// General purpose function to calculate the SUM of an array 
+// over certain days. For example if "days" is 2, then calculate
+// daily sum for the past two days.
+//
+function stSumDays(array, days)
+{
+	//dn = DateNum();
+	dn = DaysSince1900();
+	
+	for (i=0; i<BarCount; ++i) {
+		result[i] = array[i];
+		bars[i] = 1;
+
+		days_found = 1;
+		last_day = dn[i];
+		
+		for (j=i-1; j >= 0; j--) {
+			if (dn[j] != last_day) {
+				days_found++;
+				last_day = dn[j];
+			}
+			
+			if (days_found > days)
+				break;
+				
+			result[i] += array[j];
+			bars[i] += 1;
+		}
+	}
+	
+	return result;
+}
+
+//
+// Fill the intraday array with the last value of the day
+//
+function stLastDayValue(array)
+{
+	dn = DateNum();
+	
+	cur_dn = -1;
+	last_day_value = -1;
+	
+	for (i = BarCount-1; i >= 0; i--) {
+		if (dn[i] != cur_dn) {
+			cur_dn = dn[i];
+			last_day_value = array[i];
+		}
+		result[i] = last_day_value;
+	}
+	
+	return result;
+}
+
+//
+// Get interval value from cummulative array
+//
+function stGetIntervalFromCum(arr)
+{
+	prevCum = Ref(arr, -1);
+	intValue = IIf(IsEmpty(prevCum), arr, arr - prevCum);
+	return intValue;
+}
+
+//
+// Invert an array, where the lowest value becomes the highest and
+// vice versa.
+//
+function stInvert(arr)
+{
+	lowestArr = Lowest(arr);
+	lowestValue = lowestArr[BarCount-1];
+	
+	highestArr = Highest(arr);
+	highestValue = highestArr[BarCount-1];
+	
+	midValue = (highestValue + lowestValue) / 2;
+	
+	inverted = midValue + (midValue - arr);
+	return inverted;
+}
+
+//
+// Adjust array values to remove negative values. For example,
+// may return negative value for share holdings (cummulative share 
+// ownership). To remove the negative values, we first get the
+// lowest number, and add all values so that the lowest number
+// becomes zero. If the array contains no negative value, then
+// it will be left as is.
+//
+function stShiftPositive(rawHolding)
+{
+	lowestHoldingArr = Lowest(rawHolding);
+	lowestHoldingValue = lowestHoldingArr[BarCount-1];
+	if (lowestHoldingValue < 0)
+		holding = rawHolding + (-lowestHoldingValue);
+	else
+		holding = rawHolding;
+	
+	return holding;
+}
+
+//
+// Intraday version of get holding
+//
+function stGetHoldingIntraday(buyShares, sellShares)
+{
+	dn = DateNum();
+	last_dn = dn[BarCount - 1];
+	
+	netShares = buyShares - sellShares;
+	
+	i = 0;
+	startIndex = -1;
+	while (i < BarCount) {
+		if (dn[i] != last_dn) {
+			holding[i] = Null;
+		} else {
+			if (startIndex == -1) {
+				startIndex = i;
+			}
+			
+			if (IsEmpty(netShares[i])) {
+				netShares[i] = 0;
+			}
+		}
+		
+		i += 1;
+	}
+	
+	
+	// Get the lowest value for the day
+	total = netShares[startIndex];
+	lwst = total;
+	for (j = startIndex + 1; j < BarCount && dn[j] == last_dn; ++j) {
+		total = total + netShares[j];
+		if (total < lwst)
+			lwst = total;
+	}
+
+	if (lwst < 0) {
+		holding[startIndex] = -lwst + netShares[startIndex];
+	} else {
+		holding[startIndex] = netShares[startIndex];
+	}
+	
+	for (i=startIndex + 1; i < BarCount; ++i) {
+		holding[i] = holding[i-1] + netShares[i];
+	}
+	
+	if (Status("ActionEx") == actionExplore) {
+		AddColumn(buyShares, "buyShares", 1.0);
+		AddColumn(sellShares, "sellShares", 1.0);
+		AddColumn(holding, "holding", 1.0);
+	}
+	
+	return holding;
+}
+
+function stGetHoldingIntraday1(buyShares, sellShares)
+{
+	dn = DateNum();
+	last_dn = dn[BarCount - 1];
+	
+	netShares = buyShares - sellShares;
+	
+	i = 0;
+	while (i < BarCount) {
+		if (IsEmpty(netShares[i]) || dn[i] != last_dn) {
+			holding[i] = Null;
+			i += 1;
+			continue;
+		}
+		
+		cur_dn = dn[i];
+
+		// Get the lowest value for the day
+		total = netShares[i];
+		lwst = total;
+		for (j = i + 1; j < BarCount && dn[j] == cur_dn; ++j) {
+			total = total + netShares[j];
+			if (total < lwst)
+				lwst = total;
+		}
+		
+		if (lwst < 0) {
+			holding[i] = -lwst + netShares[i];
+		} else {
+			holding[i] = netShares[i];
+		}
+		
+		//_TRACE("" + i + ": " + netShares[i] + " --> " + holding[i]);
+		i += 1;
+		while (i < BarCount && dn[i] == cur_dn) {
+			holding[i] = holding[i-1] + netShares[i];
+			//_TRACE("" + i + ": " + netShares[i] + " --> " + holding[i]);
+			i += 1;
+		}
+	}
+	
+	if (False AND Status("ActionEx") == actionExplore) {
+		AddColumn(buyShares, "buyShares", 1.0);
+		AddColumn(sellShares, "sellShares", 1.0);
+		AddColumn(holding, "holding", 1.0);
+	}
+	
+	return holding;
+}
+
+//
+// Get total number of shares that is owned at any time. This is 
+// accummulation of buy and sell activities of the investor.
+//
+function stGetHolding(buyShares, sellShares)
+{
+	if (Interval() < inDaily) {
+		holding = stGetHoldingIntraday(buyShares, sellShares);
+	} else {
+		netShares = buyShares - sellShares;
+		rawHolding = Cum(netShares);
+		holding = stShiftPositive(rawHolding);
+	}
+	
+	return holding;
+}
+
+//
+// Intraday version of average price calculation
+//
+function stGetAvgPriceIntraday(buyValue, buyShares, sellValue, sellShares)
+{
+	global stProfit;
+	
+	typ = stTypicalPrice();
+	sellAvg = IIf(sellShares >= 1, sellValue / sellShares, Null);
+	
+	netShares = buyShares - sellShares;
+	
+	dn = DateNum();
+	last_dn = dn[BarCount - 1];
+	first = True;
+	
+	for (i=0; i<BarCount; ++i) {
+		if (dn[i] != last_dn || IsEmpty(netShares[i])) {
+			portoShares[i] = Null;
+			portoAvg[i] = Null;
+			stProfit[i] = Null;
+		} else {
+		
+			if (first) {
+				// Get the lowest value
+				total = netShares[i];
+				lwst = netShares[i];
+				for (j = i + 1; j < BarCount; ++j) {
+					total = total + netShares[j];
+					if (total < lwst)
+						lwst = total;
+				}
+				
+				// Initial value
+				prevAvg = typ[i];
+				if (lwst < 0) {
+					prevShares = -lwst;
+					prevProfit = 0;
+				} else {
+					prevShares = 0;
+					prevProfit = 0;
+				}
+
+				first = False;
+			}		
+		
+			// Initialize with previous value
+			portoShares[i] = prevShares;
+			portoAvg[i] = prevAvg;
+			stProfit[i] = prevProfit;
+			
+			// Add new shares just bought and adjust avg
+			if (buyShares[i]) {
+				portoShares[i] += buyShares[i];
+				portoAvg[i] = ((prevShares * prevAvg) + buyValue[i]) / portoShares[i];
+			}
+			
+			// Reduce by shares sold and calculate profit
+			if (sellShares[i]) {
+				portoShares[i] -= sellShares[i];
+				profit = sellShares[i] * (sellAvg[i] - portoAvg[i]);
+				stProfit[i] = prevProfit + profit;
+			}
+			
+			prevShares = portoShares[i];
+			prevAvg = portoAvg[i];
+			prevProfit = stProfit[i];
+		}
+	}
+	
+	if (False AND Status("ActionEx") == actionExplore) {
+		//AddColumn(BarIndex(), "i", 1.0);
+		//AddColumn(branch, "branch", 1.0);
+		AddColumn(buyShares, "buyShares", 1.0);
+		AddColumn(sellShares, "sellShares", 1.0);
+		AddColumn(buyShares - sellShares, "netShares", 1.0);
+		
+		AddColumn(buyAvg, "buyAvg", 1.2);
+		AddColumn(sellAvg, "sellAvg", 1.2);
+		
+		AddColumn(portoShares, "portoShares", 1.0);
+		AddColumn(portoAvg, "portoAvg", 1.2);
+		AddColumn(stProfit, "stProfit", 1.0);
+	}
+	return portoAvg;
+}
+
+//
+// Daily version of daily price calculation
+//
+function stGetAvgPriceDaily(buyValue, buyShares, sellValue, sellShares)
+{
+	global stProfit;
+	
+	typ = stTypicalPrice();
+	buyAvg = IIf(buyShares >= 1, buyValue / buyShares, Null);
+	sellAvg = IIf(sellShares >= 1, sellValue / sellShares, Null);
+	
+	netShares = buyShares - sellShares;
+	rawHolding = Cum(netShares);
+	
+	lowestHoldingArr = Lowest(rawHolding);
+	lowestHoldingValue = lowestHoldingArr[BarCount-1];
+	if (lowestHoldingValue < 0)
+		initialShares = -lowestHoldingValue;
+	else
+		initialShares = 0;
+	
+	dn = DateNum();
+	prev_dn = -1;
+	
+	prevShares = Null;
+	
+	for (i=0; i<BarCount; ++i) {
+		if (IsEmpty(netShares[i])) {
+			portoShares[i] = Null;
+			portoAvg[i] = Null;
+			stProfit[i] = Null;
+		} else {
+			if (IsEmpty(prevShares)) {
+				prevShares = initialShares;
+				prevAvg = typ[i];
+				prevProfit = 0;
+			}
+			
+			// Initialize with previous value
+			portoShares[i] = prevShares;
+			portoAvg[i] = prevAvg;
+			stProfit[i] = prevProfit;
+			
+			// Add new shares just bought and adjust avg
+			if (buyShares[i]) {
+				portoShares[i] += buyShares[i];
+				portoAvg[i] = ((prevShares * prevAvg) + buyValue[i]) / portoShares[i];
+			}
+			
+			// Reduce by shares sold and calculate profit
+			if (sellShares[i]) {
+				portoShares[i] -= sellShares[i];
+				profit = sellShares[i] * (sellAvg[i] - portoAvg[i]);
+				stProfit[i] = prevProfit + profit;
+			}
+			
+			prevShares = portoShares[i];
+			prevAvg = portoAvg[i];
+			prevProfit = stProfit[i];
+		}
+	}
+	
+	if (False AND Status("ActionEx") == actionExplore) {
+		//AddColumn(BarIndex(), "i", 1.0);
+		//AddColumn(branch, "branch", 1.0);
+		AddColumn(buyShares, "buyShares", 1.0);
+		AddColumn(sellShares, "sellShares", 1.0);
+		AddColumn(netShares, "netShares", 1.0);
+		
+		AddColumn(buyAvg, "buyAvg", 1.2);
+		AddColumn(sellAvg, "sellAvg", 1.2);
+		
+		AddColumn(portoShares, "portoShares", 1.0);
+		AddColumn(portoAvg, "portoAvg", 1.2);
+		AddColumn(stProfit, "stProfit", 1.0);
+	}
+	return portoAvg;
+}
+
+
+//
+// Calculate average price from buy and sell values.
+// Returns the average price of the stock ownership.
+// Also sets global variable stProfit to indicate the realized 
+// profit (or loss) from the transactions.
+//
+function stGetAvgPrice(buyValue, buyShares, sellValue, sellShares)
+{
+	isIntraday = Interval() < inDaily;
+	if (isIntraday) {
+		portoAvg = stGetAvgPriceIntraday(buyValue, buyShares, sellValue, sellShares);
+	} else {
+		if (Interval() > inDaily) {
+			stAlert("Error: Interval greater than daily is not supported yet!");
+		}
+		portoAvg = stGetAvgPriceDaily(buyValue, buyShares, sellValue, sellShares);
+	}
+
+	return portoAvg;
+}
+
+//
+// Master chart signal that data is ready
+//
+function stMasterChartSignalReady(id)
+{
+	_N(varname = "Chart" + id);
+	_N(state = stGetState());
+	StaticVarSetText(varname, state);
+}
+
+//
+// Slave chart wait until master is ready
+//
+function stSlaveChartWaitReady(id, timeoutSec)
+{
+	sleepDuration = 100;
+	sleepCount = timeoutSec * 1000 / sleepDuration;
+	
+	_N(varname = "Chart" + id);
+	_N(state = stGetState());
+	i = 0;
+	while (True) {
+		if (StaticVarGetText(varname) == state)
+			break;
+		
+		i += 1;
+		if (i > sleepCount) {
+			stAlert("Error: timeout waiting for master chart signal");
+			break;
+		}
+		
+		ThreadSleep(sleepDuration);
+	}
+}
+
+//
+// Auto precision
+//
+function stAutoPrec(arr)
+{
+	precDigit = IIf(abs(arr[BarCount-1]) < 1, 3, IIf(abs(arr[BarCount-1]) >= 1000, 0, 1));
+	return Prec(arr, precDigit);
+}
+
+//
+// Interval value is the total transaction value (in Milyar Rp) for
+// each interval (=bar), where interval can be intraday or daily. Interval 
+// greater than one day is not supported yet.
+//
+// Returns:
+//   interval value (array)
+//
+function stGetIntervalValue()
+{
+	if (Interval() < inDaily) {
+		_N( sql = " SELECT int_value, dtime " + 
+				  " FROM v_adj_intraday_foreign " +
+				  " WHERE ticker='" + Name() + "' ORDER BY dtime ASC");
+	} else if (Interval() >= inDaily) {
+		if (Interval() > inDaily) {
+			stAlert("** WARNING **\nInterval greater than daily is incorrect!\n");
+		}
+		
+		_N( sql = " SELECT DAY_VALUE, dtime " + 
+				  " FROM v_adj_intraday_foreign " +
+				  " WHERE ticker='" + Name() + "' ORDER BY dtime ASC");
+	}
+	
+	intVal = stCachedSQL("stIntervalValue", sql) / MILYAR;
+	
+	return intVal;
+}
+
+//
+// Calculate simple correlation between array A and array B movements
+// during certain period. Returns the count where the movements of both
+// arrays correlate to each other.
+//
+function stSimpleCorrelation(arr1, arr2, period, distance)
+{
+	dir1 = IIf(arr1 > Ref(Arr1, -distance), 1, IIf(arr1 < Ref(arr1, -distance), -1, 0));
+	dir2 = IIf(arr2 > Ref(arr2, -distance), 1, IIf(arr2 < Ref(arr2, -distance), -1, 0));
+	
+	match = dir1 == dir2;
+	return Sum(match, period);
+}
+
+//
+// Create color gradient
+//
+function stColorGradient(loVal, hiVal, curVal)
+{
+	range = hiVal - loVal;
+	curVal = curVal - loVal;
+	return ColorRGB((1 - curVal / range) * 255,  curVal / range * 255, 0);
+}
+
+//
+// Create color gradient
+//
+function stAutoColorGradient(curVal)
+{
+	loVal = stLowestValue(curVal, True);
+	hiVal = stHighestValue(curVal, True);
+	range = hiVal - loVal;
+	curVal = curVal - loVal;
+	ColorRGB((1 - curVal / range) * 255,  curVal / range * 255, 0);
+	return color;
+}
+
+//
+// Plot standard line indicator with gradient color, text that informs the lowest and
+// highest values, and lowest and highest marks
+//
+function stPlotLine(value, chartTitle, satuan, lowestScale, highestScale, withText, withMark)
+{
+	lValue = stLowestValue(value, True);
+	lBar = stLowestBar;
+	if (IsEmpty(lowestScale))
+		lowestScale = lValue;
+	
+	hValue = stHighestValue(value, True);
+	hBar = stHighestBar;
+	if (IsEmpty(highestScale))
+		highestScale = hValue;
+	
+	if (IsEmpty(hValue) || IsEmpty(lValue)) {
+		Plot(stAutoPrec(value), chartTitle + " (" + satuan + ")", colorLightBlue, styleLine | styleThick);
+	} else {
+		color = stColorGradient(lowestScale, highestScale, value);
+		Plot(stAutoPrec(value), chartTitle + " (" + satuan + ")", color, styleLine | styleThick);
+		
+		if (withText) {
+			dt = DateTime();
+			_N(hWhen = stDateTimeToISODateTime(dt[stHighestBar]));
+			_N(lWhen = stDateTimeToISODateTime(dt[stLowestBar]));
+			
+			_N(lMsg = "Lowest: " + stAutoPrec(lValue) + " " + satuan + " on " + lWhen + 
+					  ", highest: " + stAutoPrec(hValue) + " " + satuan + " on " + hWhen);
+			stMessageBoxYFs(lMsg, colorGrey40, GetChartBkColor(), -2, 10);
+		}
+		
+		if (withMark) {
+			isTop = BarIndex() == hBar;
+			isBottom = BarIndex() == lBar;
+			
+			PlotShapes( isTop * shapeSmallUpTriangle, colorGreen, 0, value); 
+			PlotShapes( isBottom * shapeSmallDownTriangle, colorRed, 0, value); 	
+		}
+	}
+}
+
+//
+// Get a recommendation based on MA trend analysis
+//
+function stMARecommendation(cumArr, mas, mal)
+{
+	global stRecReason;
+	
+	score = ST_STATUS_NOP;
+		
+	_N(stRecReason = "");
+	
+	selectedIndex = SelectedValue(BarIndex());
+	
+	lastTsc = cumArr[selectedIndex] - cumArr[selectedIndex-1];
+	
+	if (cumArr[selectedIndex] > mas[selectedIndex]) {
+		// Short term is trending up
+		if (mas[selectedIndex] >= mal[selectedIndex]) {
+			// Long term is also trending up!
+			if (lastTsc >= 0) {
+				score = ST_STATUS_VGOOD;
+				_N(stRecReason = "continuing strong accumulation trend");
+			} else {
+				score = ST_STATUS_GOOD;
+				_N(stRecReason = "strong accumulation trend but there is start of reversal in the last bar");
+			}
+		} else {
+			// Long term is lagging
+			if (lastTsc >= 0) {
+				score = ST_STATUS_GOOD;
+				_N(stRecReason = "continuing start uptrend against MA5");
+			} else {
+				score = ST_STATUS_NOP;
+				_N(stRecReason = "unclear short vs long term trend");
+			}
+		}
+	} else if (cumArr[selectedIndex] <= mas[selectedIndex]) {
+		// Short term is trending down
+		if (mas[selectedIndex] <= mal[selectedIndex]) {
+			// Long term is also trending down
+			if (lastTsc <= 0) {
+				score = ST_STATUS_VBAD;
+				_N(stRecReason = "continuing very strong distribution");
+			} else {
+				score = ST_STATUS_BAD;
+				_N(stRecReason = "very strong distribution but there is start of reversal in the last bar");
+			}
+		} else {
+			// Long term is still up
+			if (lastTsc <= 0) {
+				score = ST_STATUS_BAD;
+				_N(stRecReason = "continuing start downtrend against MA5");
+			} else {
+				score = ST_STATUS_NOP;
+				//_N(stRecReason = "unclear trend " + "a:" + cumArr[selectedIndex]/1000000 + ", mas:" + mas[selectedIndex]/1000000 + ", mal:" + mal[selectedIndex]/1000000 + ", tsc:" + lastTsc);
+				_N(stRecReason = "unclear trend. Last transaction is positive, MA5 > MA20, but holding is below MA5");
+			}
+		}
+	}
+	
+	return score;
+}

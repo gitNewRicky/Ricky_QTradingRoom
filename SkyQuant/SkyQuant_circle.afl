@@ -1,0 +1,230 @@
+/*******************************************************************************************/
+// SkyQuant for AmiBroker
+// http://skyquant.googlecode.com - HomeSite
+// http://groups.google.com/group/skyquant - Forum
+// You may use, copy, distribute, modify SkyQuant under the terms of
+// the GNU General Public License (GPL) Version 2, 2012
+/*******************************************************************************************/
+#include <SkyQuant\SQ_header.afl>;
+//GfxSetOverlayMode( 2 ); // don't display charts nor grids 
+pi = 3.1415926;
+pik = pi / 180;
+
+PList1 = "0,1,2,3,4,5,6,7,8,9,11,12,15";
+PList2 = "1,2,3,4,5,6,7,8,9,11,12,15";
+_N( PList1 = ParamStr("Planets 1", PList1 ) );
+_N( PList2 = ParamStr("Planets 2", PList2 ) );
+_N( AnglesList = ParamStr("Angles", "0,90,180,60,120") );
+
+p1arr = p2arr = -1;
+for( pp1 = 0; StrExtract( PList1, pp1 ) != ""; pp1++ ) 
+{
+	p = StrToNum( StrExtract( PList1, pp1 ) );
+	eph = SQpl(TZ, p, iflag, Cpos, bx) * -1;
+	VarSet( "eph" + p, eph );
+	eph *= -1;
+	zod = floor(eph/30);
+	grad1 = eph - zod * 30;
+	grad2 = 60 * frac(grad1);
+	if( SQpl(TZ, p, 2 | 256, 3, bx) < 0 ) 	dir = "Retro";
+	else 	dir = " -----";
+	printf( SQname(p) + " \t|  " + ZODIACNAME(zod[bx]) + 
+		" %0.0f°%0.0f' \t" + dir + "\n", floor(grad1), grad2); 
+	p1arr[pp1] = p;
+}
+for( pp1 = 0; StrExtract( PList2, pp1 ) != ""; pp1++ ) 
+{
+	p = StrToNum( StrExtract( PList2, pp1 ) );
+	p2arr[pp1] = p;
+}
+
+Hfont = 6;
+titleStr = "";
+r = Param ("Zodiac size", 22, 3, 50, 1);
+r *= 10;
+xs = 40;
+ys = 50;
+x0 = r + xs;
+y0 = r + ys;
+C1 = 92 / 100;
+C2 = 86 / 100;
+C3 = 55 / 100;
+C4 = 61 / 100;
+C5 = 5 / 100;
+
+GfxSetTextColor( colorDarkBlue ); 
+GfxSelectPen( colorBlue ); 
+
+a = -30;
+for( i = 1; i <= 12; i++ )
+{
+	GfxSelectSolidBrush( fELEMENT(i,1) );
+	x3 = x0 - cos( a * (i-1) * pik) * r;
+	y3 = y0 - sin( a * (i-1) * pik) * r;
+	x4 = x0 - cos( a * i * pik) * r;
+	y4 = y0 - sin( a * i * pik) * r;
+	GfxPie(xs,ys,xs+2*r,ys+2*r,x3,y3,x4,y4);
+	GfxSetTextAlign( 6 );
+	SYMBOL( i * -1, Hfont * r/100, x0 - cos( (a * i + 15) * pik) * r*C1, 
+							  y0-10 - sin( (a * i + 15) * pik) * r*C1 );
+} 
+
+GfxSelectSolidBrush( ColorRGB(240,240,240) );
+GfxCircle( x0, y0, r*C2 );
+
+GfxSelectSolidBrush( GetChartBkColor() );
+GfxCircle( x0, y0, r*C3 );
+GfxSelectPen( colorTan ); 
+GfxCircle( x0, y0, r*C5 );
+
+GfxSelectPen( colorLightGrey, 1, 2 );
+for( i = 1; i <= 12; i++ )
+{
+	GfxMoveTo( x0 - cos( a * i * pik) * r*C3, y0 - sin( a * i * pik) * r*C3 );
+	GfxLineTo( x0 - cos( a * i * pik) * r*C2, y0 - sin( a * i * pik) * r*C2 );
+}
+
+GfxSelectPen( colorBlue, 1, 2 );
+for( pp1 = 0; p1arr[pp1] >= 0; pp1++ )
+{
+	p = p1arr[pp1];
+	eph = VarGet("eph" + p); 
+	GfxSetTextColor( pColors[p] ); 
+	GfxSelectPen( pColors[p], 1, 2 ); 
+	k = 0;
+	for( pp2 = pp1+1; p1arr[pp2] >= 0; pp2++ ) 
+	{
+		p2 = p1arr[pp2];
+		eph_2 = VarGet("eph" + p2);
+		ang = ANGLE( eph, eph_2 );
+		if( ang < r/20 && p != p2 ) {
+			k += ( r/20 - ang) / 100;
+		}
+	}
+					p1x = x0 - cos( eph * pik ) * r*C3;
+					p1y = y0 - sin( eph * pik ) * r*C3;
+					p2x = x0 - cos( eph * pik ) * r*(C4 + k - 0.03);
+					p2y = y0 - sin( eph * pik ) * r*(C4 + k - 0.03);
+					GfxMoveTo( p1x, p1y );
+					GfxLineTo( p2x, p2y );
+	GfxSelectPen( pColors[p] ); 
+	GfxCircle( x0 - cos( eph * pik) * r*C3, y0 - sin( eph * pik) * r*C3, 2 );
+	SYMBOL( p, Hfont * r/100, x0 - cos( eph * pik) * r*(C4+k), y0-10 - sin( eph * pik) * r*(C4+k) );
+}
+
+GfxSetTextColor( colorDarkBlue ); 
+printf( "\n     << Aspects >>\n" );
+for( pp1 = 0; p1arr[pp1] >= 0; pp1++ )
+{
+	p1 = p1arr[pp1];
+	ep1 = VarGet("eph" + p1);
+	for( pp2 = pp1; p1arr[pp2] >= 0; pp2++ ) 
+	{
+		p2 = p2arr[pp2];
+		ep2 = VarGet("eph" + p2);
+		asp = ANGLE( ep1, ep2 );
+
+		for( angN = 0; StrExtract( AnglesList, angN ) != ""; angN++ ) 
+		{
+			aspect = StrToNum( StrExtract( AnglesList, angN ) ) ;
+			if( aspect-ORB <= asp && asp <= aspect+ORB && p1 != p2 )
+			{
+				if( aspect != 0 )
+				{
+					Color = ColorBlend( GetChartBkColor() , ASPCOLORCIRCLE(aspect), (ORB-abs(aspect-asp))/ORB );
+					GfxSelectSolidBrush( Color );
+					GfxSelectPen( Color, (ORB-abs(aspect-asp))/ORB * 3, 0 ); 
+					p1x = x0 - cos( ep1 * pik) * r*C3;
+					p1y = y0 - sin( ep1 * pik) * r*C3;
+					p2x = x0 - cos( ep2 * pik) * r*C3;
+					p2y = y0 - sin( ep2 * pik) * r*C3;
+					GfxMoveTo( p1x, p1y );
+					GfxLineTo( p2x, p2y );
+					p1x = x0 - cos( ep1 * pik) * r*C3;
+					p1y = y0-10 - sin( ep1 * pik) * r*C3;
+					p2x = x0 - cos( ep2 * pik) * r*C3;
+					p2y = y0-10 - sin( ep2 * pik) * r*C3;
+					SYMBOL( -1000-aspect, Hfont * r/120, (p1x+p2x)/2, (p1y+p2y)/2 );
+				}
+				else
+				{
+					p1x = x0 - cos( ep1 * pik) * r*C3*0.92;
+					p1y = y0-10 - sin( ep1 * pik) * r*C3*0.92;
+					p2x = x0 - cos( ep2 * pik) * r*C3*0.92;
+					p2y = y0-10 - sin( ep2 * pik) * r*C3*0.92;
+					SYMBOL( -1000-aspect, Hfont * r/120, (p1x+p2x)/2, (p1y+p2y)/2 );
+				}
+				printf( SQname(p1) + "\t< " + NumToStr(asp,3.2) + PRINTASP(asp[bx], ORB, p1, p2) + " >\t" +  SQname(p2) + "\n");
+			}
+		}
+	}
+}
+
+printf( "\n   << House Cuspids >>\n" );
+Hsys = "P";
+GfxSelectPen( colorGrey50, 1, 0 );
+Hfont *= r/120;
+SQih(TZ, Hsys, Lat, Lon, bx );
+for( z = 1; z <= 12; z++ )
+{
+	Cusp = VarGet( "Cusp" + z )*-1;
+			p1x = x0 - cos( Cusp * pik) * r*C3;
+			p1y = y0 - sin( Cusp * pik) * r*C3;
+			p2x = x0 - cos( Cusp * pik) * r*C1*1.14;
+			p2y = y0 - sin( Cusp * pik) * r*C1*1.14;
+			GfxMoveTo( p1x, p1y );
+			GfxLineTo( p2x, p2y );
+
+			p1x = x0 - cos( Cusp * pik) * r*C3;
+			p1y = y0-10 - sin( Cusp * pik) * r*C3;
+			p2x = x0 - cos( Cusp * pik) * r*C1*1.2;
+			p2y = y0-10 - sin( Cusp * pik) * r*C1*1.2;
+
+			Hstr = "[" + NumToStr( z, 0.0) + "]";
+			GfxSetTextColor( colorViolet ); 
+
+			if( z == 1 && (AlmostEqual(Cusp1, AscMC0, 999)
+				 || AlmostEqual(360-Cusp1, AscMC0, 999)) )
+			{
+				GfxSetTextColor( colorBlue ); 
+				SYMBOL( -30, Hfont, p2x, p2y );
+				Hstr = "";
+			}
+			if( z == 4 && (AlmostEqual(Cusp4, abs(AscMC1-180), 999)
+				 || AlmostEqual(360-Cusp4, abs(AscMC1-180), 999)) )
+			{
+				GfxSetTextColor( colorBlue ); 
+				SYMBOL( -33, Hfont, p2x, p2y );
+				Hstr = "";
+			}
+			if( z == 7 && (AlmostEqual(Cusp7, abs(AscMC0-180), 999)
+				 || AlmostEqual(360-Cusp7, abs(AscMC0-180), 999)) )
+			{
+				GfxSetTextColor( colorBlue ); 
+				SYMBOL( -32, Hfont, p2x, p2y );
+				Hstr = "";
+			}
+			if( z == 10 && (AlmostEqual(Cusp10, AscMC1, 999)
+				 || AlmostEqual(360-Cusp10, AscMC1, 999)) )
+			{
+				GfxSetTextColor( colorBlue ); 
+				SYMBOL( -31, Hfont, p2x, p2y );
+				Hstr = "";
+			}
+
+			GfxSetTextAlign( 6 );
+			GfxSelectFont("Tahoma", Hfont*0.7, 700 );
+			GfxTextOut( Hstr,  p2x, p2y );
+
+	Cusp *= -1;
+	zod = floor(Cusp/30);
+	grad1 = Cusp - zod * 30;
+	grad2 = 60 * frac(grad1);
+
+	printf( "[ %0.0f ]\t" + ZODIACNAME(zod[bx]) + " %0.0f°%0.0f' \t" + "\n", z, floor(grad1), grad2 ); 			
+}
+
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ) );
+Plot( C, "Close", ParamColor("Color", colorBlack ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() );
+
+//

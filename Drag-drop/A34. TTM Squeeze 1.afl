@@ -1,0 +1,64 @@
+// Downloaded From www.WiseStockTrader.com
+//~~~~~~~~~~~~~~~~~~~~~ John Carter's TTM Squeeze Indicator~~~~~~~~~~~~~~~~~~~~~
+//	Description:	Bollinger Bands AND Keltner Channel define the market
+//					conditions, i.e. when BB is narrower than KC then we have
+//					a market squeeze.  When BB break Outside the KC then trade
+//					in the direction of the smoothed Momentum(12).
+//	Parameters:	
+//				*	chanPeriod    - Bollinger Bands AND Keltner Channel length
+//				*	bolBandStdDev - width of the Bollinger Bands
+//				*	keltStdDev    - width of the Keltner Bands
+//				*	momPeriod     - # of bars for Momentum indicator
+//				*	momEMA        - EMA of the Momentum indicator
+//
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//	Source              :   John Carter, www.TradeTheMarkets.com
+//	Interpretation      :	Kris Tokarzewski, Johannesburg, 15-Dec-2006
+// AmiBroker Conversion:   Levent Pancuk, 22 Feb-2008 
+//                         lpancuk@yahoo.com
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+_SECTION_BEGIN("TTM Squeeze");
+
+function Momentum( array, period )
+{
+  return array - Ref( array, -period );
+}
+
+
+
+chanPeriod     = Param("Channel Period", 20);
+bolBandStdDev  = Param("Bollinger Band StdDev",2);
+keltStdDev     = Param("Keltner Band StdDev",1.5);
+momPeriod      = Param("Momemtum Period", 9 );
+momEMA         = Param("Momentum EMA Period", 2);
+
+highBBChl = BBandTop( C, chanPeriod, bolBandStdDev);
+lowBBChl  = BBandBot( C, chanPeriod, bolBandStdDev); 
+
+centerLine = MA( C, chanPeriod );
+highKeltn  = centerLine + keltStdDev * ATR(chanPeriod);
+lowKeltn   = centerLine - keltStdDev * ATR(chanPeriod);
+
+momHist = EMA(Momentum(C, momPeriod),momEMA);
+
+BBUp  = IIf(highBBChl > highKeltn AND momHist > 0, momHist, 0);
+BBDo  = IIf(lowBBChl < lowKeltn AND momHist < 0, momHist, 0);
+BBMid = IIf(BBUp == 0 AND BBDo == 0, momHist, 0);
+
+
+Buy  = BBUp; 
+Sell = BBDo; 
+
+Buy = ExRem(Buy,Sell)AND Volume>25000;
+Sell = ExRem(Sell,Buy)AND Volume>25000;
+
+Plot(BBUp, "TTM Squeeze - Momentum Up", colorBlue,styleHistogram  | styleThick);
+Plot(BBDo, "Momentum Down", colorOrange, styleHistogram  | styleThick);
+Plot(BBMid, "Momentum Mid", IIf(BBMid > 0, colorLightBlue, colorBrown), styleHistogram  | styleThick);
+
+PlotShapes( shapeSmallCircle*Buy, colorGreen,0, 0, 0); 
+PlotShapes( shapeSmallCircle*Sell, colorRed,0, 0, 0);
+
+AlertIf( Buy, "", "Simple text alert", 2 );
+
+_SECTION_END();

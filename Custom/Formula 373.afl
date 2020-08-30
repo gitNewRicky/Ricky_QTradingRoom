@@ -1,0 +1,15 @@
+#include_once <../Include/FF_Tools.afl>
+#include_once <../Include/BS_Tools.afl>
+
+SetChartBkColor(colorWhite);
+_SECTION_BEGIN("Volume/Freq Analyzer");
+
+Freq = fnGetFreq();
+NetVol = fnGetNetVol();
+Line = IIf(V==0 AND (Freq == Null OR Freq==0),0,100*NetVol/(Freq^3));
+
+Plot(Line,"FQ",iif(Line==0,colorRed,colorBlack),styleLine|styleNoLabel|styleOwnScale,0);
+Plot(MA(Freq,20),"MA FQ(20)",colorBlack,styleDashed|styleNoLabel|styleOwnScale);
+Filter = Line > MA(Line,5);
+
+_SECTION_END();

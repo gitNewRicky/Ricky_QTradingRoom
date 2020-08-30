@@ -1,0 +1,3 @@
+Periods = Param("CMO Periods", 14, 2, 1000, 1, 1 );
+a=TAS_CMO(Periods );
+Plot( a, "CMO", ParamColor( "Color", colorBlack ), ParamStyle("Style",styleThick) ); 

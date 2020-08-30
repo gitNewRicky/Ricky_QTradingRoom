@@ -1,0 +1,35 @@
+_SECTION_BEGIN("B. VW MACD");
+PeriodS = Param("Short period", 12, 1, 500 ); 
+PeriodL = Param("Long period", 21, 2, 501 ); 
+PeriodSig = Param("Smoothing period", 2, 1, 200 ); 
+LongMA = EMA( V * C, PeriodL ) / EMA( V, PeriodL ); 
+ShortMA = EMA( V * C, PeriodS ) / EMA( V, PeriodS ); 
+VMACD = ShortMA - LongMA; 
+SignalLine = EMA( VMACD, PeriodSig ); 
+HIST = VMACD-SignalLine;
+MACD_ROC = (HIST - Ref(HIST,-1)) ;
+
+//Uncomment two lines below to see also MACD and signal line
+VWMACD_progress = VMACD > Ref(VMACD,-1);
+Signal_Progress = SignalLine > Ref(SignalLine,-1);
+Hist_Progress = Hist > Ref(Hist,-1); 
+VMACD_Cross_UP = Cross(VMACD,SignalLine);
+VMACD_Cross_DOWN = Cross(SignalLine,VMACD);
+
+VWMACD_color = IIf(VWMACD_progress, colorGreen, colorRed);
+Signal_color = IIf(Signal_Progress, colorBlueGrey, colorPink);
+HIST_color = IIf(Hist_Progress, colorBrightGreen, colorDarkRed);
+
+
+
+Plot( VMACD, "Vol-weighted MACD", VWMACD_color, styleOwnScale ); 
+Plot( SignalLine, "Vol-weighted Signal", Signal_color, styleOwnScale); 
+Plot( HIST, "VMACD Histogram", HIST_color , styleHistogram |styleOwnScale ); 
+
+
+Title = WriteIf(VWMACD_progress,EncodeColor(colorGreen),EncodeColor(colorRed))+ "VWMACD ("+PeriodS+","+PeriodL+") = "+WriteVal(VMACD,1.2)+
+		WriteIf(Signal_progress,EncodeColor(colorGreen),EncodeColor(colorRed)) + " Signal ("+PeriodSig+") = "+WriteVal(SignalLine,1.2)+
+		WriteIf(Hist_Progress,EncodeColor(colorGold),EncodeColor(colorDarkYellow)) + WriteIf(VMACD_cross_UP," - Golden Cross",WriteIf(VMACD_Cross_DOWN," - Death Cross",""))+ "\n" +
+		WriteIf(Hist_Progress,EncodeColor(colorGreen),EncodeColor(colorRed))+ "Histogram = "+WriteVal(Hist,1.2)+
+		"  ROC = "+WriteVal(MACD_ROC,1.2);
+_SECTION_END();

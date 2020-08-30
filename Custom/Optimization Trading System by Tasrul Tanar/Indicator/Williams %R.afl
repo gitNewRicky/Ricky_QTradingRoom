@@ -1,0 +1,7 @@
+Periods = Param("Will%R Periods", 14, 2, 1000, 1, 1 );
+
+a=TAS_WilliamsR(Periods);
+Plot( a, "Will%R", ParamColor( "Color", colorRed ), ParamStyle("Style") ); 
+
+PlotOHLC(-23,-17,-23,-17,"",colorPink,styleCloud);
+PlotOHLC(-83,-77,-83,-77,"",colorLime,styleCloud);

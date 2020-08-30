@@ -1,0 +1,6 @@
+r1 = Param( "Periode Trend Channel", 100, 1, 100000, 1 );
+r2 = Param( "Multiplier", 1, 1, 5, 1 );
+r3 = Param( "Down (1) or Up (2)", 1, 1, 2, 1 );
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style"); 
+TAS_TrendChannelAdj_prd(r1,r2,r3,iColor,iStyle);

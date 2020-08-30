@@ -1,0 +1,888 @@
+/*Volume Price Analysis AFL - VPA Version 4.0 -5-05-2016
+ Revision Details
+ V-2.0 AFL - fully re written for clarity, Minor bugs removed
+ V-2.1 support AND resistance line added
+ V-2.2 Commentary for support AND resistance line breaks Added.
+ V-2.3 Revision detail- High Volume Lines added
+ V-2.4 Toggle switch for plotting S/R, High Volume AND Trend lines added
+ V-2.5 Bar coloring option included - VSA based OR Trend Based
+ V-3.0 Trend detection Method changed to "Random Walk"
+ V-3.1 exploration Added
+ V-3.2 Bug in Exploration fixed
+ V-4.0 Revamped the formulas for all signals - Especially the No Demand Bar Defn. 
+       Reduced unnecessary signals
+       Low volume Test signals formula improved
+       New signal discription for daily signals added like  "Move indicates Strength or weakness".
+       Effort up or down failure also added
+       Up and Down Arrows included to indicate change of sentiment.
+//===================Version V.4.0.0 ======================
+*/
+//=========================================================================|
+//                    VPA Basic Module                                     |
+//=========================================================================|
+_SECTION_BEGIN("VPA Basic Module");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+gxs=Param("GRAPH spaceing",10,5,50,5);        
+GraphXSpace = gxs; 
+ SetChartBkColor(ParamColor("Outer panel",colorBlack)); // color of outer border 
+    SetChartBkGradientFill( ParamColor("Inner panel upper",colorBlack),ParamColor("Inner panel lower",colorBlack));
+
+//===================== Basic Definitions =======================================
+volAvg				=	MA(V,40);
+volMean 			= 	StDev(volAvg,30); 
+volUpBand3 		= 	volAvg + 3*volMean; 
+volUpband2 		= 	volAvg + 2*volMean;; 
+volUpBand1 		= 	volAvg + 1*volMean;; 
+volDnBand1 		= 	volAvg -1*volMean; 
+volDnBand2 		= 	volAvg -2*volMean; 
+midprice			=	(H+L)/2;
+spread				=	(H-L);
+avgSpread			=	MA(spread,80);
+AvgSpreadBar     =   spread > Avgspread;
+wideRangeBar		=	spread>(1.5*avgSpread);
+narrowRangeBar	=	spread<(0.7*avgSpread);
+lowVolume			=	V<Ref(V,-1) AND V<Ref(V,-2);
+upBar				=	C>Ref(C,-1); 
+downBar			=	C<Ref(C,-1); 
+highVolume			=	V>Ref(V,-1) AND Ref(V,-1)>Ref(V,-2);
+closeFactor		=	C-L;
+clsPosition		=	spread/closeFactor;
+closePosition		=	IIf(closeFactor=0,avgSpread,clsPosition);
+Vb					=	V>volAvg OR V>Ref(V,-1);
+upClose			=	C>=((spread*0.7)+L);// close is above 70% of the Bar
+downClose			=	C<=((spread*0.3)+L);// close is below the 30% of the bar
+aboveClose			=	C>((spread*0.5)+L);// close is between 50% and 70% of the bar
+belowClose			=	C<((spread*0.5)+L);// close is between 50% and 30% of the bar
+midClose			=	C>((spread*0.3)+L) AND C<((spread*0.7)+L);// close is between 30% and 70% of the bar
+veryLowClose		=	closePosition>4;//close is below 25% of the bar
+veryHighClose		=	closePosition<1.35;// Close is above 80% of the bar
+ClosePos			= 	IIf(C<=((spread*0.2)+L),1,IIf(C<=((spread*0.4)+L),2,IIf(C<=((spread*0.6)+L),3,IIf(C<=((spread*0.8)+L),4,5))));
+                    // 1 = downclose, 2 = belowclose, 3 = MidClose, 4 = aboveClose, 5 = Upclose
+Volpos				=  	IIf(V>volAvg*2,1,IIf(V>volAvg*1.3,2,IIf(V>volAvg,3,IIf(V<volAvg AND V>volAvg*0.7,4,5))));
+                    //// 1 = Very High, 2 = High, 3 = Above Average, 4 = Less than Average, 5 = Low
+freshGndHi       =  C > HHV(H,5);
+freshGndLo       =  C < LLV(L,5);
+
+//========================Trend Estimation =========================
+j=MA(C,5);
+trendLongTerm     =  LinRegSlope(j,40) ;
+trendMediumTerm   =  LinRegSlope(j,10) ;
+trendShortTerm    =  LinRegSlope(j,3);
+tls=LinRegSlope(j,3);
+_SECTION_END();
+
+//=========================================================================|
+//                    Trend Analysis Module                                |
+//=========================================================================|
+_SECTION_BEGIN("Trend Analysis");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+ minperiodsRWIst = Param ( "Short term Min Periods", 2, 1, 9, 1); 
+ maxperiodsRWIst = Param ( "Short term Max Periods", 8, 1, 9, 1); 
+
+ minperiodsRWIlt = Param ( "Long Term Min Periods", 10, 1, 32, 1); 
+ maxperiodsRWIlt = Param ( "Long term Max Periods", 40, 1, 64, 1);  
+
+ Ground = RWIHi (minperiodsRWIst, maxperiodsRWIst); 
+ Sky    = RWILo (minperiodsRWIst, maxperiodsRWIst);  
+ j      = RWI(minperiodsRWIlt, maxperiodsRWIlt);
+ k      =  RWI(minperiodsRWIst, maxperiodsRWIst);
+ j2     = RWIHi (minperiodsRWIlt, maxperiodsRWIlt); 
+ k2     = RWILo (minperiodsRWIlt, maxperiodsRWIlt); 
+ ja     = Cross(j,1); // The followign section check the diffeent condition of the RWi above and below zero
+ jb     = Cross(1,j); // In oder to check which trend is doing what
+ jc     = Cross(-1,j);
+ jd     = Cross(j,-1);
+ j2a    = Cross(j2,1);
+ j2b    = Cross(1,j2);
+ k2a    = Cross(k2,1);
+ k2b    = Cross(1,k2);
+//Define the Major, Minor and Immediate trend Sttatus
+upmajoron   = j > 1 AND Ref(ja,-1);
+upmajoroff  = j < 1 AND Ref(jb,-1);
+upminoron   = j2 > 1 AND Ref(j2a,-1);
+upminoroff  = j2 < 1 AND Ref(j2b,-1);
+dnmajoron   = j < -1 AND Ref(jc,-1);
+dnmajoroff  = j > -1 AND Ref(jd,-1);
+dnminoron   = k2 > 1 AND Ref(k2a,-1);
+dnminoroff  = k2 < 1 AND Ref(k2b,-1);
+upimd       = IIf(ground > 1, 1,0);
+dnimd       = IIf(sky > 1, 1, 0);
+upmajor     = IIf(j>1,1,IIf(j<(-1),-1,0));
+upminor     = IIf(j2>1,1,-1);
+dnminor     = IIf(k2>1,1,-1);
+_SECTION_END();
+//======================================================================|
+//                      VSA Signal generation                           |
+//======================================================================| 
+_SECTION_BEGIN("Signal Generation");
+upThrustBar		=	wideRangeBar AND downClose  AND upimd==1 AND H>Ref(H,-1);//WRB and UHS and Fresh Ground
+nut              =   wideRangeBar AND downClose  AND freshGndHi AND HighVolume;// NEW SIGNAL
+bc               =   wideRangeBar AND aboveclose AND V == HHV(V,60) AND upmajor==1;// NEW SIGNAL
+upThrustBar		=	wideRangeBar AND (ClosePos==1 OR ClosePos==2) AND upminor>0 AND H>Ref(H,-1)AND (upimd>0 OR upmajor>0)AND VolPos <4;// after minor up trend
+upThrustBartrue	=	wideRangeBar AND ClosePos==1 AND upmajor>0 AND H>Ref(H,-1)AND VolPos <4;//occurs after a major uptrend
+upThrustCond1		=	Ref(upThrustBar,-1) AND downBar AND NOT narrowRangeBar ;
+upThrustCond2		=	Ref(upThrustBar,-1) AND downBar AND VolPos == 2;
+upThrustCond3		=	upThrustBar AND VolPos ==1;
+topRevBar			=	Ref(V,-1)>volAvg  AND Ref(upBar,-1) AND Ref(wideRangeBar,-1) AND downBar AND downClose AND wideRangeBar AND upmajor>0 AND H==HHV(H,10);
+PseudoUpThrust	=	Ref(upBar,-1) AND H>Ref(H,-1) AND Ref(V,-1)>1.5*volAvg AND downBar AND downClose AND  NOT upThrustBar;
+pseudoUtCond		=	Ref(PseudoUpThrust,-1) AND downBar AND downClose AND NOT upThrustBar;
+trendChange		=	Ref(upBar,-1) AND H==HHV(H,5)AND downBar AND (downClose OR midClose) AND V>volAvg AND upmajor>0 AND upimd>0 AND NOT wideRangeBar AND NOT PseudoUpThrust ;
+noDemandBarUt		=	upBar AND narrowRangeBar AND lowVolume AND ClosePos> 3 AND ((upminor>0 AND upimd>0) OR (upminor<0 AND upminor>0));//in a up market
+noDemandBarDt		=	upBar AND narrowRangeBar AND lowVolume AND ClosePos> 3 AND (upminor<=0 OR upimd<=0);// in a down or sidewayss market
+noSupplyBar		=	downBar AND narrowRangeBar AND lowVolume  AND ClosePos<3 AND ((upminor<1 AND upimd<1) OR (upminor>0 AND upimd<1));
+lowVolTest			=   L==LLV(L,5) AND upClose AND lowVolume;//lowVolume AND L<Ref(L,-1) AND upClose;
+lowVolTest1		= 	L==LLV(L,5) AND V<volAvg AND L<Ref(L,-1) AND upClose AND upminor>0 AND upmajor>0;// AND wideRangeBar;
+lowVolTest2		= 	Ref(lowVolTest,-1) AND upBar AND upClose;
+sellCond1			=	(upThrustCond1 OR upThrustCond2 OR upThrustCond3) ;
+sellCond2			=	Ref(sellCond1,-1)==0;
+sellCond			=	sellCond1 AND sellCond2;
+strengthDown0		= 	upmajor<0 AND VolPos<4 AND Ref(downBar,-1) AND upBar AND ClosePos>3 AND upminor<0 AND upimd<=0;// strength after a long down trend
+strengthDown		= 	VolPos<4 AND Ref(downBar,-1) AND upBar AND ClosePos>3 AND upimd<=00 AND upminor<0;// Strength after a down trend
+strengthDown1		= 	upmajor<0 AND V>(volAvg*1.5) AND Ref(downBar,-1) AND upBar AND ClosePos>3 AND upminor<0 AND upimd<=0;//Strength after downtrend . High volume
+strengthDown2		=	upimd<=0 AND Ref(V,-1)<volAvg  AND upBar AND veryHighClose AND VolPos<4;
+buyCond1			= 	strengthDown OR strengthDown1;
+buyCond			= 	upBar  AND Ref(buyCond1,-1);
+stopVolume			= 	L==LLV(L,5)  AND (upClose OR midClose) AND V>1.5*volAvg AND upmajor<0;
+revUpThrust		=	upmajor<0 AND upBar AND upClose AND V>Ref(V,-1) AND V>volAvg AND  wideRangeBar AND Ref(downBar,-1) AND Ref(downClose,-1) AND upminor<0;
+effortUp			=	H>Ref(H,-1) AND L>Ref(L,-1) AND C>Ref(C,-1) AND C>=((H-L)*0.7+L) AND spread>avgSpread AND VolPos<4;//AND O<=((H-L)*0.3+L) 
+effortUpfail		=	Ref(effortUp,-1) AND (upThrustBar OR upThrustCond1 OR upThrustCond2 OR upThrustCond3 OR (downbar AND AvgSpreadBar));
+effortDown			=	H<Ref(H,-1) AND L<Ref(L,-1) AND C<Ref(C,-1) AND  C<=((H-L)*0.25+L) AND wideRangeBar AND V>Ref(V,-1);//O>=((H-L)*0.75+
+effortDownFail   =  Ref(effortDown,-1) AND ((upbar AND AvgSpreadBar) OR revUpThrust OR Buycond1);
+upflag           =  (Sellcond OR Buycond OR effortup OR effortupfail OR stopvolume OR effortdown OR effortdownfail OR revupthrust OR
+                     noDemandBarDt OR noDemandBarUt OR nosupplyBar OR lowVolTest	OR lowVolTest1 OR lowVolTest2 OR bc);
+bullBar			=	(V>volAvg OR V>Ref(V,-1)) AND closePosition <2 AND upBar AND NOT upflag;
+bearBar			=	vb  AND downClose AND downBar AND spread>avgSpread AND NOT upflag ;
+
+_SECTION_END();
+//|============================================================================================|
+//|                                       TITLE                                                |
+//|============================================================================================|
+if( Status("action") == actionIndicator ) 
+(
+Title = EncodeColor(colorWhite)+ "Volume Price Analysis V.4.0" + " - " +  Name() + " - " + EncodeColor(colorRed)+ Interval(2) + EncodeColor(colorWhite) +
+ "  - " + Date() +" - " +EncodeColor(colorYellow)+ 
+StrFormat("\nOp %g, Hi %g, Lo %g, Cl %g  ", O, H, L, C) +  
+"Volume= "+WriteVal(V)+"--"+EncodeColor(colorYellow)+
+
+WriteIf (upThrustBartrue, " An Upthrust Bar. A Sure sign of weakness. ","")+
+WriteIf (upThrustBar AND NOT upThrustBartrue, " An Upthrust Bar. A sign of weakness. ","")+
+WriteIf (upThrustCond1, " A downbar after an Upthrust. Confirm weakness. ","")+
+WriteIf (upThrustCond2 AND NOT upThrustCond1, " A High Volume downbar after an Upthrust. Confirm weakness.","")+
+WriteIf (upThrustCond3, "This upthrust at very High Voume, Confirms weakness","")+
+WriteIf (PseudoUpThrust, "Psuedo UpThrust.   A Sign of Weakness. ","")+
+WriteIf (pseudoUtCond, "A Down Bar closing down after a Pseudo Upthrust confirms weakness. ","")+
+WriteIf (trendChange, "High volume Downbar after an upmove on high volume indicates weakness. ","")+
+WriteIf (topRevBar, "Top Reversal. Sign of Weakness. ","")+
+WriteIf (noDemandBarDt, "No Demand. upside unlikely soon ","")+
+WriteIf (noDemandBarUt, "No Demand in a Uptrend. A sign of Weakness. ","")+
+WriteIf (noSupplyBar, "No Supply. A sign of Strength. ","")+
+WriteIf (lowVolTest, "Test for supply. ","")+
+WriteIf (lowVolTest2, "An upBar closing near High after a Test confirms strength. ","")+
+WriteIf (lowVolTest1, "Test for supply in a uptrend. Sign of Strength. ","")+
+WriteIf (strengthDown1, "Strength seen returning after a down trend. High volume adds to strength. ","")+
+WriteIf (strengthDown0 AND NOT strengthDown, "Strength seen returning after a down trend. ","")+
+WriteIf (strengthDown AND NOT strengthDown1, "Strength seen returning after a down trend. ","")+
+WriteIf (buyCond, "Possible end of downtrend and start of uptrend soon ","")+
+WriteIf (Sellcond, "Possible end of Uptrend and start of Downtrend soon ","")+
+WriteIf (effortUp, "Effort to Rise. Bullish sign ","")+
+WriteIf (effortDown, "Effort to Fall. Bearish sign ","")+
+WriteIf (effortUpfail, "Effort to Move up has failed. Bearish sign ","")+
+WriteIf (effortDownfail, "Effort to Move Down has failed. Bulish sign ","")+
+WriteIf (strengthDown2, "High volume upBar closing on the high indicates strength. ","")+
+WriteIf (stopVolume, "Stopping volume. Normally indicates end of bearishness is nearing. ","")+
+WriteIf (revUpThrust, "Reverse upthrust. Indicates strength. ","")+
+WriteIf (BullBar, "Day's Move Indicates strength. ","")+
+WriteIf (BearBar, "Day's Move Indicates weakness ","")+
+WriteIf (bc,"Potential Buying climax","")+
+
+("\n Volume: ")+WriteIf(V>volAvg*2,EncodeColor(colorGreen)+"Very High",WriteIf(V>volAvg*1.3,EncodeColor(colorGreen)+
+" High",WriteIf(V>volAvg,EncodeColor(colorGreen)+"Above Average",
+WriteIf(V<volAvg AND V>volAvg*0.7,EncodeColor(colorRed)+"Less than Average",WriteIf(V<volDnBand1,"Low","")))))+
+(EncodeColor(colorYellow)+"      Spread: ")+WriteIf(spread >(avgSpread*1.5),EncodeColor(colorGreen)+" Wide",
+WriteIf(spread>avgSpread,EncodeColor(colorGreen)+" Above Average",EncodeColor(colorRed)+WriteIf((spread < avgSpread AND spread >= (AvgSpread*0.7)),"Below Average",
+WriteIf(spread < AvgSpread*0.5,EncodeColor(colorRed)+"Very Narrow"," Narrow"))))+
+(EncodeColor(colorYellow)+"      Close:  ")+WriteIf(ClosePos==5,EncodeColor(colorGreen)+"High",WriteIf(ClosePos==4,EncodeColor(colorGreen)+"Upper side",WriteIf(ClosePos==3,EncodeColor(colorYellow)+"Mid",
+WriteIf(ClosePos==2,EncodeColor(colorRed)+"Lower Side","Low"))))+ 
+EncodeColor(colorYellow)+("\n Major Trend:  ")+WriteIf(upmajor==1,EncodeColor(colorGreen)+"Major Trend UP",WriteIf(upmajor== -1,EncodeColor(colorRed)+
+"Major Trend Down",EncodeColor(colorYellow)+"No Trend"))+
+WriteIf(upmajoroff,EncodeColor(colorRed)+"    Major UpTrend Ended",WriteIf(dnmajoroff,EncodeColor(colorGreen)+"  Major Down Trend Ended","" ))+
+EncodeColor(colorYellow)+("\n Minor Trend:  ")+WriteIf(upminor==1,EncodeColor(colorGreen)+"Minor trend up",WriteIf(dnminor==1,
+EncodeColor(colorRed)+"Minor Trend Down",EncodeColor(colorYellow)+"No Trend"))+
+EncodeColor(colorYellow)+("\n Immediate Trend:  ")+WriteIf(upimd==1,EncodeColor(colorGreen)+"Immediate trend up",WriteIf(dnimd==1,
+EncodeColor(colorRed)+"Immediate Trend Down",EncodeColor(colorYellow)+"No Trend")));
+_SECTION_END();
+//====================================================================================|
+//                        Plotting Module                                             |
+//====================================================================================|
+_SECTION_BEGIN("Plotting");
+//Bar coloring formula 1 _ Preferred - Based on VSA Strength
+Vscolor=IIf(lowVolTest,colorTurquoise,IIf(lowVolTest2,colorPink,IIf(bc,colorDarkRed ,IIf(upThrustBar,colorYellow ,IIf(bullbar,colorLime ,
+IIf(bearbar,colorRed,IIf(noDemandBarUT OR noDemandBarDt,colorWhite ,IIf(noSupplyBar,colorCustom12,IIf(upbar,colorGreen,IIf(downbar,colorOrange,colorBlue))))))))));
+//Bar coloring formula 2 _  Based on Trend 
+Trcolor=IIf(trendShortTerm>0 AND trendMediumTerm>0 AND trendLongTerm>0,colorLime,IIf(trendShortTerm>0 AND trendMediumTerm>0 AND trendLongTerm<0,colorGreen,
+IIf(trendShortTerm>0 AND trendMediumTerm<0 AND trendLongTerm<0,colorPaleGreen,IIf(trendShortTerm<0 AND trendMediumTerm<0 AND trendLongTerm<0,colorRed,IIf(trendShortTerm<0 AND trendMediumTerm>0 AND trendLongTerm>0,colorPaleGreen,
+IIf(trendShortTerm<0 AND trendMediumTerm<0 AND trendLongTerm>0,colorOrange,colorBlue))))));
+//Bar coloring formula 3 _  Marar Histogram 
+Vlp=Param("Volume lookback period",150,20,300,10);
+Vrg=MA(V,Vlp);// average volume
+rg=(H-L);
+arg=Wilders(rg,30);
+Vh=V>Ref(V,-1) AND Ref(V,-1)>Ref(V,-2);
+Cloc=C-L;
+x=(H-L)/Cloc;
+x1=IIf(Cloc=0,arg,x);
+Vb=V>Vrg OR V>Ref(V,-1);
+ucls=x1<2;
+dcls=x1>2;
+mcls=x1<2.2 AND x1>1.8 ;
+Vlcls=x1>4;
+Vhcls=x1<1.35;
+upbar=C>Ref(C,-1); 
+dnbar=C<Ref(C,-1); 
+CloseUp =  C>Ref(C,-1);
+Closedn =  C<Ref(C,-1);
+VolUp   =  V>Ref(V,-1);
+VolDn   =  V<Ref(V,-1);
+bb1 = upbar AND CloseUp AND ucls AND L>Ref(L,-1);
+bb2 = upbar AND VolUp;
+bb3 = dnbar AND CloseDn AND VolDn;
+bb4 = dnbar AND CloseDn AND C>Ref(L,-1);
+db1 = dnbar AND CloseDn AND dcls;
+db2 = dnbar AND VolUp  ;
+db3 = upbar AND CloseDn AND VolUp;
+db4 = upbar AND CloseDn AND C<Ref(L,-1) AND dcls;
+db5 = upbar AND CloseUp AND ucls AND L<Ref(L,-1);
+db6 = upbar AND CloseUp AND dcls;
+bb=(bb1 OR bb2 OR bb3 OR bb4);
+db=(db1 OR db2 OR db3 OR db4 OR db5 OR db6);
+Mcolor = IIf(bb AND tls>0, colorLime,IIf(db AND tls<0,colorRed,colorWhite)) ; 
+//WriteVal(tls);
+//------------------------------------------------------------------------------------------
+SelectedIndicator = ParamList( "Chart Coloring", "VSA Based,Trend Based,Marar Trend Based", 1 );
+
+switch ( SelectedIndicator )
+{
+case "VSA Based":
+PlotOHLC( Open,  High,  Low,  Close, "", VScolor, styleCandle |styleThick );
+break;
+case "Trend Based":
+PlotOHLC( Open,  High,  Low,  Close, "", Trcolor, styleCandle |styleThick );
+break;
+case "Marar Trend Based":
+PlotOHLC( Open,  High,  Low,  Close, "", Mcolor, styleCandle |styleThick );
+//Plot(C,"",Mcolor,styleCandle);
+
+break;
+}
+
+
+
+//=============================== PLOT SHAPES SECTION============================
+PlotShapes(shapeSmallDownTriangle*(upThrustBar OR upThrustBartrue ) , colorDarkRed, 0, H, -20 );
+PlotShapes(shapeHollowSmallDownTriangle*(upThrustBar OR upThrustBartrue ) , colorRed, 0, H, -20 );
+PlotShapes(shapeSmallDownTriangle*(upThrustcond1 OR upThrustcond2 ) , colorRed, 0, H, -20 );
+PlotShapes(shapeHollowSmallDownTriangle*(upThrustcond1 OR upThrustcond2 ) , colorWhite, 0, H, -20 );
+PlotShapes(shapeSmallCircle*topRevBar, colorBlue, 0, H, 30 );
+PlotShapes(shapeSmallSquare*(PseudoUpThrust) , colorBlue, 0, H, 10 );
+PlotShapes(shapeSmallDownTriangle*(pseudoUtCond) , colorBlue, 0, H, -20 );
+PlotShapes(shapeSmallDownTriangle*trendChange , colorYellow, 0, H, -20 );
+PlotShapes(shapeHollowSmallDownTriangle*trendChange , colorRed, 0, H, -20 );
+PlotShapes(shapeSmallSquare*noDemandBarUt, colorOrange, 0, H, 15);
+PlotShapes(shapeHollowSmallSquare*noDemandBarUt, colorYellow, 0, H, 15);
+PlotShapes(shapeSmallSquare*(noDemandBarDt) , colorOrange, 0, H, 15 );
+PlotShapes(shapeHollowSmallSquare*noDemandBarDt, colorYellow, 0, H, 15);
+PlotShapes(shapeSmallSquare*noSupplyBar, colorBlue, 0, L, -20 );
+PlotShapes(shapeHollowSmallSquare*noSupplyBar, colorLightBlue, 0, L, -20 );
+PlotShapes(shapeSmallSquare*lowVolTest, colorCustom12, 0, L, -20);
+PlotShapes(shapeSmallUpTriangle*lowVolTest2, colorYellow, 0, L, -10 );
+PlotShapes(shapeSmallUpTriangle*strengthDown, colorDarkGreen, 0, L, -20 );
+PlotShapes(shapeHollowSmallUpTriangle*strengthDown, colorLime, 0, L, -20 );
+PlotShapes(shapeSmallUpTriangle*strengthDown2, colorViolet, 0, L, -30 );
+PlotShapes(shapeHollowSmallUpTriangle*strengthDown2, colorCustom12, 0, L, -30 );
+PlotShapes(shapeSmallCircle*stopVolume, colorGreen,0, L, -10 );
+PlotShapes(shapeHollowSmallCircle*stopVolume, colorYellow, 0, L, -10 );
+PlotShapes(shapeSmallSquare*revUpThrust, colorYellow, 0, L, -20 );
+PlotShapes(shapeSmallCircle*effortUp, colorLime, 0, midprice, 0 );
+PlotShapes(shapeSmallCircle*effortUpFail, colorRed, 0, H, 10 );
+PlotShapes(shapeHollowSmallCircle*effortUpFail, colorWhite, 0, H, 10 );
+PlotShapes(shapeSmallCircle*effortDown, colorOrange, 0, midprice, 0 );
+PlotShapes(shapeSmallCircle*effortDownFail, colorRed, 0, L, -10 );
+PlotShapes(shapeHollowSmallCircle*effortDownFail, colorWhite, 0, L, -10 );
+PlotShapes(shapeUpArrow*buyCond, colorGreen, 0, L, -20 );
+PlotShapes(shapeDownArrow*Sellcond, colorOrange, 0, H, -40 );
+PlotShapes(shapeSmallDownTriangle*(nut) , colorLime, 0, H, -40 );
+PlotShapes(shapeSmallDownTriangle*(bc ) , colorDarkRed, 0, H, -20 );
+
+_SECTION_END();
+
+//====================================================================================|
+//                       Commentry Module                                             |
+//====================================================================================|
+_SECTION_BEGIN("Commentary");
+Vpc= upThrustBartrue OR upThrustCond1 OR upThrustCond2 OR upThrustCond3 OR strengthDown0 OR strengthDown1 OR strengthDown2 OR 
+strengthDown OR lowVolTest1 OR pseudoUtCond OR lowVolTest2 OR PseudoUpThrust OR pseudoUtCond OR noDemandBarUt OR stopVolume OR trendChange OR buyCond OR noSupplyBar;
+
+if( Status("action") == actionCommentary ) 	printf ( "==================== Volume Price Analysis V.4.0 ====================\n");
+
+printf ( Name() + " - " + Interval(2) +  "  - " + Date() + " - " + "\n" + 
+	StrFormat("High  %g   \nLow  %g \nOpen  %g \nClose  %g \nVolume  %g ", H, L, O, C, V));
+WriteIf(Vpc,"====================\nVolume Analysis Commentary:","");
+
+WriteIf(upThrustBartrue , "\nUp-thrusts are designed to catch stops and to mislead as many traders as possible. " +  
+	"They are normally seen after there has been weakness in the background. The market makers know that the " +
+	"market is weak, so the price is marked up to catch stops, encourage traders to go long in a weak market, " +
+	"AND panic traders that are already Short into covering their very good position.","") 
++
+WriteIf(upThrustCond3,"\n  This upthrust bar is at high volume. This is a sure sign of weakness. One may even seriously " + 
+	"consider ending the Longs AND be ready to reverse","")
++
+WriteIf(upThrustBartrue OR upThrustCond3,"\nAlso note that A wide spread " +
+	"down-bar that appears immediately after any up-thrust, tends to confirm the weakness (the market makers are " + 
+	"locking in traders into poor positions). With the appearance of an upthrust you should " +
+	"certainly be paying attention to your trade AND your stops. On many upthrusts you will find that the market will " + 
+	"'test' almost immediately.","")
++
+WriteIf(upThrustCond1, "\nA wide spread down bar following a Upthrust Bar. " +
+	"This confirms weakness. The Smart Money is locking in Traders into poor positions","");
+
+WriteIf(upThrustCond2 , "\nAlso here the volume is high( Above Average).This is a sure sign of weakness. The Smart Money is " +
+	"locking in Traders into poor positions","")
++
+WriteIf(strengthDown, "\nStrength Bar. The stock has been in a down Trend. An upbar " +
+	"with higher Volume closing near the High is a sign of strength returning. The downtrend is likely to reverse soon. ","")
++
+WriteIf(strengthDown1,"\nHere the volume is very much above average. This makes this indication more stronger. ","")
++ 
+WriteIf(buyCond,"\nThe previous bar saw strength coming back. This upbar confirms strength. ","")
++
+WriteIf(PseudoUpThrust,"\nA pseudo Upthrust. This normally appears after an Up Bar with above average volume. This looks like an upthrust bar " +
+	"closing down near the Low. But the Volume is normally Lower than average. this is a sign of weakness.If the Volume is High then weakness " + 
+	"increases. Smart Money is trying to trap the retailers into bad position. ","")
++
+WriteIf(pseudoUtCond, "\nA downbar after a pseudo Upthrust Confirms weakness. If the volume is above average the weakness is increased. ","")
++
+WriteIf(lowVolTest1,"\nThe previous bar was a successful Test of supply. The current bar is a upbar with higher volume. This confirms strength","")
++
+WriteIf(lowVolTest2,"\nThe previous bar was a successful Test of supply. The current bar is a upbar with higher volume. This confirms strength","")
++
+WriteIf(trendChange,"\nThe stock has been moving up on high volume. The current bar is a Downbar with high volume. Indicates weakness and probably end of the up move","")
++
+WriteIf(effortUp,"\nEffort to Rise bar. This normally found in the beginning of a Markup Phase and is bullish sign. " +
+	"These may be found at the top of an Upmove as the Smart money makes a last effort to move the price to the maximum","")
++
+WriteIf(effortDown,"\nEffort to Fall bar. This normally found in the beginning of a Markdown phase.","")
++
+WriteIf(noSupplyBar,"\nNo Supply. A no supply bar indicates supply has been removed and the Smart money can markup the price. It is better to wait for confirmation","")
++
+WriteIf(stopVolume,"\nStopping Volume. This will be an downbar during a bearish period closing towards the Top accompanied by High volume. " +
+	"A stopping Volume normally indicates that smart money is absorbing the supply which is a Indication that they are Bullishon the MArket. " +
+	"Hence we Can expect a reversal in the down trend. ","")
++
+WriteIf(noDemandBarUt, "\nNo Demand Brief Description: \n  Any up bar which closes in the middle OR Low, especially if the Volume has fallen off, is a potential sign of weakness. " +
+	"Things to Look Out for: \n  if the market is still strong, you will normally see signs of strength in the next few bars, which will most probably show itself as a: " +
+	"* Down bar with a narrow spread, closing in the middle OR High. * Down bar on Low Volume.","");
+_SECTION_END();
+//====================================================================================|
+//                       Support & Resistance  Lines                                  |
+//====================================================================================|
+_SECTION_BEGIN("RS Lines");
+// AFL By Karthikmarar
+// RESISTANCE AND SUPPORT LINES AFL VERSION 2.00
+// Provids upto total 20 lines. Two Adjustable Parameters. 1) Sensitivity and 2) Number of lines
+// Depending on the Share Volatility, the Sensitivity Factor can be adjusted
+// Support Lines are colored Blue and Resistance Line are colored Red.
+SetChartOptions(0,chartShowArrows|chartShowDates);
+sr=ParamToggle("Plot Supp/Res lines","No|Yes" ,0);
+Per=Param("Sensitivity",6,2,15,1);
+g=Param("No.of Lines",5,1,10,1);
+x=Cum(1);
+Pk1=PeakBars(H,per,1)== 0;
+Tk1=TroughBars(L,per,1)== 0;
+//peak detection
+px1=LastValue(ValueWhen(pk1,x,1));
+px2=LastValue(ValueWhen(Pk1,x,2));
+px3=LastValue(ValueWhen(Pk1,x,3));
+px4=LastValue(ValueWhen(pk1,x,4));
+px5=LastValue(ValueWhen(Pk1,x,5));
+px6=LastValue(ValueWhen(Pk1,x,6));
+px7=LastValue(ValueWhen(pk1,x,7));
+px8=LastValue(ValueWhen(Pk1,x,8));
+px9=LastValue(ValueWhen(Pk1,x,9));
+px10=LastValue(ValueWhen(Pk1,x,10));
+//Trough  Detection
+tx1=LastValue(ValueWhen(Tk1,x,1));
+tx2=LastValue(ValueWhen(Tk1,x,2));
+tx3=LastValue(ValueWhen(Tk1,x,3));
+tx4=LastValue(ValueWhen(Tk1,x,4));
+tx5=LastValue(ValueWhen(Tk1,x,5));
+tx6=LastValue(ValueWhen(Tk1,x,6));
+tx7=LastValue(ValueWhen(Tk1,x,7));
+tx8=LastValue(ValueWhen(Tk1,x,8));
+tx9=LastValue(ValueWhen(Tk1,x,9));
+tx10=LastValue(ValueWhen(Pk1,x,10));
+//values when Peaks occured
+XT1 =LastValue(ValueWhen(pk1,H,1));
+XT2 =LastValue(ValueWhen(Pk1,H,2));
+XT3 =LastValue(ValueWhen(Pk1,H,3));
+XT4 =LastValue(ValueWhen(pk1,H,4));
+XT5 =LastValue(ValueWhen(Pk1,H,5));
+XT6 =LastValue(ValueWhen(Pk1,H,6));
+XT7 =LastValue(ValueWhen(pk1,H,7));
+XT8 =LastValue(ValueWhen(Pk1,H,8));
+XT9 =LastValue(ValueWhen(Pk1,H,10));
+XT10 =LastValue(ValueWhen(Pk1,H,10));
+//Value when troughs occured
+YT1 =LastValue(ValueWhen(tk1,L,1));
+YT2 =LastValue(ValueWhen(tk1,L,2));
+YT3 =LastValue(ValueWhen(tk1,L,3));
+YT4 =LastValue(ValueWhen(tk1,L,4));
+YT5 =LastValue(ValueWhen(tk1,L,5));
+YT6 =LastValue(ValueWhen(tk1,L,6));
+YT7 =LastValue(ValueWhen(tk1,L,7));
+YT8 =LastValue(ValueWhen(tk1,L,8));
+YT9 =LastValue(ValueWhen(tk1,L,10));
+YT10 =LastValue(ValueWhen(tk1,L,10));
+LastBar = Cum(1) == LastValue(Cum(1));
+//plot peak lines
+Plot(IIf(x>px1 AND g>=1 AND sr,XT1,Null),"P1",IIf( LastValue(C)>XT1, colorBlue, colorRed ));
+Plot(IIf(x>px2 AND g>=2 AND sr,XT2,Null),"P2",IIf( LastValue(C)>XT2, colorBlue, colorRed ));
+Plot(IIf(x>px3 AND g>=3 AND sr,XT3,Null),"P3",IIf( LastValue(C)>XT3, colorBlue, colorRed ));
+Plot(IIf(x>px4 AND g>=4 AND sr,XT4,Null),"P4",IIf( LastValue(C)>XT4, colorBlue, colorRed ));
+Plot(IIf(x>px5 AND g>=5 AND sr,XT5,Null),"P5",IIf( LastValue(C)>XT5, colorBlue, colorRed ));
+Plot(IIf(x>px6 AND g>=6 AND sr,XT6,Null),"P6",IIf( LastValue(C)>XT6, colorBlue, colorRed ));
+Plot(IIf(x>px7 AND g>=7 AND sr,XT7,Null),"P7",IIf( LastValue(C)>XT7, colorBlue, colorRed ));
+Plot(IIf(x>px8 AND g>=8 AND sr,XT8,Null),"P8",IIf( LastValue(C)>XT8, colorBlue, colorRed ));
+Plot(IIf(x>px9 AND g>=9 AND sr,XT9,Null),"P9",IIf( LastValue(C)>XT9, colorBlue, colorRed ));
+Plot(IIf(x>px10 AND g>=10 AND sr,XT10,Null),"P10",IIf( LastValue(C)>XT10, colorBlue, colorRed ));
+//plot Trough lines
+Plot(IIf(x>tx1 AND g>=1 AND sr,YT1,Null),"T1",IIf( LastValue(C)>YT1, colorBlue, colorRed ));
+Plot(IIf(x>tx2 AND g>=2 AND sr,YT2,Null),"T2",IIf( LastValue(C)>YT2, colorBlue, colorRed ));
+Plot(IIf(x>tx3 AND g>=3 AND sr,YT3,Null),"T3",IIf( LastValue(C)>YT3, colorBlue, colorRed ));
+Plot(IIf(x>tx4 AND g>=4 AND sr,YT4,Null),"T4",IIf( LastValue(C)>YT4, colorBlue, colorRed ));
+Plot(IIf(x>tx5 AND g>=5 AND sr,YT5,Null),"T5",IIf( LastValue(C)>YT5, colorBlue, colorRed ));
+Plot(IIf(x>tx6 AND g>=6 AND sr,YT6,Null),"T6",IIf( LastValue(C)>YT6, colorBlue, colorRed ));
+Plot(IIf(x>tx7 AND g>=7 AND sr,YT7,Null),"T7",IIf( LastValue(C)>YT7, colorBlue, colorRed ));
+Plot(IIf(x>tx8 AND g>=8 AND sr,YT8,Null),"T8",IIf( LastValue(C)>YT8, colorBlue, colorRed ));
+Plot(IIf(x>tx9 AND g>=9 AND sr,YT9,Null),"T9",IIf( LastValue(C)>YT9, colorBlue, colorRed ));
+Plot(IIf(x>tx10 AND g>=10 AND sr,YT10,Null),"T10",IIf( LastValue(C)>YT10, colorBlue, colorRed ));
+//Crossing Resistance Lines
+xt1c=Cross(C,xt1);
+xt2c=Cross(C,xt2);
+xt3c=Cross(C,xt3);
+xt4c=Cross(C,xt4);
+xt5c=Cross(C,xt5);
+xt6c=Cross(C,xt6);
+xt7c=Cross(C,xt7);
+xt8c=Cross(C,xt8);
+xt9c=Cross(C,xt9);
+xt10c=Cross(C,xt10);
+//Breaking support Lines
+yt1c=Cross(yt1,C);
+yt2c=Cross(yt2,C);
+yt3c=Cross(yt3,C);
+yt4c=Cross(yt4,C);
+yt5c=Cross(yt5,C);
+yt6c=Cross(yt6,C);
+yt7c=Cross(yt7,C);
+yt8c=Cross(yt8,C);
+yt9c=Cross(yt9,C);
+yt10c=Cross(yt10,C);
+//Resistance approaching 
+ax1=C<xt1 AND C>xt1*0.97;
+ax2=C<xt2 AND C>xt2*0.97;
+ax3=C<xt3 AND C>xt3*0.97;
+ax4=C<xt4 AND C>xt4*0.97;
+ax5=C<xt5 AND C>xt5*0.97;
+ax6=C<xt6 AND C>xt6*0.97;
+ax7=C<xt7 AND C>xt7*0.97;
+ax8=C<xt8 AND C>xt8*0.97;
+ax9=C<xt9 AND C>xt9*0.97;
+ax10=C<xt10 AND C>xt10*0.97;
+//Support approaching
+ay1=C>yt1 AND C<yt1*1.03;
+ay2=C>yt2 AND C<yt2*1.03;
+ay3=C>yt3 AND C<yt3*1.03;
+ay4=C>yt4 AND C<yt4*1.03;
+ay5=C>yt5 AND C<yt5*1.03;
+ay6=C>yt6 AND C<yt6*1.03;
+ay7=C>yt7 AND C<yt7*1.03;
+ay8=C>yt8 AND C<yt8*1.03;
+ay9=C>yt9 AND C<yt9*1.03;
+ay10=C>yt10 AND C<yt10*1.03;
+//Resistance lines commentary
+src1=xt1c OR xt2c OR xt3c OR xt4c OR xt5c OR xt6c OR xt7c OR xt8c OR xt9c OR xt10c OR yt1c OR yt2c OR yt3c OR yt4c OR yt5c OR yt6c OR yt7c OR yt8c OR yt9c OR yt10c;
+src2=ax1 OR ax2 OR ax3 OR ax4 OR ax5 OR ax6 OR ax7 OR ax8 OR ax9 OR ax10 OR ay1 OR ay2 OR ay3 OR ay4 OR ay5 OR ay6 OR ay7 OR ay8 OR ay9 OR ay10;
+WriteIf(src1 OR src2,"------------------------------------------","");
+WriteIf(src1 OR src2,"SUPPORT/RESISTANCE COMMENTARY:\n","");
+WriteIf(xt1c AND V>volAvg,"Resistance at "+xt1+"  crossed with high volume.Bullish.",
+WriteIf(xt1c AND V<volAvg,"Resistance at "+xt1+"  crossed, but volume is less. caution adviced."," "))+
+WriteIf(xt2c AND V>volAvg,"Resistance at "+xt2+"  crossed with high volume.Bullish.",
+WriteIf(xt2c AND V<volAvg,"Resistance at "+xt2+"  crossed, but volume is less. caution adviced."," "))+
+WriteIf(xt3c AND V>volAvg,"Resistance at "+xt3+"  crossed with high volume.Bullish.",
+WriteIf(xt3c AND V<volAvg,"Resistance at "+xt3+"  crossed, but volume is less. caution adviced."," "))+
+WriteIf(xt4c AND V>volAvg,"Resistance at "+xt4+"  crossed with high volume.Bullish.",
+WriteIf(xt4c AND V<volAvg,"Resistance at "+xt4+"  crossed, but volume is less. caution adviced."," "))+
+WriteIf(xt5c AND V>volAvg,"Resistance at "+xt5+"  crossed with high volume.Bullish.",
+WriteIf(xt5c AND V<volAvg,"Resistance at "+xt5+"  crossed, but volume is less. caution adviced."," "))+
+WriteIf(xt6c AND V>volAvg,"Resistance at "+xt6+"  crossed with high volume.Bullish.",
+WriteIf(xt6c AND V<volAvg,"Resistance at "+xt6+"  crossed, but volume is less. caution adviced."," "))+
+WriteIf(xt7c AND V>volAvg,"Resistance at "+xt7+"  crossed with high volume.Bullish.",
+WriteIf(xt7c AND V<volAvg,"Resistance at "+xt7+"  crossed, but volume is less. caution adviced."," "))+
+WriteIf(xt8c AND V>volAvg,"Resistance at "+xt8+"  crossed with high volume.Bullish.",
+WriteIf(xt8c AND V<volAvg,"Resistance at "+xt8+"  crossed, but volume is less. caution adviced."," "))+
+WriteIf(xt9c AND V>volAvg,"Resistance at "+xt9+"  crossed with high volume.Bullish.",
+WriteIf(xt9c AND V<volAvg,"Resistance at "+xt9+"  crossed, but volume is less. caution adviced."," "))+
+WriteIf(xt10c AND V>volAvg,"Resistance at "+xt10+" crossed with High Volume.Bullish.",
+WriteIf(xt10c AND V<volAvg,"Resistance at "+xt10+" crossed, but volume is less. caution adviced."," "));
+//Support line breaks Commentary
+WriteIf(yt1c AND V>volAvg,"Support at "+yt1+"  is broken with high volume.Bearish.",
+WriteIf(yt1c AND V<volAvg,"Support at "+yt1+"  is broken, but volume is less. caution adviced."," "))+
+WriteIf(yt2c AND V>volAvg,"Support at "+yt2+"  is broken with high volume.Bearish.",
+WriteIf(yt2c AND V<volAvg,"Support at "+yt2+"  is broken, but volume is less. caution adviced."," "))+
+WriteIf(yt3c AND V>volAvg,"Support at "+yt3+"  is broken with high volume.Bearish.",
+WriteIf(yt3c AND V<volAvg,"Support at "+yt3+"  is broken, but volume is less. caution adviced."," "))+
+WriteIf(yt4c AND V>volAvg,"Support at "+yt4+"  is broken with high volume.Bearish.",
+WriteIf(yt4c AND V<volAvg,"Support at "+yt4+"  is broken, but volume is less. caution adviced."," "))+
+WriteIf(yt5c AND V>volAvg,"Support at "+yt5+"  is broken with high volume.Bearish.",
+WriteIf(yt5c AND V<volAvg,"Support at "+yt5+"  is broken, but volume is less. caution adviced."," "))+
+WriteIf(yt6c AND V>volAvg,"Support at "+yt6+"  is broken with high volume.Bearish.",
+WriteIf(yt6c AND V<volAvg,"Support at "+yt6+"  is broken, but volume is less. caution adviced."," "))+
+WriteIf(yt7c AND V>volAvg,"Support at "+yt7+"  is broken with high volume.Bearish.",
+WriteIf(yt7c AND V<volAvg,"Support at "+yt7+"  is broken, but volume is less. caution adviced."," "))+
+WriteIf(yt8c AND V>volAvg,"Support at "+yt8+"  is broken with high volume.Bearish.",
+WriteIf(yt8c AND V<volAvg,"Support at "+yt8+"  is broken, but volume is less. caution adviced."," "))+
+WriteIf(yt9c AND V>volAvg,"Support at "+yt9+"  is broken with high volume.Bearish.",
+WriteIf(yt9c AND V<volAvg,"Support at "+yt9+"  is broken, but volume is less. caution adviced."," "))+
+WriteIf(yt10c AND V>volAvg,"Support at "+yt10+"  is broken with high volume.Bearish.",
+WriteIf(yt10c AND V<volAvg,"Support at "+yt10+"  is broken, but volume is less. caution adviced."," "));
+//Resistance approaching Commentary
+WriteIf(ax1 AND tls>0, "Price Approaching resistance at "+xt1+  ". ","")+
+WriteIf(ax2 AND tls>0, "Price Approaching resistance at "+xt2+  ". ","")+
+WriteIf(ax3 AND tls>0, "Price Approaching resistance at "+xt3+  ". ","")+
+WriteIf(ax4 AND tls>0, "Price Approaching resistance at "+xt4+  ". ","")+
+WriteIf(ax5 AND tls>0, "Price Approaching resistance at "+xt5+  ". ","")+
+WriteIf(ax6 AND tls>0, "Price Approaching resistance at "+xt6+  ". ","")+
+WriteIf(ax7 AND tls>0, "Price Approaching resistance at "+xt7+  ". ","")+
+WriteIf(ax8 AND tls>0, "Price Approaching resistance at "+xt8+  ". ","")+
+WriteIf(ax9 AND tls>0, "Price Approaching resistance at "+xt9+  ". ","")+
+WriteIf(ax10 AND tls>0, "Price Approaching resistance at "+xt10+ ". ","");
+WriteIf(ay1 AND tls<0, "Price Approaching Support at "+yt1+  ". ","")+
+WriteIf(ay2 AND tls<0, "Price Approaching Support at "+yt2+  ". ","")+
+WriteIf(ay3 AND tls<0, "Price Approaching Support at "+yt3+  ". ","")+
+WriteIf(ay4 AND tls<0, "Price Approaching Support at "+yt4+  ". ","")+
+WriteIf(ay5 AND tls<0, "Price Approaching Support at "+yt5+  ". ","")+
+WriteIf(ay6 AND tls<0, "Price Approaching Support at "+yt6+  ". ","")+
+WriteIf(ay7 AND tls<0, "Price Approaching Support at "+yt7+  ". ","")+
+WriteIf(ay8 AND tls<0, "Price Approaching Support at "+yt8+  ". ","")+
+WriteIf(ay9 AND tls<0, "Price Approaching Support at "+yt9+  ". ","")+
+WriteIf(ay10 AND tls<0, "Price Approaching Support at "+yt10+  ". ","");
+_SECTION_END();
+//==========================================================================|
+//                    Volume Lines Module                                   |
+//==========================================================================|
+// AFL Karthikmarar
+// HIGH VOLUME LINES AFL VERSION 1.00
+// Provids upto total 20 lines. Number of lines Adjustable from Parameter window
+_SECTION_BEGIN("High Volume Lines");
+vr=ParamToggle("Plot High volume lines","No|Yes" ,0);
+j=Param("No.of High vol Lines",5,1,20,1);
+k=Param("Volume factor",2,1.5,3,0.5);
+y=Cum(1);
+Hk1=V>k*volAvg;
+//High volume detection
+hx1=LastValue(ValueWhen(hk1,y,1));
+hx2=LastValue(ValueWhen(hk1,y,2));
+hx3=LastValue(ValueWhen(hk1,y,3));
+hx4=LastValue(ValueWhen(hk1,y,4));
+hx5=LastValue(ValueWhen(hk1,y,5));
+hx6=LastValue(ValueWhen(hk1,y,6));
+hx7=LastValue(ValueWhen(hk1,y,7));
+hx8=LastValue(ValueWhen(hk1,y,8));
+hx9=LastValue(ValueWhen(hk1,y,9));
+hx10=LastValue(ValueWhen(hk1,y,10));
+hx11=LastValue(ValueWhen(hk1,y,11));
+hx12=LastValue(ValueWhen(hk1,y,12));
+hx13=LastValue(ValueWhen(hk1,y,13));
+hx14=LastValue(ValueWhen(hk1,y,14));
+hx15=LastValue(ValueWhen(hk1,y,15));
+hx16=LastValue(ValueWhen(hk1,y,16));
+hx17=LastValue(ValueWhen(hk1,y,17));
+hx18=LastValue(ValueWhen(hk1,y,18));
+hx19=LastValue(ValueWhen(hk1,y,19));
+hx20=LastValue(ValueWhen(hk1,y,20));
+//values when High volume occured
+XV1 =LastValue(ValueWhen(hk1,H,1));
+XV2 =LastValue(ValueWhen(hk1,H,2));
+XV3 =LastValue(ValueWhen(hk1,H,3));
+XV4 =LastValue(ValueWhen(hk1,H,4));
+XV5 =LastValue(ValueWhen(hk1,H,5));
+XV6 =LastValue(ValueWhen(hk1,H,6));
+XV7 =LastValue(ValueWhen(hk1,H,7));
+XV8 =LastValue(ValueWhen(hk1,H,8));
+XV9 =LastValue(ValueWhen(hk1,H,9));
+XV10 =LastValue(ValueWhen(hk1,H,10));
+XV11 =LastValue(ValueWhen(hk1,C,11));
+XV12 =LastValue(ValueWhen(hk1,C,12));
+XV13 =LastValue(ValueWhen(hk1,C,113));
+XV14 =LastValue(ValueWhen(hk1,C,14));
+XV15 =LastValue(ValueWhen(hk1,C,15));
+XV16 =LastValue(ValueWhen(hk1,C,16));
+XV17 =LastValue(ValueWhen(hk1,C,17));
+XV18 =LastValue(ValueWhen(hk1,C,18));
+XV19 =LastValue(ValueWhen(hk1,C,19));
+XV20 =LastValue(ValueWhen(hk1,C,20));
+LastBar = Cum(1) == LastValue(Cum(1));
+//plot High Volume lines
+Plot(IIf(y>hx1 AND j>=1 AND Vr,xv1,Null),"v1",colorYellow);
+Plot(IIf(y>hx2 AND j>=2 AND Vr,xv2,Null),"v2",colorYellow);
+Plot(IIf(y>hx3 AND j>=3 AND Vr,xv3,Null),"v3",colorYellow);
+Plot(IIf(y>hx4 AND j>=4 AND Vr,xv4,Null),"v4",colorYellow);
+Plot(IIf(y>hx5 AND j>=5 AND Vr,xv5,Null),"v5",colorYellow);
+Plot(IIf(y>hx6 AND j>=6 AND Vr,xv6,Null),"v6",colorYellow);
+Plot(IIf(y>hx7 AND j>=7 AND Vr,xv7,Null),"v7",colorYellow);
+Plot(IIf(y>hx8 AND j>=8 AND Vr,xv8,Null),"v8",colorYellow);
+Plot(IIf(y>hx9 AND j>=9 AND Vr,xv9,Null),"v9",colorYellow);
+Plot(IIf(y>hx10 AND j>=10 AND Vr,xv10,Null),"v10",colorYellow);
+Plot(IIf(y>hx11 AND j>=11 AND Vr,xv11,Null),"v11",colorYellow);
+Plot(IIf(y>hx12 AND j>=12 AND Vr,xv12,Null),"v12",colorYellow);
+Plot(IIf(y>hx13 AND j>=13 AND Vr,xv13,Null),"v13",colorYellow);
+Plot(IIf(y>hx14 AND j>=14 AND Vr,xv14,Null),"v14",colorYellow);
+Plot(IIf(y>hx15 AND j>=15 AND Vr,xv15,Null),"v15",colorYellow);
+Plot(IIf(y>hx16 AND j>=16 AND Vr,xv16,Null),"v16",colorYellow);
+Plot(IIf(y>hx17 AND j>=17 AND Vr,xv17,Null),"v17",colorYellow);
+Plot(IIf(y>hx18 AND j>=18 AND Vr,xv18,Null),"v18",colorYellow);
+Plot(IIf(y>hx19 AND j>=19 AND Vr,xv19,Null),"v19",colorYellow);
+Plot(IIf(y>hx20 AND j>=20 AND Vr,xv20,Null),"v20",colorYellow);
+_SECTION_END();
+
+
+//============================================================================================================================================================================================
+_SECTION_BEGIN("Exploration");
+
+Lq=V;
+Lqok=Lq>100000;
+
+Filter=  (upThrustBar OR upThrustCond2 OR upThrustCond3 OR strengthDown OR strengthDown0 OR strengthDown1 OR strengthDown2 OR effortUp OR effortDown OR stopVolume OR PseudoUpThrust OR pseudoUtCond
+         OR trendChange OR lowVolTest OR lowVolTest1 OR topRevBar OR lowVolTest2 OR buyCond OR noDemandBarUt OR noDemandBarDt OR effortUpfail) AND Lqok;
+tcolor = IIf(strengthDown OR strengthDown1 OR buyCond, 42, IIf(buycond , colorPaleGreen, IIf(strengthDown2, colorPaleGreen,  
+        IIf(upThrustBar OR upThrustCond1 OR sellcond, 33, IIf(upThrustCond2 OR upThrustCond3, 25, IIf(effortUp, colorLime, IIf(effortDown,colorRed, IIf(PseudoUpThrust,33,
+        IIf(pseudoUtCond OR noDemandBarUt,colorOrange, IIf(strengthDown0 OR noSupplyBar OR lowVolTest OR lowVolTest1 OR lowVolTest2,42, IIf(stopVolume OR revUpThrust,42, IIf(upThrustCond1,colorOrange,
+        IIf(trendChange,33,colorBlack))))))))))))); 
+
+AddTextColumn(
+WriteIf (upThrustBar, "Sign of weakness. ",
+WriteIf (upThrustCond1	, "Confirmed weakness. ",
+WriteIf (upThrustCond2	 AND NOT upThrustCond1	, "Confirms weakness.",
+WriteIf (upThrustCond3	, "Confirms weakness",
+WriteIf (strengthDown1, "strength returning. ",
+WriteIf (strengthDown0 AND NOT strengthDown, "strength returning. ",
+WriteIf (strengthDown AND NOT strengthDown1, "strength returning. ",
+WriteIf (lowVolTest , "Test for supply. ",
+WriteIf (lowVolTest2 , "confirms strength. ",
+WriteIf (buyCond, "Change of sentiment to Positive ",
+WriteIf (Sellcond, "Change of sentiment to Negative ",
+WriteIf (PseudoUpThrust, "Sign of Weakness. ",
+WriteIf (topRevBar, "Top Reversal. Sign of Weakness. ",
+WriteIf (pseudoUtCond, "Confirms weakness. ",
+WriteIf (lowVolTest1, "Sign of Strength. ",
+WriteIf (strengthDown2, "Indicates strength. ",
+WriteIf (noSupplyBar, "Indicates strength. ",
+WriteIf (trendChange, "Indicates weakness. ",
+WriteIf (noDemandBarUt, "A sign of Weakness. ",
+WriteIf (noDemandBarDT, "A sign of Weakness. ",
+WriteIf (stopVolume, "End of bearishnees near ",
+WriteIf (revUpThrust, "End of bearishnees near ",
+WriteIf (effortUp, "Bullish sign ",
+WriteIf (effortDown	, "Bearish sign ",
+WriteIf (effortDownfail	, "Bullish sign ",
+WriteIf (effortUpfail, "Bearish sign ","")))))))))))))))))))))))))), "Signal" , 1, colorDefault, tcolor,110);
+
+AddTextColumn(
+WriteIf (upThrustBar, " An Upthrust Bar. ",
+WriteIf (upThrustCond1, " A downbar after an Upthrust. ",
+WriteIf (upThrustCond2 AND NOT upThrustCond1, " A High Volume downbar after an Upthrust.",
+WriteIf (upThrustCond3, "This upthrust at very High Voume.",
+WriteIf (strengthDown1, "Strength seen returning after a down trend. ",
+WriteIf (strengthDown0 AND NOT strengthDown, "Strength seen returning after a down trend. ",
+WriteIf (strengthDown AND NOT strengthDown1, "Strength seen returning after a long down trend. ",
+WriteIf (lowVolTest , "Test for supply. ",
+WriteIf (lowVolTest2, "An Upbar after sucessful Test, Confirms strength ",
+WriteIf (buyCond, "Possible end of downtrend and start of uptrend soon",
+WriteIf (Sellcond, "Possible end of Uptrend and start of Downtrend soon",
+WriteIf (PseudoUpThrust, "Psuedo UpThrust. ",
+WriteIf (topRevBar, "Top Reversal Bar. Caution. The probability of end of the current upmove is High",
+WriteIf (pseudoUtCond, "A Down Bar closing down after a Pseudo Upthrust. ",
+WriteIf (lowVolTest1, "Test for supply in a uptrend. ",
+WriteIf (strengthDown2, "High volume upbar closing on the high. ",
+WriteIf (trendChange, "High volume Downbar after an upmove on high volume. ",
+WriteIf (noDemandBarUt, "No Demand in a uptrend. A sign of Weakness. ",
+WriteIf (noDemandBarDt, "No Demand. Uptrend unlikely soon. ",
+WriteIf (stopVolume, "Stopping volume. ",
+WriteIf (noSupplyBar, "No Supply. A sign of strength",
+WriteIf (revUpThrust, "Reverse UpThrust. ",
+WriteIf (effortUp, "Effort to Rise. ",
+WriteIf (effortDown	, "Effort to Fall.  ",
+WriteIf (effortUpfail, "Effort to Down up has failed. ",
+WriteIf (effortUpfail, "Effort to Move up has failed. ","")))))))))))))))))))))))))), "Condition" , 1, colorDefault, tcolor,250);
+ _SECTION_END ();
+//===========================================================================
+
+// Downloaded From www.WiseStockTrader.com
+//CyberMan's Linear Regression Channel.
+
+//Linear Regression Line with 2 Standard Deviation Channels Plotted Above and Below 
+//The original was written by Patrick Hargus, with critical hints from Marcin Gorzynski, Amibroker.com Technical Support 
+//Wysiwyg coded the angle in degrees part
+//I modified the original Linear Regression code so that the line will change color based on the degree of the Linear Regression slope.
+//I combine this with my trading system.
+//When my system gives an entry signal I look at the Linear Regression Line and I will only take long positions
+//if the Linear Regression line is green AND the entry price is below the LR line.
+//When my system gives an entry signal I look at the Linear Regression Line and I will only take short positions
+//if the Linear Regression line is red AND the entry price is above the LR line.
+//It is usefull for filtering out lower probability trades.
+
+
+//================================================Start Chart Configuration======================================================
+SetChartOptions(0,chartShowArrows|chartShowDates);
+//SetChartBkColor(colorBlack);
+
+Plot( C, "", colorBlack, styleCandle, Zorder = 1);
+SetChartOptions(0,chartShowArrows | chartShowDates);
+
+//================================================End Chart Configuration========================================================
+
+
+//====================================Start of Linear Regression Code============================================================
+
+P = ParamField("Price field",-1);
+
+Length = 150;
+
+Daysback = Param("Period for Liner Regression Line",Length,1,240,1);
+shift = Param("Look back period",0,0,240,1);
+
+//=============================== Math Formula =================================================================================
+x = Cum(1);
+lastx = LastValue( x ) - shift;
+aa = LastValue( Ref(LinRegIntercept( p, Daysback), -shift) );
+bb = LastValue( Ref(LinRegSlope( p, Daysback ), -shift) );
+y = Aa + bb * ( x - (Lastx - DaysBack +1 ) );
+
+//==================Plot the Linear Regression Line ============================================================================
+
+LRColor = ParamColor("LR Color", colorCycle ); 
+LRStyle = ParamStyle("LR Style");
+
+LRLine =  IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y, Null );
+
+LRStyle = ParamStyle("LR Style");
+Angle = Param("Angle", 0.05, 0, 1.5, 0.01);// A slope higher than 0.05 radians will turn green, less than -0.05 will turn red
+                                           // AND anything in between will be white.
+
+LRLine = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y, Null );
+
+Pi = 3.14159265 * atan(1); // Pi
+SlopeAngle = atan(bb)*(180/Pi);
+
+LineUp = SlopeAngle > Angle;
+LineDn = SlopeAngle < - Angle;
+
+if(LineUp)
+{
+Plot(LRLine, "Lin. Reg. Line Up", IIf(LineUp, colorLime, colorWhite), LRStyle);
+}
+else
+{
+Plot(LRLine, "Lin. Reg. Line Down", IIf(LineDn, colorRed, colorWhite), LRStyle);
+} 
+
+//==========================  Plot 1st SD Channel =============================================================================
+
+SDP = Param("Standard Deviation", 1.5, 0, 6, 0.1);
+SD = SDP/2;
+
+width = LastValue( Ref(SD*StDev(p, Daysback),-shift) ); //Set width of inside chanels here.
+SDU = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y+width , Null ) ;
+SDL = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y-width , Null ) ;
+
+SDColor = ParamColor("SD Color", colorCycle );
+SDStyle = ParamStyle("SD Style");
+
+Plot( SDU , "", colorBlue,SDStyle ); //Inside Regression Lines
+Plot( SDL , "", colorBlue,SDStyle ); //Inside Regression Lines
+
+//==========================  Plot 2d SD Channel ===============================================================================
+
+SDP2 = Param("2d Standard Deviation", 2.0, 0, 6, 0.1);
+SD2 = SDP2/2;
+
+width2 = LastValue( Ref(SD2*StDev(p, Daysback),-shift) ); //Set width of outside chanels here. 
+SDU2 = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y+width2 , Null ) ;
+SDL2 = IIf( x > (lastx - Daysback) AND BarIndex() < Lastx, y-width2 , Null ) ;
+
+SDColor2 = ParamColor("2 SD Color", colorCycle );
+SDStyle2 = ParamStyle("2 SD Style");
+
+Plot( SDU2 , "", colorRed,SDStyle2 ); //OutSide Regression Lines
+Plot( SDL2 , "", colorRed,SDStyle2 ); //OutSide Regression Lines
+
+Trend = IIf(LRLine > Ref(LRLine,-1),colorLime,colorRed);//Changes LR line to green if sloping up and red if sloping down.
+
+Plot( LRLine , "LinReg", Trend, styleDots );
+
+//============================ End Indicator Code =======================================================================
+
+//TRENDING RIBBON
+// Paste the code below to your price chart somewhere and green ribbon means both
+// both MACD and ADX trending up so if the red ribbon shows up the MACD and the ADX 
+// are both trending down.
+_SECTION_BEGIN("trending ribbon");
+uptrend=PDI()>MDI() AND MACD()>Signal();
+downtrend=MDI()>PDI() AND Signal()>MACD();
+Plot( 2, /* defines the height of the ribbon in percent of pane width */"",
+IIf( uptrend, colorLime, IIf( downtrend, colorRed, 0 )), /* choose color */
+styleOwnScale|styleArea|styleNoLabel, -0.5, 100 );
+_SECTION_END();
+//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+//FORMULE
+P = ParamField("Price field",-1);
+cuptop1= C>BBandTop(p,20,1) ;
+bot1= BBandBot(p,20,1) ;
+top2= BBandTop(p,20,2) ;
+bot2= BBandBot(p,20,2) ;
+stochup= StochK()>StochD() ;
+MACDup= MACD()>Signal() ;
+Hist= MACD()-Signal() ;
+Histup= Hist>Ref(Hist,-1) ;
+MFIupema5= MFI()>EMA(MFI(),5) ;
+top1up= BBandTop(p,20,1)>Ref(BBandTop(p,20,1),-1) ;
+band= BBandTop(p,20,2)-BBandBot(p,20,2) ;
+Volatbuy= band>Ref(band,-1) ;
+cupbot1= C>BBandBot(p,20,1) ;
+bot1dn= BBandBot(p,20,1)<Ref(BBandBot(p,20,1),-1) ;
+CCIup0= CCI()>0 ;
+Cupma10= C>MA(C,10) ;
+Cupma20= C>MA(C,20) ;
+MA10up= MA(C,10)>Ref(MA(C,10),-1) ;
+MA10upma20= MA(C,10)>MA(C,20) ;
+MA20up= MA(C,20)>Ref(MA(C,20),-1) ;
+Cupema50= C>EMA(C,50) ;
+Vup= V>10000 AND C>O ;
+trendup= LRLine>Ref(LRLine,-1) ;
+Cdnlrl= C<LRLine ;
+//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+myBuy   = Cross(PDI(),MDI()) AND MACD()>Signal() AND Hist>Ref(Hist,-1) AND LRLine>Ref(LRLine,-1) AND C<LRLine ;
+myShort = Cross(0,CCI()) AND Signal()>MACD() ;
+
+Buy = ExRem(myBuy, myShort);
+Sell = ExRem(myShort, myBuy);
+
+PlotShapes(IIf(Buy,shapeUpArrow,shapeNone),colorBlue,0,L,Offset=-10);
+PlotShapes(IIf(Sell,shapeDownArrow,shapeNone),colorRed,0,H,Offset=-10);
+//END OF xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+
+

@@ -1,0 +1,16 @@
+#include_once <../Include/FF_Tools.afl>
+
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorDefault ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+
+
+
+FF = fnGetNBSVolA();
+CumFF = Cum(FF);
+MA5_Cum = WMA(CumFF,5);
+MA21_Cum = WMA(CumFF,21);
+
+Plot(CumFF,"Cum_FF",colorRed,styleLine | styleOwnScale);

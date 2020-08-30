@@ -1,0 +1,14 @@
+#include_once <../Include/BS_Tools.afl>
+
+_SECTION_BEGIN("Big Broker");
+
+SumBigBroker = fnGetNetVolAllBigBroker();
+SumBigBrokerCol = IIf(SumBigBroker > 0, colorBrightGreen,colorRed);
+abs_SumBigBroker = abs(SumBigBroker);
+
+CumBigBroker = Cum(SumBigBroker);
+Plot(CumBigBroker,"",colorWhite,styleDashed | styleOwnScale);
+SetBarFillColor(SumBigBrokerCol);
+PlotOHLC(0,abs_SumBigBroker,0,abs_SumBigBroker,"Sum Big Broker",colorWhite,styleCandle);
+
+_SECTION_END();

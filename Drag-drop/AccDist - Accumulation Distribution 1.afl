@@ -1,0 +1,5 @@
+
+VOLDAYS1 = Param("AD DAYS",20,1,50,1);
+AD_PER = Sum((Close-Open)/(High-Low)*Volume,VOLDAYS1)/Sum(Volume,VOLDAYS1);
+mycolorAD =IIf  (AD_PER<0,ColorRed ,colorGreen);
+Plot(AD_PER,"AD%",mycolorAD ,styleHistogram);

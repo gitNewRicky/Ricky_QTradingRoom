@@ -1,0 +1,3 @@
+sig = Optimize("EMA Periods",20,2,500,1);
+Buy=TAS_Buy_EMA(sig);
+Sell=TAS_Sell_EMA(sig);

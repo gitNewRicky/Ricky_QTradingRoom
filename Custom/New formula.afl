@@ -1,0 +1,15 @@
+#include_once <../Include/BS_Tools.afl>
+
+_SECTION_BEGIN("Broker Buy and Sell");
+
+Netbuyer = fnGetNetBuyer();
+NetSeller = fnGetNetSeller();
+
+Acc = NetBuyer > NetSeller;
+Dist = NetBuyer < NetSeller;
+AD_color = IIf(Acc,colorGreen,IIf(Dist,colorRed,colorwhite));
+AD = NetBuyer - NetSeller;
+abs_AD = abs(AD);
+Plot(abs_AD,"Broker AD",AD_color,styleHistogram);
+
+_SECTION_END();

@@ -1,0 +1,22 @@
+_SECTION_BEGIN(" Smart Money Histogram");
+SetBarsRequired(sbrAll,sbrAll);
+BV = IIf( (H==L), 0, V*(C-L)/(H-L) );
+SV = IIf( (H==L), 0, V*(H-C)/(H-L) );
+
+BvS = BV - SV;
+EBvS3 = MA(BvS,3);
+EBvS5 = EMA(EBvS3,5);
+
+BvS_PC = IIf(BVS > 0, colorBrightGreen, colorRed);
+EBvS5_PC = IIf(EBVS5 > (Ref(EBVS5,-1)), colorBrightGreen, colorRed);
+
+Plot(BV - SV ,"Sell Volume",BvS_PC,styleHistogram | styleOwnScale);
+Plot(EBVS5,"EMA Buy Vs Sell", EBvS5_PC, styleDashed | styleOwnScale);
+
+
+//Va = MA(V,30);
+//PlotOHLC( Va, Va, 0, 0, "", ColorBlend( colorWhite , GetChartBkColor(), 0.4 ), styleNoLabel | styleCloud | styleNoRescale, Null, Null, Null, -1 );
+//Plot(Va,"Average Volume",colorRose,styleNoLine|styleNoLabel );
+//VI = V/Va;
+
+_SECTION_END();

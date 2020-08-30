@@ -1,0 +1,29 @@
+_SECTION_BEGIN("B. Stochastic RSI");
+//www.aflcode.com
+PeriodRSI = Param( "PeriodRSI", 13, 1, 250, 1 );
+PeriodStoch = Param( "PeriodStoch", 8, 1, 250, 1 );
+MAType = Param( "MAType", 1, 1, 2, 1 );
+PeriodSK = Param( "PeriodSK", 5, 1, 250, 1 );
+PeriodSD = Param( "PeriodSD", 3, 1, 250, 1 );
+Upper = Param( "Upper", 80, 50, 100, 1 );
+Lower = Param( "Lower", 20, 0, 50, 1 );
+irsi = RSI( PeriodRSI );
+llvRsi = LLV( irsi, PeriodStoch );
+hhvRsi = HHV( irsi, PeriodStoch );
+StoRSI = 100 * ((irsi- llvRsi) / Max(hhvRsi - llvRsi, 0.0001));
+if( MAType == 1 )
+{
+    SK = MA( StoRSI, PeriodSK );
+    SD = MA( SK, PeriodSD );
+}
+if( MAType == 2 )
+{
+    SK = EMA( StoRSI, PeriodSK );
+    SD = EMA( SK, PeriodSD );
+}
+Plot( SK, "DTOscSK", ParamColor( "ColorSK", colorBlueGrey ), styleLine );
+Plot( SD, "DTOscSD", ParamColor( "ColorSD", colorWhite ), styleDashed );
+Plot( 0, "ZeroLine", ParamColor( "ColorZero", colorWhite ), styleLine );
+Plot( Upper, "Upper", ParamColor( "ColorUpper", colorRed ), styleLine );
+Plot( Lower, "Lower", ParamColor( "ColorLower", colorGreen ), styleLine );
+_SECTION_END();

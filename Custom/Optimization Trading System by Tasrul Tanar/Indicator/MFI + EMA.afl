@@ -1,0 +1,11 @@
+Periods = Param("MFI Periods", 14, 1, 100, 1, 1 );
+Periods2 = Param("MA Periods", 10, 1, 100, 1, 1 );
+iColor=ParamColor( "MFI Color", colorRed );
+iStyle=ParamStyle("MFI Style"); 
+iColor2=ParamColor( "MA Color", colorBlue );
+iStyle2=ParamStyle("MA Style",styleDashed); 
+
+a=TAS_MFI( Periods );
+b=EMA(a,Periods2);
+Plot( a, "MFI", iColor, iStyle ); 
+Plot( b, "MA",  iColor2, iStyle2 ); 

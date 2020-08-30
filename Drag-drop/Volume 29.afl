@@ -1,0 +1,23 @@
+_SECTION_BEGIN("Volume");
+Plot( Volume, _DEFAULT_NAME(), ParamColor("Color", colorBlack ), ParamStyle( "Style", styleHistogram | styleThick, maskHistogram  ) );
+_SECTION_END();
+
+_SECTION_BEGIN("Avg Volume_prd");
+r1 = Param( "Periode", 100, 1, 1000, 1 );
+
+a=TAS_AverageVolume_prd(r1);
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style",styleThick); 
+
+Plot(a,"Avg.Volume_prd",iColor,iStyle); 
+_SECTION_END();
+
+_SECTION_BEGIN("Avg Volume_prd1");
+r1 = Param( "Periode", 100, 1, 1000, 1 );
+
+a=TAS_AverageVolume_prd(r1);
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style",styleThick); 
+
+Plot(a,"Avg.Volume_prd",iColor,iStyle); 
+_SECTION_END();

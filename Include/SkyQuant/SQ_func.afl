@@ -1,0 +1,524 @@
+/*******************************************************************************************/
+// SkyQuant for AmiBroker
+// http://skyquant.googlecode.com - HomeSite
+// http://groups.google.com/group/skyquant - Forum
+// You may use, copy, distribute, modify SkyQuant under the terms of
+// the GNU General Public License (GPL) Version 2, 2012 - 2013
+/*******************************************************************************************/
+function SYMBOL( s, Hfont, gx, gy )
+{
+	GfxSelectFont("StarFont Sans", Hfont, 500 ); 
+	GfxSetBkMode(1); 
+
+	switch( s ) // for "StarFont Sans"
+	{
+		case 0: 	result = "s";		break; 
+		case 1: 	result = "d";		break;
+		case 2:	result = "f";		break;
+		case 3: 	result = "g";		break;
+		case 4: 	result = "h";		break;
+		case 5: 	result = "j";		break; 
+		case 6: 	result = "S";		break;
+		case 7:	result = "F";		break;
+		case 8: 	result = "G";		break;
+		case 9: 	result = "J";		break;
+		case 10: 	result = "k";		break; 
+		case 11: 	result = "k";		break;
+		case 12: 	result = ".";		break; // symbol looks like Black Moon
+		case 13: 	result = ".";		break;
+		case 14: 	result = "L";		break;
+		case 15: 	result = "D";		break;
+
+		case -1000-0: 	result = "q";		break; 
+		case -1000-60: 	result = "r";		break; 
+		case -1000-120: 	result = "u";		break; 
+		case -1000-90: 	result = "t";		break; 
+		case -1000-180: 	result = "p";		break; 
+
+		case -1000-45: 	result = "e";		break;
+		case -1000-135: 	result = "i";		break;
+		case -1000-30: 	result = "w";		break;
+		case -1000-150: 	result = "o";		break;
+		case -1000-72: 	result = "T";		break; // квинтиль
+		case -1000-144: 	result = "I";		break; // биквинтиль U
+		case -1000-40: 	result = "E";		break; // нонагон
+		case -1000-108: 	result = "Z";		break; // полутораквинтиль
+		case -1000-36: 	result = "W";		break; // полуквинтиль
+		case -1000-51.42857: 	result = "P";		break; // септиль 360 / 7 * 1
+		case -1000-102.85714: 	result = "O";		break; // бисептиль 360 / 7 * 2
+		case -1000-154.28571: 	result = "_";		break; // трисептиль 360 / 7 * 3
+
+		case -1: 	result = "x";		break;
+		case -2:	result = "c";		break;
+		case -3: 	result = "v";		break;
+		case -4: 	result = "b";		break;
+		case -5: 	result = "n";		break; 
+		case -6: 	result = "m";		break;
+		case -7:	result = "X";		break;
+		case -8: 	result = "C";		break;
+		case -9: 	result = "V";		break;
+		case -10: 	result = "B";		break;
+		case -11: 	result = "N";		break;
+		case -12: 	result = "M";		break;
+
+		case -20: 	result = "6";		break; //	stat
+		case -21: 	result = "5";		break; //	retro
+		case -22:	result = "7";		break;	// direct
+		case -23: 	result = ")";		break; //	radix
+		case -24: 	result = "0";		break; //	natal
+		case -25: 	result = "8";		break; //	transit
+		case -26: 	result = "9";		break; //	progression
+
+		case -30: 	result = "1";		break; //	AS
+		case -31: 	result = "3";		break; //	MC
+		case -32:	result = "2";		break;	// DS
+		case -33: 	result = "4";		break; // IC
+		case -34:	result = "!";		break;	// Vx
+		default:	result = "±";
+	}
+
+	GfxTextOut(result, gx, gy );
+	GfxSelectFont("Tahoma", Hfont, 500 );
+}
+
+function ANGLE( a1, a2 )
+{
+	result = abs(a1 - a2);
+	result = Min(	result, 360 - result );
+	return result;
+}
+
+
+function ASPCOLOR (aspect)
+{ 
+	switch( aspect )
+	{
+		case 0: 	result = colorSkyblue;			break; 
+		case 60: 	result = colorPaleGreen;		break;
+		case 120:	result = colorPaleGreen;		break;
+		case 90: 	result = colorLightOrange;		break;
+		case 180: 	result = colorLightOrange;		break;
+
+		case 45: 	result = colorLightOrange;		break; // Semisquare - 45°, disharmonious 
+		case 135: 	result = colorLightOrange;		break; // Sesquisquare - 135°, disharmonious 
+		case 30: 	result = colorPaleGreen;		break; // Semisextil - 30°, neutral
+		case 150: 	result = colorLightOrange;		break; // Quincunx or Inconjunct - 150°, neutral
+		case 72: 	result = colorPaleGreen;		break; // Quintile - 72°, harmonious 
+		case 144:	result = colorPaleGreen;		break; // Biquintil - 144°, harmonious
+		case 40: 	result = colorLightOrange;		break;
+		case 108:	result = colorPaleGreen;		break;
+		case 36: 	result = colorPaleGreen;		break;
+		case 51.42857: 	result = colorPaleGreen;		break;
+		case 102.85714:	result = colorPaleGreen;		break;
+		case 154.28571: 	result = colorPaleGreen;		break;
+
+		default:	result = ColorRGB(240,240,240);
+	}
+	return result;
+} 
+
+function STICKCOLOR (aspect)
+{ 
+	switch( aspect )
+	{
+		case 0: 	result = colorBlue;		break; 
+		case 60: 	result = colorGreen;		break;
+		case 120:	result = colorGreen;		break;
+		case 90: 	result = colorRed;		break;
+		case 180: 	result = colorRed;		break;
+
+		case 45: 	result = colorRed;		break; // Semisquare - 45°, disharmonious 
+		case 135: 	result = colorRed;		break; // Sesquisquare - 135°, disharmonious 
+		case 30: 	result = colorGreen;		break; // Semisextil - 30°, neutral
+		case 150: 	result = colorRed;		break; // Quincunx or Inconjunct - 150°, neutral
+		case 72: 	result = colorGreen;		break; // Quintile - 72°, harmonious 
+		case 144:	result = colorGreen;		break; // Biquintil - 144°, harmonious
+		case 40: 	result = colorRed;		break;
+		case 108:	result = colorGreen;		break;
+		case 36: 	result = colorGreen;		break;
+		case 51.42857: 	result = colorGreen;		break;
+		case 102.85714:	result = colorGreen;		break;
+		case 154.28571: 	result = colorGreen;		break;
+
+		default:	result = colorDarkBlue;
+	}
+	return result;
+} 
+
+function ASPCOLORCIRCLE (aspect)
+{ 
+	switch( aspect )
+	{
+		case 0: 	result = colorBlue;		break; 
+		case 60: 	result = colorGreen;		break;
+		case 120:	result = colorGreen;		break;
+		case 90: 	result = colorRed;		break;
+		case 180: 	result = colorRed;		break;
+
+		case 45: 	result = colorLightOrange;		break; // Semisquare - 45°, disharmonious 
+		case 135: 	result = colorLightOrange;		break; // Sesquisquare - 135°, disharmonious 
+		case 30: 	result = colorPaleGreen;		break; // Semisextil - 30°, neutral
+		case 150: 	result = colorLightOrange;		break; // Quincunx or Inconjunct - 150°, neutral
+		case 72: 	result = colorPaleGreen;		break; // Quintile - 72°, harmonious 
+		case 144:	result = colorPaleGreen;		break; // Biquintil - 144°, harmonious
+		case 40: 	result = colorLightOrange;		break;
+		case 108:	result = colorPaleGreen;		break;
+		case 36: 	result = colorPaleGreen;		break;
+		case 51.42857: 	result = colorPaleGreen;		break;
+		case 102.85714:	result = colorPaleGreen;		break;
+		case 154.28571: 	result = colorPaleGreen;		break;
+
+		default:	result = ColorRGB(240,240,240);
+	}
+	return result;
+} 
+
+
+function PRINTASP (fasp, ORB, p1, p2)
+{ 
+	local faspect, fasp, ORB, str, grad2;
+	global titleStr;
+		result = "";
+		str = "\t|  ";
+		grad2 = 60 * frac(fasp);
+	gradStr = StrFormat( "%0.0f°%0.0f'", floor(fasp), grad2 );
+
+	faspect = 0;
+	if(fasp >= faspect-ORB && fasp <= faspect+ORB)
+	{
+		Conf = "CNJ";
+		result = str + Conf;
+		titleStr += SQname(p1) + "<" + Conf + " " + gradStr + ">" + SQname(p2) + " | ";
+	}
+
+
+	faspect = 60;
+	if(fasp >= faspect-ORB && fasp <= faspect+ORB)
+	{
+		Conf = "SEX";
+		result = str + Conf;
+		titleStr += SQname(p1) + "<" + Conf + " " + gradStr + ">" + SQname(p2) + " | ";
+	}
+
+
+	faspect = 120;
+	if(fasp >= faspect-ORB && fasp <= faspect+ORB)
+	{
+		Conf = "TRI";
+		result = str + Conf;
+		titleStr += SQname(p1) + "<" + Conf + " " + gradStr + ">" + SQname(p2) + " | ";
+	}
+
+
+	faspect = 90;
+	if(fasp >= faspect-ORB && fasp <= faspect+ORB)
+	{
+		Conf = "SQR";
+		result = str + Conf;
+		titleStr += SQname(p1) + "<" + Conf + " " + gradStr + ">" + SQname(p2) + " | ";
+	}
+
+
+	faspect = 180;
+	if(fasp >= faspect-ORB && fasp <= faspect+ORB)
+	{
+		Conf = "OPP";
+		result = str + Conf;
+		titleStr += SQname(p1) + "<" + Conf + " " + gradStr + ">" + SQname(p2) + " | ";
+	}
+
+	return result;
+} 
+
+	function ZODIACNAME( zod )
+	{
+			switch( zod )
+			{
+				case 0: signs = "Ari";	break; 
+				case 1: signs = "Tau";	break;
+				case 2: signs = "Gem";	break;
+				case 3: signs = "Can";	break;
+				case 4: signs = "Leo";	break;
+				case 5: signs = "Vir";	break;
+				case 6: signs = "Lib";	break;
+				case 7: signs = "Sco";	break;
+				case 8: signs = "Sag";	break;
+				case 9: signs = "Cap";	break;
+				case 10: signs = "Aqu";	break;
+				case 11: signs = "Pis";	break;
+				default:	  signs = "not in Zodiac";
+			}
+			return signs;
+	}
+
+
+function TIMEZONES( City )
+{
+global Lat, Lon, TZpath;
+n = mult = 1;
+i = zone = Zshift = 0;
+DT = DateTime(); 
+fh = fopen( TZpath + "SkyQuant\\TimeZones\\" + City + ".tzf", "r");
+if( fh ) 
+{ 
+   while( ! feof( fh ) ) 
+   { 
+		str = fgets( fh );
+
+		if( StrExtract( str, 0 ) == "[atlas]")
+		{ 
+			Lat = StrToNum( StrExtract( str, 1 ) );
+			Lon = StrToNum( StrExtract( str, 2 ) );
+			CityName = StrToNum( StrExtract( str, 3 ) );
+			StaticVarSet( "Lat"+City, Lat );
+			StaticVarSet( "Lon"+City, Lon );
+		}
+  
+		if( StrExtract( str, 0 ) == "[UTC]")
+		{ 
+			zone = StrToNum( StrExtract( str, 1 ) );		// default zone
+			mult = StrToNum( StrExtract( str, 2 ) );		// usually 1 or -1
+			Zshift = StrToNum( StrExtract( str, 3 ) );	// time shift. usually 0, for 30 min - 0.5
+			zone *= mult;
+			TimeShift = zone;
+		}
+
+		if( StrExtract( str, 0 ) == "[time]") 
+		{
+			n = 1;
+			dd = 		StrExtract( str, n++ );
+			m = 		StrExtract( str, n++ );
+			yyyy = 	StrExtract( str, n++ );
+			time = 	StrExtract( str, n++ );
+			shift = 	StrExtract( str, n++ );
+
+			switch( m )
+			{
+				case "Jan": m = "01";	break;
+				case "Feb": m = "02";	break;
+				case "Mar": m = "03";	break;
+				case "Apr": m = "04";	break;
+				case "May": m = "05";	break;
+				case "Jun": m = "06";	break;
+				case "Jul": m = "07";	break;
+				case "Aug": m = "08";	break;
+				case "Sep": m = "09";	break;
+				case "Oct": m = "10";	break;
+				case "Nov": m = "11";	break;
+				case "Dec": m = "12";	break;
+//				default:	  m = 1;
+			}
+			d = dd + "." + m + "." + yyyy + " " + time + ":00"; 
+			dtarr[i] = StrToDateTime( d );
+			Hshift = StrToNum( StrExtract( StrReplace(shift, ":", "," ), 0 ) ); 
+			Mshift = StrToNum( StrExtract( StrReplace(shift, ":", "," ), 1 ) ); 
+			Sshift = StrToNum( StrExtract( StrReplace(shift, ":", "," ), 2 ) ); 
+			TimeZone[i] = Hshift + Mshift/60 + Sshift/3600 + Zshift;
+			i++;
+		}
+
+   } 
+	fclose( fh ); 
+		dtarr[i] = StrToDateTime( "01.01.2100" );
+		Hshift[i] = StrToNum( "0" ); 
+		Mshift[i] = StrToNum( "0" );
+		Sshift[i] = StrToNum( "0" );
+
+	lenth = i;
+	for(j = 1; j < lenth; j++)
+	{
+		if( DateTimeDiff( dtarr[j], DT[0] ) > 0 )
+		{
+			for(i = 0; i < BarCount; i++)
+			{
+				if( DateTimeDiff( DT[i], dtarr[j] ) > 0 )
+					j++;
+				TimeShift[i] = TimeZone[j-1] * mult;
+			}
+			j = lenth;
+		}
+	}
+} 
+else 
+{ 
+   printf("ERROR: TimeZone file can not be found (does not exist)"); 
+}	return TimeShift * -1;
+}
+
+
+function fELEMENT(z, color_flag)
+{
+	local z, color_flag, Color;
+	global Fire, Earth, Air, Water;
+	Fire = Earth = Air = Water = 0;
+	ElStr = "";
+	element = 1;
+			if( z == element || z == (element+4) || z == (element+8) || z == (element+12) ) 
+			{
+				Color = colorRose; // fire
+				ElStr = "Fire";
+				Fire++;
+			}
+				element++;
+			if( z == element || z == (element+4) || z == (element+8) ) 
+			{
+				Color = colorGold; // earth
+				ElStr = "Earth";
+				Earth++;
+			}
+				element++;
+			if( z == element || z == (element+4) || z == (element+8) ) 
+			{
+				Color = colorLightYellow; // air
+				ElStr = "Air";
+				Air++;
+			}
+				element++;
+			if( z == element || z == (element+4) || z == (element+8) ) 
+			{
+				Color = colorPaleTurquoise; // water
+				ElStr = "Water";
+				Water++;
+			}
+	if(color_flag)
+		result = Color;
+	else
+		result = ElStr;
+	return result;
+}
+
+function fCROSS(z, color_flag)
+{
+	local z, color_flag, Color;
+	global Cardinal, Fix, Mutable;
+	Cardinal = Fix = Mutable = 0;
+	CrossStr = "";
+	element = 1;
+			if( z == element || z == (element+3) || z == (element+6) || z == (element+9) ) 
+			{
+				Color = colorRose;
+				CrossStr = "Cardinal";
+				Cardinal++;
+			}
+				element++;
+			if( z == element || z == (element+3) || z == (element+6) || z == (element+9) ) 
+			{
+				Color = colorPaleTurquoise;
+				CrossStr = "Fix";
+				Fix++;
+			}
+				element++;
+			if( z == element || z == (element+3) || z == (element+6) || z == (element+9) ) 
+			{
+				Color = colorLightYellow;
+				CrossStr = "Mutable";
+				Mutable++;
+			}
+	if(color_flag)
+		result = Color;
+	else
+		result = CrossStr;
+	return result;
+}
+
+function fHOUSES(z, color_flag)
+{
+	local z, color_flag, Color;
+	global Angular, Succedent, Cadent;
+	Angular = Succedent = Cadent = 0;
+	CrossStr = "";
+	element = 1;
+			if( z == element || z == (element+3) || z == (element+6) || z == (element+9) ) 
+			{
+				Color = colorRose;
+				CrossStr = "Angular";
+				Angular++;
+			}
+				element++;
+			if( z == element || z == (element+3) || z == (element+6) || z == (element+9) ) 
+			{
+				Color = colorLightYellow;
+				CrossStr = "Succedent";
+				Succedent++;
+			}
+				element++;
+			if( z == element || z == (element+3) || z == (element+6) || z == (element+9) ) 
+			{
+				Color = colorPaleTurquoise;
+				CrossStr = "Cadent";
+				Cadent++;
+			}
+	if(color_flag)
+		result = Color;
+	else
+		result = CrossStr;
+	return result;
+}
+
+	function fSHOWARROWS( p, seph, zch )
+	{
+		global Clr;
+//		Plot( C, "Close", ParamColor("Color", colorBlack ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() );
+		zseph = Zig(seph, zch);
+//		shapeup = IIf( Ref(zseph,-2) >= Ref(zseph,-1) && Ref(zseph,-1) < zseph, 1, 0 );
+//		shapedw = IIf( Ref(zseph,-2) <= Ref(zseph,-1) && Ref(zseph,-1) > zseph, 1, 0 );
+		shapeup = IIf( Ref(zseph,-1) >= zseph && Ref(zseph,1) > zseph, 1, 0 );
+		shapedw = IIf( Ref(zseph,-1) <= zseph && Ref(zseph,1) < zseph, 1, 0 );
+
+		PlotShapes( shapeup * shapeSmallUpTriangle, Clr+p , layer = 0, yposition = Low - ATR(7), offset = -15 - sqrt(p) );
+		PlotShapes( shapedw * shapeSmallDownTriangle, Clr+p , layer = 0, yposition = High + ATR(7), offset = -15 - sqrt(p) );
+//		Plot(Zig(seph, 0.001),  "", colorGreen, styleOwnScale ); 
+	}
+
+
+function EPHEMERIS( mode, p, iflag, cpos )
+{
+	global  TZ, pMax, zod, grad1, grad2, method;
+
+	sysID = NumToStr ( iflag, 1.0, False ) + "_" + NumToStr ( Cpos, 1.0, False ) + 
+	Name() + "_" + Interval( format = 2 ) + "_N" + mode + NumToStr ( p, 1.0, False ) + tzchoice;
+		if( mode == "G" )
+		{
+			global nx;
+			sysID = NumToStr ( iflag, 1.0, False ) + "_" + NumToStr ( Cpos, 1.0, False ) + 
+			Name() + "_" + Interval( format = 2 ) + "_N" + NumToStr ( nx, 1.0, False ) + 
+			mode + NumToStr ( p, 1.0, False ) + tzchoice;
+		}
+	eph = StaticVarGet( sysID );
+	if( IsNull(eph[BarCount-1]) || IsNull(eph[0]) )
+	{
+		if( method == 1 || mode == "P" )
+		{
+			eph = SQeph(TZ, p, iflag, cpos);
+			_TRACE( "Step " + p + " of " + pMax + ". " + SQname(p) + " ephemeris is completed. Time [ms] = " + GetPerformanceCounter() % 1000 );
+		}
+		if( mode == "S" )
+		{
+			eph = SQfixstar(TZ, VarGetText( "star_" + p ), iflag, Cpos);
+			_TRACE( "Step " + p + " of " + pMax + ". " + VarGetText( "star_" + p ) + " ephemeris is completed.");
+		}
+		if( method == 3 ) //|| mode == "G1F" || mode == "G2F" || mode == "G3F" || mode == "G4F" || mode == "G5F" || mode == "G6F" || mode == "G7F" ||			 mode == "G1B" || mode == "G2B" || mode == "G3B" || mode == "G4B" || mode == "G5B" || mode == "G6B" || mode == "G7B" )
+		{
+			global dd, mm, yy, hhh, mmm, sss, tzx, prg_type, bf;
+			eph = SQprg( TZ, p, iflag, cpos, dd, mm, yy, hhh, mmm, sss, tzx, prg_type, bf );
+			_TRACE( "Step " + p + " of " + pMax + ". " + SQname(p) + " progression is completed.");
+		}
+		if( method == 4 ) 
+		{
+			global dd, mm, yy, hhh, mmm, sss, tzx, dir_type, bf;
+			eph = SQdir( TZ, p, iflag, cpos, dd, mm, yy, hhh, mmm, sss, tzx, dir_type, bf );
+			_TRACE( "Step " + p + " of " + pMax + ". " + SQname(p) + " direction is completed.");
+		}
+	} 
+
+	VarSet( "eph" + mode + p, eph );
+	StaticVarSet( sysID, eph );
+
+		zod = floor(eph/30);
+		grad1 = eph - zod * 30;
+		grad2 = 60 * frac(grad1);
+//	Plot(eph, SQname(p), p, styleOwnScale ); 
+	return eph;
+}
+
+//

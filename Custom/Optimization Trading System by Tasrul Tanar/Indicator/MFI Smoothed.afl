@@ -1,0 +1,8 @@
+Periods = Param("MFI Periods", 14, 1, 100, 1, 1 );
+Periods2 = Param("Smoothing Periods", 2, 2, 5, 1, 1 );
+a=TAS_MFI( Periods );
+b=EMA(a,Periods2);
+Plot( b, "MFI Smoothed", ParamColor( "Color", colorBlack ), ParamStyle("Style",styleThick) ); 
+
+PlotOHLC(30,20,30,20,"",colorLime,styleCloud);
+PlotOHLC(80,70,80,70,"",colorPink,styleCloud);

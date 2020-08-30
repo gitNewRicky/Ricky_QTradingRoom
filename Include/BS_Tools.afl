@@ -1,0 +1,105 @@
+#include_once <../Include/Data_Module.afl>
+
+function fnGetRetailBroker()
+{
+	result = odbcGetArraySQL("SELECT SUM(NetVol), trans_date FROM broker_summary where broker_cd in ('YP','PD','KK','NI','DH','GR','OD') AND EMITEN_CD = '"+Name()+"' GROUP BY emiten_cd, trans_date ORDER BY trans_date asc");
+	return result;
+}
+
+function fnGetBvolBroker(Broker_CD)
+{	
+	result = odbcGetArraySQL("SELECT Bvol,trans_date FROM broker_summary WHERE EMITEN_CD = '"+Name()+"' AND Broker_CD = '"+Broker_CD+"' ORDER BY trans_date asc");
+	return result;
+}
+
+function fnGetSvolBroker(Broker_CD)
+{	
+	result = odbcGetArraySQL("SELECT Svol,trans_date FROM broker_summary WHERE EMITEN_CD = '"+Name()+"' AND Broker_CD = '"+Broker_CD+"' ORDER BY trans_date asc");
+	return result;
+}
+
+function fnGetNetVolAllRetailBroker()
+{
+	result = odbcGetArraySQL("SELECT sum(NETVOL), trans_date FROM broker_summary WHERE EMITEN_CD = '"+Name()+"' AND Broker_cd IN ('YP','PD','KK','NI','DH','OD','GR') GROUP BY trans_date asc");
+	return result;
+}
+
+function fnGetNetVolAllBigBroker()
+{
+	result = odbcGetArraySQL("SELECT sum(NETVOL), trans_date FROM broker_summary WHERE EMITEN_CD = '"+Name()+"' AND Broker_cd IN ('AI','AK','BK','CC','CG','CS','DX','KZ','LG','MS','RX','YU','ZP') GROUP BY trans_date Asc");
+	return result;
+}
+
+function fnGetNetVol()
+{
+	result = odbcGetArraySQL("Call sp_GetNetVolume('"+Name()+"')");
+	return result;
+}
+
+function fnGetNetBuyer()
+{
+	result = odbcGetArraySQL("Call sp_GetNetBuyerBroker('"+Name()+"')");
+	return result;	
+}
+
+function fnGetNetSeller()
+{
+	result = odbcGetArraySQL("Call sp_GetNetSellerBroker('"+Name()+"')");
+	return result;
+}
+
+
+
+function fnGetTop3BrokerAcD()
+{
+	result = odbcGetArraySQL("Call sp_getNTopBrokerAcD('"+Name()+"',"+3+")");
+	return result;
+}
+
+function fnGetTop5BrokerAcD()
+{
+	result = odbcGetArraySQL("Call sp_getNTopBrokerAcD('"+Name()+"',"+5+")");
+	return result;
+}
+
+function fnGetTop10BrokerAcD()
+{
+	result = odbcGetArraySQL("Call sp_getNTopBrokerAcD('"+Name()+"',"+10+")");
+	return result;
+}
+
+function fnGetNetBuyRetail()
+{
+	result = odbcGetArraySQL("Call sp_getNetBuyRetail('"+Name()+"')");
+	return result;
+}
+
+function fnGetNetSellRetail()
+{
+	result = odbcGetArraySQL("Call sp_getNetSellRetail('"+Name()+"')");
+	return result;
+}
+
+function fntopbuyer()
+{
+	result = odbcGetArraySQL("Call topbuyer('"+Name()+"',)");
+	return result;
+}
+
+function fngetAvg10AccDist()
+{
+	result = odbcGetArraySQL("call sp_getAvg10AccDist('"+Name()+"')");
+	return result;
+}
+
+function fngetAvgBuyTopN()
+{
+	result = odbcGetArraySQL("call sp_getAvgBuyTopN('"+Name()+"',"+3+")");
+	return result;
+}
+
+function fngetAvgSellTopN()
+{
+	result = odbcGetArraySQL("call sp_getAvgSellTopN('"+Name()+"',"+3+")");
+	return result;
+}

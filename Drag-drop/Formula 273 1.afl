@@ -1,0 +1,295 @@
+SetChartBkColor(colorBlack);
+
+//AFL ini dinamakan "Pixellent" atau "JendRAl Hunter"...... vArief Budiman....berdasarkan data EOD HGU (berbayar Rp. 2.000,-/hari)
+//Jika anda menggunakan afl ini dan mendapatkan 'cuan', jangan lupa sedekah untuk kaum dhuafa cukup 2,5%
+//Bagi pemakai AFL ini berlaku "disclaimer on"
+ 
+//Definisi, Perhitungan dan Konstanta
+//Menghitung Momentum dan Akselerasi Pasar (AC)
+AvgPrice=(O+H+L+C)/4;
+DV=AvgPrice*V;
+
+//Syarat likuiditas saham yang kita tetapkan
+//Syarat ini bisa diubah sesuai dgn kriteria yang kita tentukan
+MinimumValue = IIf(DateNum()<1050101, 750000000,2500000000);
+Likuid = MA(DV,21) > MinimumValue;
+
+O1 = Ref (O,-1);
+H1 = Ref( H,-1 );
+L1 = Ref( L,-1 );
+V1 = Ref (V,-8);
+MAV21 = MA (V, 21);
+
+//IHSGPositif = Foreign ("^JKSE", "Close") - Foreign ("^JKSE", "Open") > 0;
+
+Tengah = (H+L)/2 ;
+var1 = MA (Tengah, 34);
+var2 = MA(Tengah,5);
+//Momentum
+AO = var2-var1;
+//Akselerasi Pasar
+AC=AO-MA(AO,5);
+
+AONaik   = AO > Ref(AO,-1);
+AOTurun = AO < Ref(AO,-1);
+ACNaik   = AC > Ref(AC,-1);
+ACTurun = AC < Ref(AC,-1);
+Hijau = AONaik AND ACNaik;
+Abu2 = ACTurun AND AONaik OR ACNaik AND AOTurun;//Disediakan jika kita inginkan warna abu2 sesuai syarat yg ditetapkan
+
+GraphXSpace=30;//Agar ada jarak antara pixel dgn chart candle
+
+_SECTION_BEGIN("Trade System");
+SetTradeDelays( 1, 1, 1, 1); // EOD 
+//Maksimum open position yang disediakan adl 21 posisi...silahkan atur sendiri maksimum posisi yang diinginkan 
+MaxOpenPos=Optimize("MaxOpenPositions", 8, 3, 13, 1); 
+// MaxOpenPos diisi setelah kita melakukan optimize berdasarkan CAR/MDD
+//MaxOpenPos = 6;
+SetOption("MaxOpenPositions", MaxOpenPos);
+
+PositionSize = -100/MaxOpenPos;
+PositionScore=RSI();//Hasil seleksi saham diurut berdasarkan score RSI
+
+//Jumlah iterasi cara pengujian MonteCarlo Simulation
+//Jumlah iterasi dibuat hanya 50 kali, jika spek komputer mendukung bisa di set menjadi 1000 kali atau suka-suka
+MonteCarlo=Optimize("MonteCarlo Iteration",1,1,50,1);
+PositionScore = Random()*MonteCarlo;
+_SECTION_END();
+
+_SECTION_BEGIN("Tick ");
+/*Aturan Tick Khusus untuk BEI*/
+Tick =
+IIf( DateNum() < 1140106,
+    IIf( Close < 200, 1,
+    IIf( Close >= 200 AND Close < 500, 5,
+    IIf( Close >= 500 AND Close < 2000, 10,
+    IIf( Close >= 2000 AND Close < 5000, 25,
+    IIf( Close >= 5000, 50, 0 ) ) ) ) ),
+
+IIf( DateNum() >= 1140106 AND DateNum() < 1160502,
+    IIf( Close < 500, 1,
+    IIf( Close >= 500 AND Close < 5000, 5,
+    IIf( Close >= 5000, 25, 0 ) ) ),
+
+IIf( DateNum() >= 1160502,
+    IIf( Close < 200, 1,
+    IIf( Close >= 200 AND Close < 500, 2,
+    IIf( Close >= 500 AND Close < 2000, 5,
+    IIf( Close >= 2000 AND Close < 5000, 10,
+    IIf( Close >= 5000, 25, 0 ) ) ) ) ), 0 ) ) );
+_SECTION_END();
+
+_SECTION_BEGIN("Fractal-EOD-WF");
+UpFractal= ValueWhen(
+  (Ref(H,-2) > Ref(H, -4)) AND
+  (Ref(H,-2) > Ref(H, -3)) AND
+  (Ref(H,-2) > Ref(H, -1)) AND
+  (Ref(H,-2) > H), Ref(H,-2));
+
+DownFractal= ValueWhen(
+  (Ref(L,-2) <= Ref(L, -4)) AND
+  (Ref(L,-2) <=  Ref(L, -3)) AND
+  (Ref(L,-2) <=  Ref(L, -1)) AND
+  (Ref(L,-2) <=  L), Ref(L,-2));
+
+UF=UpFractal;
+DF=DownFractal;
+
+Plot(UpFractal, "UF", ParamColor("Up Fractal Color",colorGreen),
+ParamStyle("Up Fractal Style", styleDashed));
+Plot(DownFractal, "DF",ParamColor("Down Fractal Color",colorOrange), 
+ParamStyle("Down Fractal Style", styleDashed));
+_SECTION_END();
+
+//Plotting frekuensi disediakan jika kita ingin mengetahui adanya ledakan frekuensi...biasanya data frekuensi didapat dari datafeed Husni Gumilang
+/*
+_SECTION_BEGIN("Frekuensi");
+Frek = (Volume/((Aux1)^3))*100;
+Freks = IIf (Aux1 !=0, Frek,1);
+Plot( Freks," ; Vol/Frek^3 ", colorwhite, styleline|styleOwnScale|styleNoTitle );
+_SECTION_END();
+*/
+
+ma5 = MA(C,5);
+ma8 = MA(C,8);
+ma21 = MA(C,21);
+//ma34 = MA(C,34);
+//ma55 = MA(C,55);
+
+Plot(ma8,"MA-8",colorPink, styleDashed | styleStaircase);
+Plot(ma21,"MA-21",colorBlue);
+//Plot(ma55,"MA-55",colorRed,styleThick);
+
+//Perhitungan MFI
+function MarketFacilitationIndex()
+{
+  return abs (H - L)/V;
+}
+
+mfac = MarketFacilitationIndex();
+rm = ROC( mfac, 1 );
+rv = ROC( V, 1 );
+
+Color = IIf( rm > 0 AND rv > 0, colorPaleGreen,
+		 IIf( rm < 0 AND rv < 0, colorRed,
+		 IIf( rm > 0 AND rv < 0, colorBlue,
+		 IIf( rm < 0 AND rv > 0, colorPink, colorLightGrey ) ) ) );
+
+//Perhitungan konstanta atau besaran Heiken Ashi
+HaClose = (O + H + L + C)/4; 
+HaOpen = AMA( Ref( HaClose, -1 ), 0.5 ); 
+HaHigh = Max( H, Max( HaClose, HaOpen ) ); 
+HaLow = Min( L, Min( HaClose, HaOpen ) ); 
+xDiff = (HaHigh - Halow) * 10000;
+
+//============== VOLUME ==============
+Vrt=MA(V,21);
+St = StDev(Vrt,21);
+Vp3 = Vrt + 3*st; 
+Vp2 = Vrt + 2*st;
+Vp1 = Vrt + 1*st;
+
+//Pixel Foreign Flow
+SumForeign = Cum(Aux2);
+Warna4 = IIf(SumForeign > Ref(SumForeign,-1),colorLime, colorDarkRed );
+SetBarFillColor(Warna4);
+PlotOHLC(9,11.5,9,11.5, "",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+//Pixel trend harga jangka pendek = batang ke-1 (paling atas)
+//Warna hijau tua muncul jika V > Vrata2 34 hari
+Warna1 = 
+IIf(C>O AND C>H1 AND V>Vrt OR C>O AND C>H1 AND V>Vp1 OR C>O AND C>H1 AND V>Vp2 OR C>O AND C>H1 AND V>Vp3,colorGreen,IIf(C>WMA(C,5),colorPaleGreen, IIf(C<O AND C<H1,colorRed,
+IIf(C<WMA(C,5),colorRed,
+IIf(C>O and C<WMA(C,3),colorGreen,
+colorRed)))));
+SetBarFillColor(Warna1);
+PlotOHLC(6,8.5,6,8.5, "",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+//Pixel trend harga jangka menengah = batang ke-2
+Warna2 = 
+IIf(C>O AND C>H1 AND V>Vrt,colorGreen,IIf(C>WMA (C,21),colorPaleGreen, IIf(C<O AND C<H1,colorRed,
+IIf(C<WMA (C,21),colorRed,
+IIf(C<O OR C<WMA(C,21),colorGreen,
+colorRed)))));
+SetBarFillColor(Warna2);
+PlotOHLC(3,5.5,3,5.5, "",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+//Pixel trend harga jangka panjang (2-3 bulan) = batang ke-3
+Warna3 = 
+IIf(C>O AND C>H1 AND V>Vrt,colorGreen,IIf(C>WMA (C,55),colorPaleGreen, IIf(C<O AND C<H1,colorRed,
+IIf(C<WMA (C,55),colorRed,
+IIf(C>O OR C<WMA(C,55),colorGreen,
+colorRed)))));
+SetBarFillColor(Warna3);
+PlotOHLC(0,2.5,0,2.5, "",colorBlack, styleOwnScale|64|styleNoLabel, -0.5, 200,0,-1 );
+
+HMA5 = HMA(C,5);
+C1 = Ref (C,-1);
+Pivot = (O + H + L + C)/4 ;
+
+Buy = ACNaik AND Likuid AND Pivot > L OR ACNaik AND Likuid AND C == O AND C > HMA5 OR ACNaik AND Likuid AND 
+C > O AND C > HMA5 AND HaClose >= HaOpen ;
+
+//Oleh karena AFL ini dikembangkan berdasarkan data EOD, maka sinyal buy hanya valid dan bisa dijadikan rujukan sebelum bursa tutup atau setelah pukul 15.35
+BuyPrice= (Close-TickSize) ;
+
+Sell = C < O1 OR HaClose < HaOpen AND Cross (HMA5, C) ;
+
+SellPrice=(Close + TickSize) ;
+
+Buy=ExRem(Buy,Sell);
+Sell=ExRem(Sell,Buy);
+
+//PlotShapes (IIf(Buy, shapeUpArrow, shapeNone),colorSeaGreen, 0, L, -12);
+//PlotShapes (IIf(Sell, shapeDownArrow, shapeNone),colorYellow, 0, H, -12);
+
+Prev = ROC(C,1);
+Weekly = ROC(C,5);
+Monthly = ROC(C,22);
+Yearly = ROC(C,244);
+//Filter di bawah ini jika kita ingin sortir harga2 yg naik pada hari ini
+Filter=Prev>0.0001 AND V > 1250000 ;
+//Filter di bawah ini jika kita ingin sortir harga2 yg naik 1 minggu ini 
+/* Filter=Prev>0.005 AND Weekly>0.0005; */
+//Filter di bawah ini jika kita ingin sortir harga2 yg naik 1 bulan ini (uptrend selama 1 bulan)
+/* Filter=Prev>0.005 AND Weekly>0.0005 AND Monthly>0.0005; */
+
+AddTextColumn ( WriteIf(Buy,"Beli", WriteIf(Sell, "Jual", "Lht/Priksa Chart")), "Sinyal", 1.0, IIf(Buy,colorGreen, IIf(Sell,colorRed,colorBlack)));
+SetSortColumns(9,10);
+AddColumn (RSI(),"RSI Score",1.3, colorBlack);
+AddColumn (MA(C,8),"MA 8",1.0, colorBlack);
+AddColumn (C,"Close",1.0, colorBlack);
+AddColumn (O,"Open",1.0, colorBlack);
+AddColumn (H,"High",1.0, colorBlack);
+AddColumn (L,"Low",1.0,colorBlack);
+AddColumn (V,"Volume",1.0,colorBlack);
+AddColumn (MAV21,"VRata 21",1.0,colorBlack);
+
+WarnaBGP= IIf (Prev <-30, ColorRGB(255,0,0), 
+		  IIf ((Prev <-10 AND Prev >=-30), ColorRGB(255,83,83),
+		  IIf ((Prev <-3 AND Prev >=-10), ColorRGB(255,147,147),
+		  IIf ((Prev <0 AND Prev >=-3), ColorRGB(255,196,196),
+		  IIf ((Prev <3 AND Prev >=0), ColorRGB(168,255,168),
+		  IIf ((Prev <10 AND Prev >=3), ColorRGB(91,255,91),
+		  IIf ((Prev <30 AND Prev >=10), ColorRGB(0,255,0),ColorRGB(0,130,0)
+		  )))))));
+WarnaBGW= IIf (Weekly <-30, ColorRGB(255,0,0), 
+		  IIf ((Weekly <-10 AND Weekly >=-30), ColorRGB(255,83,83),
+		  IIf ((Weekly <-3 AND Weekly >=-10), ColorRGB(255,147,147),
+		  IIf ((Weekly <0 AND Weekly >=-3), ColorRGB(255,196,196),
+		  IIf ((Weekly <3 AND Weekly >=0), ColorRGB(168,255,168),
+		  IIf ((Weekly <10 AND Weekly >=3), ColorRGB(91,255,91),
+		  IIf ((Weekly <30 AND Weekly >=10), ColorRGB(0,255,0),ColorRGB(0,130,0)
+		  )))))));
+WarnaBGM= IIf (Monthly <-30, ColorRGB(255,0,0), 
+		  IIf ((Monthly <-10 AND Monthly >=-30), ColorRGB(255,83,83),
+		  IIf ((Monthly <-3 AND Monthly >=-10), ColorRGB(255,147,147),
+		  IIf ((Monthly <0 AND Monthly >=-3), ColorRGB(255,196,196),
+		  IIf ((Monthly <3 AND Monthly >=0), ColorRGB(168,255,168),
+		  IIf ((Monthly <10 AND Monthly >=3), ColorRGB(91,255,91),
+		  IIf ((Monthly <30 AND Monthly >=10), ColorRGB(0,255,0),ColorRGB(0,130,0)
+		  )))))));
+WarnaBGY= IIf (Yearly <-30, ColorRGB(255,0,0), 
+		  IIf ((Yearly <-10 AND Yearly >=-30), ColorRGB(255,83,83),
+		  IIf ((Yearly <-3 AND Yearly >=-10), ColorRGB(255,147,147),
+		  IIf ((Yearly <0 AND Yearly >=-3), ColorRGB(255,196,196),
+		  IIf ((Yearly <3 AND Yearly >=0), ColorRGB(168,255,168),
+		  IIf ((Yearly <10 AND Yearly >=3), ColorRGB(91,255,91),
+		  IIf ((Yearly <30 AND Yearly >=10), ColorRGB(0,255,0),ColorRGB(0,130,0)
+		  )))))));
+AddColumn (Prev,"Daily %",1.2,colorBlack,WarnaBGP);
+AddColumn (Weekly,"Weekly% ",1.2,colorBlack,WarnaBGW);
+AddColumn (Monthly,"Monthly% ",1.2,colorBlack,WarnaBGM);
+AddColumn (Yearly,"Yearly% ",1.2,colorBlack,WarnaBGY);
+
+C1= Ref (C,-1);
+//Harga rata2 yang tersaji dalam chart merupakan harga rata2 kemaren yg bisa dijadikan rujukan untuk buy atau sell (harus dicek silang dgn volume/value transaksi hari ini atau rata2 21hari lalu)
+MA5Avgb = MA (Pivot, 5);
+NBSAVal = Aux2/ 1000000000;
+DVMil = DV / 1000000000;
+Target = Pivot + (H - L) ;
+Persen = Abs ((NBSAVal/DVMil)*100);
+//Akumulasi bet buy atau sell (-) asing selama 21hari 
+NF21D = Sum(NBSAVal,21);
+
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("Pixellent - {{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) " +  " {{VALUES}}", O, H, L, C, SelectedValue ( ROC( C, 1 )))+ "\n\n"+"• Vol " + WriteVal(V,1.0) + "  • Vx " + WriteVal (V/Ref (V,-21),1.2)+"x"+ "  • Freq "+ Aux1+"  • NForeign =" + WriteIf (NBSAVal >=0,EncodeColor(colorPaleGreen)+ WriteVal(Aux2/1000000000,1.2)+" B" +" ("+WriteVal(Persen,1.1)+"%)",WriteIf (NBSAVal < 0, EncodeColor(colorRed)+WriteVal(Aux2/1000000000,1.2)+" B"+" ("+WriteVal(Persen,1.1)+"%)",""))+EncodeColor(colorWhite)+ " • NForeign21 ="+WriteIf (NF21D >= 0,EncodeColor (ColorPaleGreen)+WriteVal(NF21D,1.2)+"B",WriteIf (NF21D < 0,EncodeColor(ColorRed)+WriteVal (NF21D,1.2)+" B",""))+EncodeColor(ColorWhite)+"\n\n"+"• Momentum " + WriteVal(AO,1.2) + " • Akselerasi "+WriteVal (AC,1.2) + /* " • Ren "+WriteVal(AC1) +" • Ren-1 "+WriteVal(AC2) +" • Ren-2 "+WriteVal(AC3) +*/ " • Avg =" + WriteVal (Pivot,1.0)+" • MA5Avg ="+WriteVal(MA5Avgb,1.0)+/* " • MA8Avgb ="+WriteVal (MA8Avgb,1.0)+*/" • Pembatas ="+WriteVal(((2 * Pivot - H)-TickSize),1.0)+"\n\n\n"+"============"+"\n"+WriteIf (Buy , " Beli ! - Harga: "+WriteVal((C-TickSize),1.0) + " - StopLoss: " + WriteVal((2 * Pivot)-H,1.0)+" Target:"+WriteVal(target,1.0)+" - Imbal L/R: " + WriteVal(abs(target-C)/abs(C-(2*Pivot-H)),1.2),"")+
+WriteIf (Sell, "Jual ! - Harga: " + WriteVal(C,1.0) +  " - Profit Taking!","  Tunggu sinyal berikutnya") + "\n" + "============");
+
+Sum3D = Cum(Aux2);
+Plot(Sum3D,"",colorLightOrange,styleLine| styleOwnScale);
+
+Plot(C, "Close", ParamColor("Color", colorBlack ), styleNoTitle | ParamStyle("Style") | GetPriceStyle()); 
+
+pxwidth = Status("pxwidth");
+pxheight = Status("pxheight");
+
+GfxSetOverlayMode(1);
+GfxSetBkMode(0); // transparan
+GfxSelectFont("Pixellent AB", Status("pxheight")/32);
+GfxSetTextColor( colorGrey40 );
+//GfxTextOut( "Profit Hunter Pixell", Status("pxwidth")/1.0, Status("pxheight")/25 );
+
+_SECTION_END();
+

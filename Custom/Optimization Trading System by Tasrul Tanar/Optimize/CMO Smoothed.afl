@@ -1,0 +1,8 @@
+sig1 = Optimize("CMO Periods",9,2,15,1);
+sig2 = Optimize("Smoothing Periods",2,2,5,1);
+sig3 = Optimize("OS",9,0,20,1);
+sig4 = Optimize("OB",9,80,100,1);
+
+
+Buy=TAS_Buy_CMO_Smooth(sig1,sig2,sig3);
+Sell=TAS_Sell_CMO_Smooth(sig1,sig2,sig4);

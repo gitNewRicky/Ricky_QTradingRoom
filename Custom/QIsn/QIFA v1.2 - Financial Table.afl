@@ -1,0 +1,241 @@
+/*
+//------------------------------------------------------------------------------
+//
+//  Formula Name: QIFA - Financial Table Ver. 1.2 (Quantitative Intelligent Fundamental Analysis)
+//  Author		: Isnandar 
+//  E-mail		: isnandar2009@gmail.com
+//  Url			: QISignal.com
+//  Date		: April 2016
+//  Flags		: Chart Table
+//  
+//------------------------------------------------------------------------------
+*/
+
+/*
+Disclaimer :
+	Data maupun rekomendasi yang dihasilkan oleh Quantitative Intelligent Fundamental Analysis (QIFA) berdasarkan Financial Data, dan merupakan informasi semata. 
+	Segala keputusan dalam membeli atau menjual saham memiliki resiko yang harus dipahami sebelum pengambilan keputusan.
+	QISignal.com sebagai penyedia data dan pengembang QIFA tidak bertanggung jawab terhadap kerugian baik langsung maupun 
+	tidak langsung yang timbul dari tindakan membeli atau menjual saham.
+	
+	Rencanakan investasi anda dengan manajemen yang baik. 
+	Setiap keputusan investasi menjadi tanggung jawab pemilik investasi atau pemilik modal.
+*/
+
+/*
+New Update :
+
+v.1.2 : 2017-01-03
+- Coded : Fixed Bug. Data lapkeu terakhir ditampilkan berulang bilamana lebih kecil dari tahun berjalan (current date).
+
+v.1.1 : 2016-05-02
+- DrawText Revenue: MRQ vs Qtr.1Yr.Ago (pertubuhan pendapatan kuartal terakhir terhadap kuartal yang sama pada tahun sebelumnya)
+- DrawText EPS: MRQ vs Qtr.1Yr.Ago (pertubumhan laba bersih kuartal terakhir terhadap kuartal yang sama pada tahun sebelumnya)
+- DrawText EPS (TTM) vs TTM 1 Yr.Ago (pertumbuhan laba bersih Trailing Twelve Months terhadap TTM dengan kuartal yang sama pada tahun sebelumnya)
+- BackColor untuk cell Dividend saat belum ExDate
+*/
+
+_SECTION_BEGIN("QIFA Financial Table");
+
+colFin=12;
+yr = Year();
+
+YearChange = yr != Ref( yr, -1 );
+
+
+FirstYr = 0;
+LastYr = 0;
+QIFALastYr = 0;
+
+startbar = 0;
+mYRange=5;
+nLastReported = 0;
+FinancialRatios = "Dividend,RPSttm,ForwardEPS,EPSttm,BVPS,OCFPS,OPM,NPM,ROE,ROA,DER,CRR";
+
+FromYr=Param("From Year",yr[0]-mYRange+1,yr[0]-5,yr[0]-1,1);
+
+
+QIFA = QIsnFAHistory("Period","Annually",mYRange);
+QIFA_MRQorFY  =  QIsnFAHistory("AsOfDate","Annually",mYRange);
+
+QIFA_Dividend =  QIsnFAHistory("DividendPerShare","Annually",mYRange);
+QIFA_CumDateNum =  QIsnFAHistory("CumDateNum","Annually",mYRange);
+
+QIFA_RPS =  QIsnFAHistory("RevenuePerShare","Annually",mYRange);
+
+QIFA_ForwardEPS =  QIsnFAHistory("ForwardEPS","Annually",mYRange);
+QIFA_EPSttm =  QIsnFAHistory("EPSttm","Annually",mYRange);
+QIFA_BVPS =  QIsnFAHistory("BookValuePerShare","Annually",mYRange);
+
+QIFA_SharesOut =  QIsnFAHistory("SharesOut","Annually",mYRange);
+
+QIFA_OCF =  QIsnFAHistory("OperatingCashFlow","Annually",mYRange);
+QIFA_OPM =  QIsnFAHistory("OperatingMargin","Annually",mYRange);
+QIFA_NPM =  QIsnFAHistory("NetProfitMargin","Annually",mYRange);
+QIFA_ROE =  QIsnFAHistory("ReturnOnEquity","Annually",mYRange);
+QIFA_ROA =  QIsnFAHistory("ReturnOnAssets","Annually",mYRange);
+
+QIFA_TLiab =  QIsnFAHistory("TotalLiabilities","Annually",mYRange);
+QIFA_TEquity =  QIsnFAHistory("TotalEquity","Annually",mYRange);
+
+QIFA_TCurrAssets =  QIsnFAHistory("CurrentAssets","Annually",mYRange);
+QIFA_TCurrLiab =  QIsnFAHistory("CurrentLiabilities","Annually",mYRange);
+	
+
+
+for( i = 0; i < BarCount; i++ )
+{
+  if( QIFA[ i ] && yr[ i ] > FromYr )
+  {
+    startbar = i;
+    break;
+  } 
+}
+
+Chg = FinYr = 0;
+LastQIFA = 1 ;
+
+for( i = startbar ; i < BarCount; i++ )
+{
+  if( YearChange[ i ] || i == BarCount - 1  )  
+  {
+    VarSet("FinYear"+ yr[ i - 1 ], QIFA[ i ] );
+    VarSet("Period"+ yr[ i - 1 ], QIFA_MRQorFY[ i ] );
+    VarSet("Dividend"+ yr[ i - 1 ], QIFA_Dividend[ i ] );
+    VarSet("CumDate"+ yr[ i - 1 ], QIFA_CumDateNum[ i ] );
+    
+    VarSet("RPS"+ yr[ i - 1 ], QIFA_RPS[ i ] );
+    VarSet("ForwardEPS"+ yr[ i - 1 ], QIFA_ForwardEPS[ i ] );        
+    VarSet("EPSttm"+ yr[ i - 1 ], QIFA_EPSttm[ i ] );
+    
+    VarSet("BVPS"+ yr[ i - 1 ], QIFA_BVPS[ i ] );
+    VarSet("OCFPS"+ yr[ i - 1 ], ( QIFA_OCF[ i ] *1000 ) / QIFA_SharesOut[ i ]);        
+
+	VarSet("OPM"+ yr[ i - 1 ], QIFA_OPM[ i ] );
+	VarSet("NPM"+ yr[ i - 1 ], QIFA_NPM[ i ] );
+	VarSet("ROE"+ yr[ i - 1 ], QIFA_ROE[ i ] );
+	VarSet("ROA"+ yr[ i - 1 ], QIFA_ROA[ i ] );
+
+	VarSet("DER"+ yr[ i - 1 ], QIFA_TLiab[ i ] / QIFA_TEquity[ i ]);
+	VarSet("CRR"+ yr[ i - 1 ], IIf(QIFA_TCurrLiab[ i ]==0,0,Nz(QIFA_TCurrAssets[ i ] / QIFA_TCurrLiab[ i ],0) ));	
+	
+    if( FirstYr == 0 ) FirstYr = yr[ i - 1 ];
+ 	if (QIFA[i] != yr[ i - 1 ]) nLastReported++; 
+
+	LastYr = yr[ i ] - nLastReported ;
+    FinYr++;
+    QIFALastYr = QIFA[i]; //Update 2017-01-03
+
+  }
+  if(QIFALastYr != LastYr ) LastYr--; //Update 2017-01-03
+}
+
+
+GfxSetOverlayMode( 2 );
+
+
+CellHeight = (Status("pxheight")-1)/(LastYr - FirstYr + 3 ); 
+CellWidth = (Status("pxwidth")-1)/(colFin+1); 
+CellQtrWidth = (Status("pxwidth")-1)/(4+1); 
+GfxSelectFont( "Tahoma", 8.5 ); 
+GfxSelectSolidBrush( colorWhite );
+GfxRectangle( 0, 0, Status("pxwidth"), Status("pxheight"));
+
+GfxSetBkMode( 1 );
+
+boolbkcolor = false;
+function PrintInCell( string, row, Col ) 
+{
+//128, 255, 128 
+ Color =  ColorRGB( IIf( row == 0 || col == 0 || col == 13, IIf(boolbkcolor,128,220), IIf(boolbkcolor,128,255) ), 255, IIf(boolbkcolor,128,IIf( row % 2, 255, 220 ) ));
+ GfxSelectSolidBrush( Color   );
+ GfxRectangle( Col * CellWidth, row * CellHeight, (Col + 1 ) * CellWidth + 1, (row + 1 ) * CellHeight  + 1); 
+
+ GfxDrawText( string, Col * CellWidth + 1, row * CellHeight + 1, (Col + 1 ) * CellWidth, (row + 1 ) * CellHeight, 32+5 ); 
+} 
+
+function PrintQtrInCell( string, row, Col ) 
+{
+ Color =  ColorRGB( IIf( row == 0 || col == 0 || col == 13, 220, 255 ), 255, IIf( row % 2, 255, 220 ) );
+ GfxSelectSolidBrush( Color   );
+
+ if( col > 2 ) GfxSetTextColor( colorBlue ); 
+ GfxDrawText( string, Col * CellQtrWidth + 1 + CellWidth, row * CellHeight + 1, CellWidth + (Col + 1 ) * CellQtrWidth, (row + 1 ) * CellHeight, 32+5 ); //32+5
+} 
+
+YOffset = 25;
+XOffset = 15;
+
+function DisplayFinancialTable( )
+{
+ Header = "Period,"+FinancialRatios;
+ for( Col = 0; (Colname = StrExtract( Header, Col ) ) != ""; Col++ )
+ {
+  PrintInCell( ColName, 0, Col );
+ }
+ FY = False ;
+ Row = 1;
+ for( y = FirstYr; y <= LastYr ; y++ )
+ {
+	  mPeriod = QIsnFA("AsOfDate",(FinYr-nLastReported-Row)*-1);   
+	  PrintInCell( mPeriod , Row, 0 );     
+	  mCumDate =  Nz(VarGet("CumDate" + y ),0) ; 
+      boolbkcolor = Iif(mCumDate>=LastValue(DateNum())+10000*1900,true , false)  ;
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("Dividend" + y ),0) ), Row, 1 );
+	  boolbkcolor = false;
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("RPS" + y ),0) ), Row, 2 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("ForwardEPS" + y ),0) ), Row, 3 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("EPSttm" + y ),0) ), Row, 4 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("BVPS" + y ),0) ), Row, 5 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("OCFPS" + y ),0) ), Row, 6 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("OPM" + y ),0) ), Row, 7 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("NPM" + y ),0) ), Row, 8 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("ROE" + y ),0) ), Row, 9 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("ROA" + y ),0) ), Row, 10 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("DER" + y ),0) ), Row, 11 );
+	  PrintInCell( StrFormat("%.2f",  Nz(VarGet("CRR" + y ),0) ), Row, 12 );
+	  FY = IIf(strleft( mPeriod, 1 )=="F",True,False); 
+	  Row++;
+ }
+PrintInCell(Name(), Row, 0 );
+
+if( FY )
+{
+	currentRPS = Nz(QIsnFA("RevenuePerShare"),0);
+	YrAgoRPS = Nz(QIsnFA("RevenuePerShare",-1),0);
+	Yr1RPSGrowth =IIf(YrAgoRPS>0 && currentRPS>0,Nz(100 * ( -1 + currentRPS / YrAgoRPS )),0);
+
+	currentEPS = Nz(QIsnFA("EPS"),0);
+	YrAgoEPS = Nz(QIsnFA("EPS",-1),0);
+	Yr1EPSGrowth =IIf(YrAgoEPS>0 && currentEPS>0,Nz(100 * ( -1 + currentEPS / YrAgoEPS )),0);
+
+	PrintQtrInCell("Revenue vs 1Yr.Ago : "+StrFormat("%.2f",Yr1RPSGrowth)+"%", Row,0 );
+	PrintQtrInCell("EPS vs 1Yr.Ago : "+StrFormat("%.2f",Yr1EPSGrowth)+"%", Row, 1 );
+}
+else
+{
+    mQtrRevenueGrowth = QIsnFA("QRG");
+    mQtrEarningGrowth = QIsnFA("QEG");
+    mYoyEarningGrowth = QIsnFA("YOYEG");
+    
+    		
+	PrintQtrInCell("Revenue (MRQ) vs Qtr. 1Yr.Ago = "+StrFormat("%.2f",mQtrRevenueGrowth)+"%", Row,0 );
+	PrintQtrInCell("EPS (MRQ) vs Qtr. 1Yr.Ago = "+StrFormat("%.2f",mQtrEarningGrowth)+"%", Row, 1 );
+	if(!IsNull(mYoyEarningGrowth)) PrintQtrInCell("EPS (TTM) vs TTM 1 Yr.Ago = "+StrFormat("%.2f",mYoyEarningGrowth)+"%", Row, 2 );
+}
+//PrintQtrInCell("http://qisignal.com", Row, 3.7 );
+}
+
+/* Main program  */
+if(!IsIndex()) 
+{DisplayFinancialTable();  }
+else{
+	GfxSelectFont("Tahoma", 10, 100);
+	GfxSetTextColor(colorBlack); 		
+	GfxTextOut("Symbol: "+Name(), 5, 5 ); 
+	GfxTextOut(_SECTION_NAME()+": N/A", 5, 25 ); 
+	GfxSetTextColor(colorDefault); 
+	GfxSelectFont("Verdana", 8, 100);
+}
+
+_SECTION_END();

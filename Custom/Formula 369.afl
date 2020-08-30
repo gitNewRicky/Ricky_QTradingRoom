@@ -1,0 +1,15 @@
+#include_once <../Include/BS_Tools.afl>
+_SECTION_BEGIN("Broker Line");
+
+Broker = ParamStr("Broker Code","YP");
+LineColor = ParamColor("Color",colorWhite);
+
+BVOL = fnGetBvolBroker(Broker);
+SVOL = fnGetSvolBroker(Broker);
+NetVol = BVOL - SVOL;
+
+Cum_NetVol = Cum(NetVol);
+
+Plot(Cum_NetVol,"NetVolume "+Broker,LineColor,styleLine);
+
+_SECTION_END();

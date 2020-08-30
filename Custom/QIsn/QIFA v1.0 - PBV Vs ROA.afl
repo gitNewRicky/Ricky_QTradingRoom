@@ -1,0 +1,204 @@
+/*
+//------------------------------------------------------------------------------
+//
+//  Formula Name: QIFA v1.0 - PBV Vs ROA
+//  Author		: Isnandar 
+//  E-mail		: isnandar2009@gmail.com
+//  Date		: Oct 2017
+//  Ref.		: AFL to plot a scatter chart (XY Chart) v:0.1 by Anderson Wilson (www.andersonwilson.com)
+// 				  based on October 11, 2007 - Low-level gfx example: Yearly profit chart from Tomasz Janeczko 
+//  
+//------------------------------------------------------------------------------
+*/
+
+QIsnInitialize();
+
+GfxSetOverlayMode( 2 );
+GfxSetBkMode( 0 );
+
+
+_SECTION_BEGIN("Symbols");
+	Remark = "Selected Symbols" ;
+	SectorList = "Agriculture   ,Mining        ,Basic Industry,Misc. Industry,Consumer      ,Property      ,Infrastructure,Finance       ,Trade          ";
+
+	function ParamIndustryNum( n )
+	{
+	 global ListNum;
+		ListNum 		= Param("Industry#", 1, 1, 9, 1);
+	 return (n*10)+ListNum;
+	}
+
+	SymBank = "BBRI,BBCA,BBNI,BMRI,PNBN,BDMN,BNII,BJTM,BJBR,BNGA,BBKP,BBTN";
+	SymList = ParamStr( "Symbols", symBank );
+	SymList = StrToUpper(SymList);
+	BasedOn = ParamList("Based On", "SelectedSymbols|Sector|Industry|Watchlist",0);
+	SectorName = ParamList("Sectors", SectorList,0);
+	nSectorID = (StrFind( SectorList, SectorName)-1)/15 + 1 ;
+	nIndustryNum 	= ParamIndustryNum(nSectorID);
+	WatchlistNum 	= Param("Watchlist#", 1, 1, 255, 1);
+	WatchlistNum-=1;
+_SECTION_END();
+
+_SECTION_BEGIN("Range PBV");
+	MinPBV 	= Param("Min PBV", 0, 0, 9, 1);
+	MaxPBV 	= Param("Max PBV", 10, 1, 20, 1);
+_SECTION_END();
+
+_SECTION_BEGIN("Range ROA");
+	MinROA 	= Param("Min ROA", -1, -5, 6, 1);
+	MaxROA 	= Param("Max ROA", 10, 1, 20, 1);
+_SECTION_END();
+
+_SECTION_BEGIN("Filter Volume");
+	perVolume 	= Param("MA Period", 14, 0, 50, 1);
+	parameterFilterVolume = " And V>MA(V,"+NumToStr(perVolume,1.0)+")"; 
+_SECTION_END();
+
+function GetSymbols()
+{
+	Remark = TickerList = "";
+	if(BasedOn == "Watchlist" )
+	{
+		SymbolList = CategoryGetSymbols(categoryWatchlist, WatchlistNum);
+		Remark = "Watchlist: " + CategoryGetName( categoryWatchlist, WatchlistNum);	
+	}
+	
+	if( BasedOn == "Sector" )
+	{
+		SymbolList = CategoryGetSymbols(categorySector, nSectorID);
+		Remark = "Sector: " + CategoryGetName( categorySector, nSectorID) ;
+		
+		for( i = 0; ( symbol = StrExtract( SymbolList, i ) ) != ""; i++ )
+		{
+		   SetForeign(symbol);
+		   MAVol14 = MA(V,perVolume);
+		   TickerList = TickerList + WriteIf( ( (Ref(V,-1)*1.25>Ref(MAVol14,-1)) OR V>Ref(MAVol14,-1) ) AND   MA(C,50)>0, symbol + ",",""); 
+		   RestorePriceArrays();   
+		}
+		
+		SymbolList = TickerList;		
+	}
+
+	if( BasedOn == "Industry" )
+	{
+		SymbolList = CategoryGetSymbols(categoryIndustry, nIndustryNum);
+		Remark = CategoryGetName( categorySector, nSectorID) +" - "+"Industry: "+(CategoryGetName( categoryIndustry, nIndustryNum) ) ;
+	}
+	
+	if( SymbolList=="" )
+	{
+		Remark += " Undefined";
+	}
+
+ return SymbolList;
+}
+
+
+function DisplayPBVvsROA()
+{
+    if( BasedOn!="SelectedSymbols" ) SymList = GetSymbols(); 
+
+    for( i = 0; ( symbol = StrExtract( SymList, i ) ) != ""; i++ )
+    {
+       QIsnGetPBVvsROA(symbol,MinPBV,MinROA,MaxPBV,MaxROA);
+    }
+    QIsnGridLinesPBVvsROA();
+    for( i = 0; ( symbol = StrExtract( SymList, i ) ) != ""; i++ )
+    {
+		QIsnDrawPBVvsROA(symbol,colorDefault);
+    }
+    
+	GfxSelectFont("Verdana", 13, 100);
+
+	GfxSetTextColor(colorWhite); 		
+	GfxTextOut(Remark, 65, 5 ); 
+	GfxTextOut( DateTimeToStr( LastValue(DateTime()), 4 ) , ( Status( "pxwidth" ) - 155 ), 15 ) ;
+	
+	GfxTextOut("Parameters: "+NumToStr(MinPBV,format=1.0)+"<PBV<"+NumToStr(MaxPBV,format=1.0)+" And "+
+							  NumToStr(MinROA,format=1.0)+"<ROA<"+NumToStr(MaxROA,format=1.0)+ parameterFilterVolume, 65, 25 ); 
+	
+	GfxSetTextColor(colorDefault); 
+	GfxSelectFont("Verdana", 8, 100);
+	SetChartBkColor(16); 
+}
+
+DisplayPBVvsROA();
+
+_SECTION_BEGIN("Exploration");
+	if( Status("action") == actionExplore  ) 
+	{
+		Chg = C - Ref(C,-1);
+		ROA = QIsnFA("ROA");
+		BVS = QIsnFA("BookValuePerShare");
+		PBV = C/BVS ;
+		EPS = QIsnFA("EPS");
+		PER = C/EPS;
+		
+		Filter = PER >= MinPER AND PER <= MaxPER;
+
+		bkColorDefault = 54;
+		AddColumn(C,"Close",1,IIf(Chg>0,colorGreen,colorRed),-1,60);
+		AddColumn(Chg,"Chg",1,IIf(Chg>0,colorGreen,colorRed),-1,45);
+		AddColumn(ROC( C, 1 ), "%Chg",1.2,IIf(Chg>0,colorGreen,colorRed),-1,45);
+	
+		AddColumn(BVS,"BV",1.2,colorDefault,bkColorDefault);
+		AddColumn(PBV,"PBV",1.2,colorDefault,bkColorDefault);
+		AddColumn(ROA,"ROA",1.2,colorDefault,bkColorDefault);
+		AddColumn(PER,"PER",1.2,colorDefault,45,80);
+		
+		AddTextColumn(SectorID(1), "Sector",1.0,colorDefault,bkColorDefault,90);
+		AddTextColumn(IndustryID(1), "Industry",1.0,colorDefault,bkColorDefault,150);
+		
+		SetSortColumns(11,9);
+
+	}
+_SECTION_END();
+
+
+_SECTION_BEGIN("Symbol Info.");
+	ShowFA = ParamToggle("Show?","Yes|No",0);
+	FAWidth=Param("Width",190,190,225,5);    	
+	FAHeight=Param("Height",105,105,480,5);    	
+	FAHor=Param("HPosition",50,50,480,1);
+	FAVer=Param("VPosition",70,70,740,1);   
+	if(ShowFA==1)
+	{
+		MRQorFY = QIsnFA("AsOfDate");
+			
+		DER = Nz(QIsnFA("TotalLiabilities")/QIsnFA("TotalEquity")*100,0);
+		ROA = Nz(QIsnFA("ROA"),0);
+		BVS = Nz(QIsnFA("BookValuePerShare"),0);
+		PBV = Nz(C/BVS,0) ;
+		EPS = Nz(QIsnFA("EPS"),0);
+		PER = Nz(C/EPS,0);
+		MCap = Nz(C*QIsnFA("SharesOut")/1000000,0) ;
+		YrAgoEPS = QIsnFA("EPS",-1);
+		EPS1YrGrowth =IIf(YrAgoEPS>0 && EPS>0,Nz(100 * ( -1 + EPS / YrAgoEPS )),0);
+
+		x1=FAVer;y1=FAHor; 
+		x2=FAVer+FAWidth;	y2=FAHor+FAHeight; 		
+		x3=0;	y3=0;	xmargin=15;	
+
+		GfxSelectPen( colorWhite, 2 );
+		GfxSelectSolidBrush( colorLightGrey );
+		GfxRoundRect( x1, y1, x2, y2, x3, y3 );
+					
+		GfxSelectFont( "Verdana", 9, 100 );
+		GfxSetTextColor( colorBlue );
+		GfxSetTextAlign(0);
+		GfxTextOut( Name()+" : "+MRQorFY, x1+xmargin, y1+5);	
+		
+		GfxSelectFont( "Verdana", 8, 100 );		
+		GfxSetTextColor( colorBlack );
+		GfxTextOut( "EPS: "+EPS+"  PER: "+WriteVal(PER,1.2)+"x", x1+xmargin, y1+20);	
+		GfxTextOut( "1Yr. EPS Growth: "+WriteVal(EPS1YrGrowth,1.2), x1+xmargin, y1+35);
+		
+		GfxSetTextColor( colorBlack );
+		GfxTextOut( "BV: "+BVS+"  PBV: "+WriteVal(PBV,1.2)+"x", x1+xmargin, y1+50);
+		GfxTextOut( "ROA: "+WriteVal(ROA,1.2)+"%  DER: "+WriteVal(DER,1.2)+"%", x1+xmargin, y1+65);
+		GfxTextOut( "M. Cap.: "+WriteVal(MCap,1.2)+"B", x1+xmargin, y1+80);
+		
+		
+	}
+_SECTION_END();
+

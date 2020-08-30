@@ -1,0 +1,174 @@
+/*******************************************************************************************/
+// SkyQuant for AmiBroker
+// http://skyquant.googlecode.com - HomeSite
+// http://groups.google.com/group/skyquant - Forum
+// You may use, copy, distribute, modify SkyQuant under the terms of
+// the GNU General Public License (GPL) Version 2, 2012
+/*******************************************************************************************/
+#include <SkyQuant\SQ_header.afl>;
+
+PList1 = "0,1,2,3,4,5,6,7,8,9,11,12,15";
+pMax = 0;
+p1Count = 0;
+p1arr = -1;
+for( pp = 0; StrExtract( PList1, pp ) != ""; pp++ )
+{
+	p = StrToNum( StrExtract( PList1, pp ) );
+	p1Count++;
+	if( p > pMax ) pMax = p;
+	p1arr[pp] = p;
+}
+
+Hsys = "P"; // houses system
+//SQ12h(TZ, Hsys, Lat, Lon );
+for( j = 1; j <= 13; j++ ) 
+{
+	// CUSPS
+	sysID = NumToStr ( iflag, 1.0, False ) + "_" + NumToStr ( Cpos, 1.0, False ) + 
+		Name() + "_" + Interval( format = 2 ) + "_Nc" + NumToStr ( j, 1.0, False );
+	eph = StaticVarGet( sysID );
+	if( IsNull(eph[BarCount-1]) || IsNull(eph[0]) )
+	{
+		eph = SQh(TZ, Hsys, j, Lat, Lon, 2 );
+	}
+		VarSet( "Cusp" + j, eph );
+		StaticVarSet( sysID, eph );
+}
+
+for( j = 0; j <= 7; j++ ) 
+{
+	// ASCMC
+	sysID = NumToStr ( iflag, 1.0, False ) + "_" + NumToStr ( Cpos, 1.0, False ) + 
+		Name() + "_" + Interval( format = 2 ) + "_Na" + NumToStr ( j, 1.0, False );
+	eph = StaticVarGet( sysID );
+	if( IsNull(eph[BarCount-1]) || IsNull(eph[0]) )
+	{
+		eph = SQh(TZ, Hsys, j, Lat, Lon, 1 );
+	}
+		VarSet( "AscMC" + j, eph );
+		StaticVarSet( sysID, eph );
+}
+
+GfxSetBkMode(1); 
+GfxSetTextColor( colorViolet ); 
+y1 = 24;
+//ys = (pxchartbottom - y1) / (p1Count + 1) / 4.2;
+Hfont = ys * 1.8;
+GfxSelectFont("Tahoma", Hfont, 500 );
+nl = 0;
+AngularA = SuccedentA = CadentA = Hn = 0;
+
+for( pp1 = 0; p1arr[pp1] >= 0; pp1++ )
+{
+	p = p1arr[pp1];
+	eph = EPHEMERIS( "P", p, iflag, cpos );
+	Lefts = 3;
+	Hn[Lefts + fvb] = Hn[Lefts + fvb - 1] = Hn[Lefts + fvb - 1];
+	
+	for( i = Lefts; i < Min( Lvb - fvb, BarCount - fvb ) ; i++ ) 
+	{
+		b = i + fvb;
+		for( j = 1; j <= 12; j++ ) 
+		{
+			HousePrev = VarGet( "Cusp" + j );
+			HouseNext = VarGet( "Cusp" + (j+1) );
+			if(( eph[b] >= HousePrev[b] && eph[b] < HouseNext[b] 
+				&& HouseNext[b] > HousePrev[b]) || 
+				( ( eph[b] >= HousePrev[b] || eph[b] < HouseNext[b] )
+				&& HouseNext[b] < HousePrev[b]) )
+			{
+				Hn[Lefts + fvb - 1] = j;
+				Hn[b] = j;
+				z = j;
+				j = 12;
+
+			}
+		}
+		Color = fHOUSES(z,1);
+		AngularA[b] += Angular;
+		SuccedentA[b] += Succedent;
+		CadentA[b] += Cadent;
+
+		GfxSelectSolidBrush( Color );
+		GfxSelectPen( Color );  
+ 		x = pxchartleft + i  * pxchartwidth / ( lvb - fvb + 1 );
+
+ 		y = y1 + ys * nl * 4; 
+		GfxRectangle( x - barw/2, y-ys, x + barw/2, y+ys*2.5 );
+
+		GfxSelectSolidBrush( Color );
+		GfxSelectPen( Color ); 
+
+		if( Hn[b] != Hn[b - 1] )
+		{
+			z++;
+			Hstr = "[" + NumToStr( z, 0.0) + "]";
+			GfxSetTextColor( colorViolet ); 
+			gx = 20;
+			gy = y - ys*0.5;
+			if( z == 13 && (AlmostEqual(Cusp1[b], AscMC0[b], 999)
+				 || AlmostEqual(360-Cusp1[b], AscMC0[b], 999)) )
+			{
+				GfxSetTextColor( colorBlue ); 
+				SYMBOL( -30, Hfont, x-gx, gy );
+				Hstr = "";
+			}
+			if( z == 4 && (AlmostEqual(Cusp4[b], abs(AscMC1[b]-180), 999)
+				 || AlmostEqual(360-Cusp4[b], abs(AscMC1[b]-180), 999)) )
+			{
+				GfxSetTextColor( colorBlue ); 
+				SYMBOL( -33, Hfont, x-gx, gy );
+				Hstr = "";
+			}
+			if( z == 7 && (AlmostEqual(Cusp7[b], abs(AscMC0[b]-180), 999)
+				 || AlmostEqual(360-Cusp7[b], abs(AscMC0[b]-180), 999)) )
+			{
+				GfxSetTextColor( colorBlue ); 
+				SYMBOL( -32, Hfont, x-gx, gy );
+				Hstr = "";
+			}
+			if( z == 10 && (AlmostEqual(Cusp10[b], AscMC1[b], 999)
+				 || AlmostEqual(360-Cusp10[b], AscMC1[b], 999)) )
+			{
+				GfxSetTextColor( colorBlue ); 
+				SYMBOL( -31, Hfont, x-gx, gy );
+				Hstr = "";
+			}
+
+			GfxSetTextAlign( 2 );
+			GfxSelectFont("Tahoma", Hfont*0.7, 700 );
+			GfxTextOut( Hstr, x-8, gy + ys - 5 );
+		}
+
+	}
+	GfxSetTextAlign( 0 );
+	GfxSetTextColor( pColors[p] ); 
+	y = y1 + ys * nl * 4;
+	SYMBOL( p, Hfont*1.2, 0, y - ys*0.6 );
+	nl++;
+
+	zod = floor(eph/30);
+	grad1 = eph - zod * 30;
+	grad2 = 60 * frac(grad1);
+
+
+	printf( SQname(p) + "\t|  " + ZODIACNAME(zod[bx]) + 
+		" %0.0f°%0.0f'     [ %0.0f ]  " + fHOUSES(zod[bx]+1,0) + "\n", floor(grad1), grad2, Hn[bx] ); 
+}
+
+printf( "\n<< House Cuspids >>\n" );
+for( j = 1; j <= 12; j++ ) 
+{
+	House = VarGet( "Cusp" + j );
+	zod = floor(House/30);
+	grad1 = House - zod * 30;
+	grad2 = 60 * frac(grad1);
+
+	printf( "[ %0.0f ]\t" + ZODIACNAME(zod[bx]) + " %0.0f°%0.0f'\n", j, floor(grad1), grad2 ); 	
+}
+
+_N(Title = StrFormat("House distribution:  Angular %0.0f%% |  Succedent %0.0f%% |  Cadent %0.0f%% |", 
+	AngularA[bx]/p1Count*100, SuccedentA[bx]/p1Count*100, CadentA[bx]/p1Count*100 ) );
+
+
+//

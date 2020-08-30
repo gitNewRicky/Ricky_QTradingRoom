@@ -1,0 +1,6 @@
+sig1 = Optimize("RSI Periods",9,2,15,1);
+sig2 = Optimize("OS",14,0,20,1);
+sig3 = Optimize("OB",9,80,100,1);
+
+Buy=TAS_Buy_RSI(sig1,sig2);
+Sell=TAS_Sell_RSI(sig1,sig3);

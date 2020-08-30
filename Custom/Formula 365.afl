@@ -1,0 +1,11 @@
+#include_once <../Include/BS_Tools.afl>
+
+NBSRB = fnGetRetailBroker();
+
+NBSRB_color = IIf(NBSRB < 0, colorRed, colorBrightGreen);
+SetBarFillColor(NBSRB_color);
+
+abs_NBSRB = abs(NBSRB);
+PlotOHLC(0,abs_NBSRB,0,abs_NBSRB,"Sum Retail Broker",colorBlack,styleCandle);
+
+Title = Name() + " - " + "Summary Retail Broker = " + WriteVal(NBSRB,1.0);

@@ -1,0 +1,63 @@
+QIsnInitialize();
+
+/*
+	Variable :
+				NBSFVal = NetBuySell Foreign by Value
+				NBSFVol = NetBuySell Foreign by Volume
+*/
+
+NetBuySellForeignValue = NBSFVal/1000000000;
+	
+cumNBSF = Cum(NetBuySellForeignValue);
+NF5D = Sum(NetBuySellForeignValue,5);
+NF20D = Sum(NetBuySellForeignValue,20);
+NF60D = Sum(NetBuySellForeignValue,60);
+
+colorNF = SelectedValue(IIf(NetBuySellForeignValue > 0,27,32)); 
+colorNF5D = SelectedValue(IIf(NF5D > 0,27,32)); 
+colorNF20D = SelectedValue(IIf(NF20D > 0,27,32)); 
+colorNF60D = SelectedValue(IIf(NF60D > 0,27,32)); 
+
+_SECTION_BEGIN("Cum NBS Foreign");
+	colorCumF = ParamColor("Color", colorCycle );
+	colorCumF = ColorBlend( colorCumF,  GetChartBkColor(), 0.2 );
+	
+	//colorCumF = ParamColor("Color", colorDarkGrey );
+
+	Plot( cumNBSF, "", colorCumF,ParamStyle("Style") );
+_SECTION_END();
+
+// 9 period SMA
+_SECTION_BEGIN("MA1");
+	MA1Periods = Param("Periods",9);
+	colorMA1 = ParamColor( "Color", colorGreen ) ;
+	MA1 = MA( cumNBSF, MA1Periods );
+	Plot( MA1, "", colorMA1, ParamStyle("Style") ); 
+_SECTION_END();
+
+// 26 period SMA
+_SECTION_BEGIN("MA2");
+	MA2Periods = Param("Periods",26);
+	colorMA2 = ParamColor( "Color", colorBlue ) ;
+	MA2 = MA( cumNBSF, MA2Periods ) ;
+	Plot( MA2, "", colorMA2, ParamStyle("Style") ); 
+_SECTION_END();
+
+_SECTION_BEGIN("Net Foreign Volume");
+	NetBuySellForeignVolume = NBSFVol;
+	BarColor = IIf (NetBuySellForeignVolume > 0, ParamColor("Up Color", colorGreen ),  ParamColor("Down Color", colorRed ));
+	Plot( abs(NetBuySellForeignVolume),  "" ,  BarColor , ParamStyle( "Style", styleHistogram | styleOwnScale | styleThick, maskHistogram  ),2,0,0,0,8 );
+_SECTION_END();
+
+
+Title = StrFormat("{{NAME}}- {{INTERVAL}} {{DATE}} O= %g, H= %g, L= %g, C= %g,(%.1f%%) V= " +WriteVal( V/1000000, 1.0 ) + " M, "+
+	"TVal= " + WriteVal( TradeValue/1000000000, 1.2 )+"B\n"+
+	"Net Foreign= " + EncodeColor(colorNF) + WriteVal(NetBuySellForeignValue,1.2,True) + "B,  "+
+	EncodeColor(colorDefault)+"5Day= " + EncodeColor(colorNF5D) + WriteVal(NF5D,1.2,True) + "B,  "+
+	EncodeColor(colorDefault)+"20Day= " + EncodeColor(colorNF20D) + WriteVal(NF20D,1.2,True) + "B,  "+
+	EncodeColor(colorDefault)+"60Day= " + EncodeColor(colorNF60D) + WriteVal(NF60D,1.2,True) + "B"+	
+	"\n{{VALUES}}", O, H, L, C, SelectedValue(ROC( C, 1 )) ) + 
+	EncodeColor(colorCumF)+"Cum(Net Foreign)= " + EncodeColor(colorDefault) + WriteVal(cumNBSF,1.2,True) + "B,  " +
+	EncodeColor(colorMA1)+"MA1(" +WriteVal(MA1Periods,1)+")= " + EncodeColor(colorDefault) + WriteVal(MA1,1.2,True) + "B,  " +
+	EncodeColor(colorMA2)+"MA2(" +WriteVal(MA2Periods,1)+")= " + EncodeColor(colorDefault) + WriteVal(MA2,1.2,True) + "B  " ;
+

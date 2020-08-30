@@ -1,0 +1,131 @@
+_SECTION_BEGIN("Zig Zag Indicator with Valid Entry and Exit Points");
+//z_ZigZagValid
+// ******** CHARTING 
+PercentChange = 6;
+mystartbar = SelectedValue(BarIndex());  // FOR GRAPHING
+
+mystartbardate = LastValue(ValueWhen(mystartbar == BarIndex(), DateNum(),1));
+
+InitialValue = LastValue(ValueWhen(mystartbardate == DateNum(), C , 1 ) ) ;
+Temp1 = IIf(BarIndex() >= mystartbar, InitialValue, Null) ;
+Plot(Temp1, " ", colorBlack,styleLine);
+Plot((1+(LastValue(PercentChange)/100))*(Temp1), " ", colorGreen, styleLine) ;
+Plot((1-(LastValue(PercentChange)/100))*(Temp1), " ", colorRed, styleLine) ;
+
+ZZ = Zig(C,LastValue(PercentChange)) ; 
+PivotLow = Ref(IIf(Ref(ROC(ZZ,1),-1) < 0 AND ROC(ZZ,1) > 0, 1, Null),1);
+PivotHigh = Ref(IIf(Ref(ROC(ZZ,1),-1) > 0 AND ROC(ZZ,1) < 0, 1, Null),1);
+
+PlotShapes( shapeCircle*PivotLow, colorGreen,0, L, -20) ; 
+PlotShapes( shapeCircle*PivotHigh,colorRed,0,H, 20) ;
+
+Buy_Valid = IIf(C>(1+(LastValue(PercentChange)/100))*(ValueWhen(PivotLow, C, 1))
+AND ROC(ZZ,1) > 0,1,0); 
+Sell_Valid = IIf(C<(1-(LastValue(PercentChange)/100))*(ValueWhen(PivotHigh, C, 1))
+AND ROC(ZZ,1) < 0,1,0); 
+
+Buy_Valid = ExRem(Buy_Valid,Sell_Valid);
+Sell_Valid = ExRem(Sell_Valid,Buy_Valid);
+
+PlotShapes( shapeUpArrow*Buy_Valid, colorGreen,0, L, -20); 
+PlotShapes( shapeDownArrow*Sell_Valid, colorRed,0,H, -20) ;
+
+BarColors = 
+IIf(BarsSince(Buy_Valid) < BarsSince(Sell_Valid) 
+AND BarsSince(Buy_Valid)!=0, colorGreen,
+IIf(BarsSince(Sell_Valid) < BarsSince(Buy_Valid)
+AND BarsSince(Sell_Valid)!=0,  colorRed, colorBlue));
+
+Plot(C, " ", BarColors,  styleCandle) ; 
+Plot(ZZ," ", colorLightGrey,styleLine|styleThick);
+Plot(ZZ," ", BarColors,styleDots|styleNoLine);
+
+Title = Name() + " " + Date() + WriteIf(PivotLow, " Up Pivot ","")+WriteIf(PivotHigh," Down Pivot ","")+ WriteIf(Buy_Valid, " Buy Point ", "") + WriteIf(Sell_Valid, " Sell Point ", "") ;
+_SECTION_END();
+
+_SECTION_BEGIN("C. VAP Coloured");
+/*
+	Author: Anderson Wilson 
+		based on PriceVolDistribution demo written by Tomasz Janeczko
+		
+Volume-by-Price is an indicator that shows the amount of volume for a particular price range,
+The Volume-by-Price bars are horizontal and shown on the left side of the chart to correspond 
+with these price ranges. Bar colors indicate bear/bull volume
+*/
+
+bi = BarIndex();
+fvb = FirstVisibleValue( bi );
+lvb = LastVisibleValue( bi );
+
+fvb = Max( 0, fvb );
+lvb = Max( 0, lvb );
+
+bins = Param("Bins", 152, 3, 200, 1);
+pRecHeight = Param("Rectangle Height", 0.90, 0.10, 1, 0.05);
+
+BullBearZone = (High - Low) / 3;
+bullbar = C > (High - BullBearZone);
+bearbar = C < (Low + BullBearZone);
+
+mx = PriceVolDistribution( H, L, V, bins, True, fvb, lvb );
+mx1 = PriceVolDistribution( H, L, IIf( bullbar, V, 0 ), bins, True, fvb, lvb );
+mx2 = PriceVolDistribution( H, L, IIf( bearbar, V, 0 ), bins, True, fvb, lvb );
+
+bins = MxGetSize( mx, 0 );
+bins1 = MxGetSize( mx1, 0 );
+bins2 = MxGetSize( mx2, 0 );
+
+GfxSetOverlayMode( 1 );
+GfxSetCoordsMode( 1 );
+
+if( bins > 1 && bins == bins1 && bins == bins2 ) {
+
+	MaxVolume = mx[ 0 ][ 1 ];
+
+	// find max volume
+	for( i = 1; i < bins; i++ )
+	{
+		if( mx[ i ][ 1 ] > MaxVolume )
+			MaxVolume = mx[ i ][ 1 ];
+	}
+	
+	// rectangle height
+	RecHeight = (mx[ 1 ][ 0 ] - mx[ 0 ][ 0 ]) / 2 * pRecHeight;
+	
+	for( i = 0; i < bins; i++ )
+	{
+		price = mx1[ i ][ 0 ]; // price level
+		
+		absVolume = mx1[ i ][ 1 ];
+		VolAcum = absVolume;
+		relvolume = absVolume / MaxVolume;
+		relbar = relvolume * (lvb-fvb+1);
+		
+		// upper left corner of the rectangle.	
+		x1 = fvb;
+		y1 = price + RecHeight;
+		// lower right corner of the rectangle.	
+		x2 = fvb + relbar;
+		y2 = price - RecHeight; 
+
+		GfxFillSolidRect( x1, y1, x2, y2, colorDarkGreen );
+		
+		absVolume = mx2[ i ][ 1 ];
+		VolAcum += absVolume;
+		relvolume = absVolume / MaxVolume;
+		relbar2 = relvolume * (lvb-fvb+1);
+
+		x1 = x2;
+		x2 = x1 + relbar2;
+		GfxFillSolidRect( x1, y1, x2, y2, colorRed );
+
+		absVolume = mx[ i ][ 1 ]; 
+		relvolume = (absVolume - VolAcum) / MaxVolume;
+		relbar3 = relvolume * (lvb-fvb+1);
+
+		x1 = x2;
+		x2 = x1 + relbar3;
+		GfxFillSolidRect( x1, y1, x2, y2, colorBrown );
+	}
+}
+_SECTION_END();

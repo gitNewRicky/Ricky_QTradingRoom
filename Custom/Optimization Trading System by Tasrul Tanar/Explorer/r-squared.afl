@@ -1,0 +1,27 @@
+iPrd=Param("Start Periode",30,1,1000,1);
+iMaxR2=Param("r-squared >= ",80,0,100,1);
+iMktVal=Param("Mkt. Value (Milyar) >",10,0,1000000,1);
+
+Filter= TAS_MktVal_Filter(iMktVal,5)>0 AND TAS_r2_Max(iPrd)>=(iMaxR2/100);
+Clr = colorDefault;
+if (Version(5)<=5.3) {
+	AddColumn(TAS_r2_Max(iPrd),"r-squared (max)",1.4,Clr,colorDefault,-1);
+	AddColumn(TAS_r2_Max_Prd(iPrd),"Period (max)",1.0,Clr,colorDefault,-1);
+	AddColumn(TAS_r2_1st_Max(iPrd,(iMaxR2/100)),"r-squared (min)",1.4,Clr,colorDefault,-1);
+	AddColumn(TAS_r2_1st_Max_Prd(iPrd,(iMaxR2/100)),"Period (min)",1.0,Clr,colorDefault,-1);
+	AddColumn(TAS_r2_Max_Prd(iPrd)-TAS_r2_1st_Max_Prd(iPrd,(iMaxR2/100)),"Prd. Diff.",1.0,Clr,colorDefault,-1);
+	AddColumn(TAS_r2_Max_Slope(iPrd),"Slope",1.4,Clr,colorDefault,-1);
+	AddColumn(TAS_r2_Max_Prd(iPrd)*(1-TAS_r2_Max(iPrd)),"Deviation",1.4,Clr,colorDefault,-1);
+	AddColumn(TAS_MktVal(iPrd),"Market Value",1.0,Clr,colorDefault,-1);
+	AddColumn(Volume,"Volume",1.0,Clr,colorDefault,-1);
+} else {
+	AddColumn(TAS_r2_Max(iPrd),"r-squared (max)",1.4,Clr,colorDefault,-1,Null);
+	AddColumn(TAS_r2_Max_Prd(iPrd),"Period (max)",1.0,Clr,colorDefault,-1,Null);
+	AddColumn(TAS_r2_1st_Max(iPrd,(iMaxR2/100)),"r-squared (min)",1.4,Clr,colorDefault,-1,Null);
+	AddColumn(TAS_r2_1st_Max_Prd(iPrd,(iMaxR2/100)),"Period (min)",1.0,Clr,colorDefault,-1,Null);
+	AddColumn(TAS_r2_Max_Prd(iPrd)-TAS_r2_1st_Max_Prd(iPrd,(iMaxR2/100)),"Prd. Diff.",1.0,Clr,colorDefault,-1,Null);
+	AddColumn(TAS_r2_Max_Slope(iPrd),"Slope",1.4,Clr,colorDefault,-1,Null);
+	AddColumn(TAS_r2_Max_Prd(iPrd)*(1-TAS_r2_Max(iPrd)),"Deviation",1.4,Clr,colorDefault,-1,Null);
+	AddColumn(TAS_MktVal(iPrd),"Market Value",1.0,Clr,colorDefault,-1,Null);
+	AddColumn(Volume,"Volume",1.0,Clr,colorDefault,-1,Null);
+}

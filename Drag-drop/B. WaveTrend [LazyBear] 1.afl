@@ -1,0 +1,37 @@
+
+_SECTION_BEGIN("WaveTrend[LazyBear]");
+
+n1 = Param("Channel Length",10,5,100,1);
+n2 = Param("Average Length",21,5,100,1);
+obLevel1 = Param("Overbought L1",60,50,100,1);
+obLevel2 = Param("Overbought L2",53,50,100,1);
+osLevel1 = Param("Oversold L1",-60,-100,0,1);
+osLevel2 = Param("Oversold L2",-53,-100,0,1);
+
+ap = (H + L + C) / 3;
+esa = EMA(ap,n1);
+d = EMA(abs(ap - esa),n1);
+ci = (ap - esa) / (0.015 * d);
+tci = EMA(ci, n2);
+
+wt1 = tci;
+wt2 = MA(wt1,4);
+Hist = WT1 - WT2;
+
+Plot(0,"",colorGrey40);
+Plot(oblevel1,"",colorRed,styleLine);
+Plot(oslevel1,"",colorGreen,styleLine);
+Plot(oblevel2,"",colorRed,styleDots);
+Plot(oslevel2,"",colorGreen,styleDots);
+
+LineCol = IIf(WT1 > WT2, colorGreen, colorRed);
+HistColor = IIf(Hist < Ref(Hist,1), colorBrightGreen, colorDarkRed);
+
+Plot(wt1,"WT1", LineCol, styleLine);
+Plot(wt2, "WT2", LineCol, styleDots);
+Plot(Hist,"",HistColor,styleHistogram);
+
+Filter = 1;
+AddColumn(WT1,"WT1",1.0,colorBlack,colorDefault);
+ 
+_SECTION_END();

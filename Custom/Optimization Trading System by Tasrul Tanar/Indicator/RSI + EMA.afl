@@ -1,0 +1,11 @@
+Periods = Param("RSI Periods", 14, 1, 100, 1, 1 );
+Periods2 = Param("MA Periods", 10, 1, 100, 1, 1 );
+iColor=ParamColor( "RSI Color", colorRed );
+iStyle=ParamStyle("RSI Style"); 
+iColor2=ParamColor( "MA Color", colorBlue );
+iStyle2=ParamStyle("MA Style",styleDashed); 
+
+a=TAS_RSI( Periods );
+b=EMA(a,Periods2);
+Plot( a, "RSI",  iColor, iStyle ); 
+Plot( b, "MA",  iColor2, iStyle2 ); 

@@ -1,0 +1,45 @@
+_SECTION_BEGIN("E. Earth_03");
+//Earth-3
+
+n = Param("Periods", 14, 5, 25, 1 );
+
+var6=(2*Close+High+Low)/4;
+var7=LLV(L,n);
+var8=HHV(H,n);
+var9=EMA((var6-var7)/(var8-var7)*100,5);
+varA=EMA(0.333*Ref(var9,-1)+0.667*var9,3);
+UP=Var9; 
+DOWN=Vara; 
+Oo=IIf(up<down,up,down);
+Hh=Oo;
+Ll=IIf(up<down,down,up);
+Cc=Ll;
+barcolor2=
+IIf( (Ref(up,-1)>Ref(down,-1) AND Ref(up,-1)>up AND up>down ) 
+  OR (Ref(up,-1)<Ref(down,-1) AND Ref(up,-1)<up AND up<down ) 
+  , colorBlue,
+  IIf(up>down,5,4));
+PlotOHLC( Oo,hh,ll,Cc, "", barcolor2, styleCandle );
+
+n=3;
+var3=(C-LLV(L,14))/(HHV(H,14)-LLV(L,14))*100;
+var4=WMA(var3,9);
+var5=WMA(var4,3);
+j=3*var4-2*var5;
+a2=EMA(var4,n);
+a3=EMA(a2,n);
+a4=EMA(a3,n);
+a5=EMA(a4,n);
+aa=EMA(a5,n);
+Midbot=LLV(j,aa);
+Plot(midbot,"Support",colorBlue,1);
+
+res=HHV(j,45);
+Plot(res,"Resistance",colorRed,1);
+b1=(H+L+C)/3;
+b2=HHV(b1,15);
+b3=LLV(b1,15);
+b4=b2-b3;
+b5=MA((b1-b3)/b4,3)*100;
+Plot(b5,"Position",7,4);
+_SECTION_END();

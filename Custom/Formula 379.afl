@@ -1,0 +1,28 @@
+// Downloaded From https://www.WiseStockTrader.com
+// AFL for Dynamic RSI
+//============================================================
+_SECTION_BEGIN("Dynamic RSI");
+
+DZbuy = Param("Buy Zone Probability",0.1,0.1,0.5,0.1);
+DZsell = Param("Sell Zone Probability",0.1,0.1,0.5,0.1);
+Period = Param("Period", 14, 2, 30, 1);
+
+Lb = Param("LookBack Period",60,40,120,1);
+RSILine = RSI(Period);
+jh = HHV(RSILine,Lb);
+jl = LLV(RSILine,Lb);
+jc = (WMA((jh-jl),Period)*0.50)+WMA(jl,Period);
+Hiline = jh-jc*DZbuy;
+Loline = jl+jc*DZsell;
+//midline = (jh-jl)/2;
+Plot(HiLine,"",colorDarkRed, styleThick| styleDashed);
+Plot(LoLine,"",colorDarkRed, styleDashed|styleThick);
+Plot(jc,    "",colorGrey40,   styleDashed|styleThick);
+
+R =  ( 4 * RSILine + 3 * Ref(RSILine,-1) + 2 * Ref(RSILine,-2) + Ref(RSILine,-3) ) / 10;
+Plot(R,"",IIf(R>jc,colorLime,colorRed),styleThick);
+kh = IIf(R>Hiline, R,Hiline);
+PlotOHLC( kh,kh,Hiline,Hiline, "", IIf(R>HiLine,colorLime,colorBlack), styleCloud );
+kl = IIf(R <Loline, R,Loline);
+PlotOHLC( Loline,Loline,kl,kl, "", IIf(R<HiLine,colorRed,colorBlack), styleCloud );
+Title = Name() + "- Floating Level RSI V1.0(" + WriteVal(period, 1.0) + ")"; 

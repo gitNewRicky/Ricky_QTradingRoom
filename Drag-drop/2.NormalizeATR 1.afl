@@ -1,0 +1,20 @@
+SetChartBkColor(colorBlack);
+_SECTION_BEGIN("Normalize ATR");
+periods = Param( "Periods", 15, 1, 200, 1 );
+NATRO = (ATR(periods) / Open) * 100;
+NATRH = (ATR(periods) / High) * 100;
+NATRL = (ATR(periods) / Low) * 100;
+NATRC = (ATR(periods) / Close) * 100;
+
+NATRA = WMA(NATRC,3);
+NATRA3 = WMA(NATRC,5);
+ROCNATRA = ROC(NATRA,1);
+
+
+NATRACol = IIf(NATRA > Ref(NATRA,-1),colorBrightGreen,colorRed);
+//PlotOHLC( NATRO,NATRH,NATRL,NATRC, _DEFAULT_NAME(), ParamColor( "Color", colorBlack ), styleCandle );
+Plot(NATRA,"Norm ATR HLC", NATRACol,styleLine | styleThick);
+Plot(NATRA3,"", colorBlue,styleLine);
+
+Title = 
+_SECTION_END();

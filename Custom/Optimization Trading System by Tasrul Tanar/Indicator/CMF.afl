@@ -1,0 +1,4 @@
+Periods = Param("CMF Periods", 21, 1, 1000, 1, 1 );
+
+a=TAS_CMF(Periods);
+Plot( a, "CMF", ParamColor( "Color", colorBlack ), ParamStyle("Style",styleThick) ); 

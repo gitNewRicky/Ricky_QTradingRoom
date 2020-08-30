@@ -1,0 +1,11 @@
+_SECTION_BEGIN("Volume_Color");
+
+Plot(0,"",colorBlack,styleLine | styleThick);
+
+Volume_color_by_Progress = IIf(Volume > Ref(Volume,-1),colorBrightGreen,colorRed);
+Plot(Volume,"Volume",Volume_color_by_Progress,styleHistogram | styleThick);
+
+Volume_color_By_Price = IIf( C > O, colorBrightGreen, colorRed);
+Plot(-1 * Volume,"",Volume_color_By_Price,styleHistogram | styleThick);
+
+_SECTION_END();

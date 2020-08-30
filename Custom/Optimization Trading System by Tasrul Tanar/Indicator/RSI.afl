@@ -1,0 +1,2 @@
+Periods = Param("RSI Periods", 14, 2, 1000, 1, 1 );
+Plot( TAS_RSI( Periods ), "RSI", ParamColor( "Color", colorRed ), ParamStyle("Style") ); 

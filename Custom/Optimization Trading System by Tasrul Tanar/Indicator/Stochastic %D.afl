@@ -1,0 +1,8 @@
+iColor=ParamColor( "Stochastic Color", colorRed );
+iStyle=ParamStyle("Stochastic Style"); 
+iColor2=ParamColor( "MA Color", colorBlue );
+iStyle2=ParamStyle("MA Style",styleDashed); 
+r1 = Param( "Periods", 14, 1, 1000, 1 );
+r2 = Param( "%K avg", 3, 1, 1000, 1 );
+r3 = Param( "%D avg", 3, 1, 1000, 1 );
+TAS_StochasticOscillator2(r1,r2,r3,iColor,iStyle,iColor2,iStyle2);

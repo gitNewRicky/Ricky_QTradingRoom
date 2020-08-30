@@ -1,0 +1,463 @@
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+Plot( C, "Close", ParamColor("Color", colorBlack ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+_SECTION_END();
+
+_SECTION_BEGIN("Background_Setting");
+SetChartBkGradientFill( ParamColor("BgTop", colorBlack),
+ParamColor("BgBottom", colorBlack),ParamColor("titleblock",colorDarkTeal ));
+_SECTION_END();
+
+
+
+_SECTION_BEGIN("swing line");
+no=Param( "Swing", 3, 1, 55 );
+tsl_col=ParamColor( "Color", colorCycle );
+res=HHV(H,no);
+sup=LLV(L,no);
+avd=IIf(C>Ref(res,-1),1,IIf(C<Ref(sup,-1),-1,0));
+avn=ValueWhen(avd!=0,avd,1);
+tsl=IIf(avn==1,sup,res);
+Plot(tsl, _DEFAULT_NAME(), tsl_col, styleStaircase);
+Buy=Cross(C,tsl);
+Sell=Cross(tsl,C);
+shape=Buy*shapeUpArrow + Sell*shapeDownArrow;
+PlotShapes(shape,IIf(Buy,tsl_col,tsl_col),0,IIf(Buy,Low,High));
+_SECTION_END();
+
+_SECTION_BEGIN("High Volume Lines");
+volAvg	=	MA(V,90);
+vr=ParamToggle("Plot High volume lines","No|Yes" ,1);
+j=Param("No.of High vol Lines",5,1,20,1);
+k=Param("Volume factor",2,1.5,3,0.5);
+y=Cum(1);
+Hk1=V>k*volAvg;
+//High volume detection
+hx1=LastValue(ValueWhen(hk1,y,1));
+hx2=LastValue(ValueWhen(hk1,y,2));
+hx3=LastValue(ValueWhen(hk1,y,3));
+hx4=LastValue(ValueWhen(hk1,y,4));
+hx5=LastValue(ValueWhen(hk1,y,5));
+hx6=LastValue(ValueWhen(hk1,y,6));
+hx7=LastValue(ValueWhen(hk1,y,7));
+hx8=LastValue(ValueWhen(hk1,y,8));
+hx9=LastValue(ValueWhen(hk1,y,9));
+hx10=LastValue(ValueWhen(hk1,y,10));
+hx11=LastValue(ValueWhen(hk1,y,11));
+hx12=LastValue(ValueWhen(hk1,y,12));
+hx13=LastValue(ValueWhen(hk1,y,13));
+hx14=LastValue(ValueWhen(hk1,y,14));
+hx15=LastValue(ValueWhen(hk1,y,15));
+hx16=LastValue(ValueWhen(hk1,y,16));
+hx17=LastValue(ValueWhen(hk1,y,17));
+hx18=LastValue(ValueWhen(hk1,y,18));
+hx19=LastValue(ValueWhen(hk1,y,19));
+hx20=LastValue(ValueWhen(hk1,y,20));
+//values when High volume occured
+XV1 =LastValue(ValueWhen(hk1,H,1));
+XV2 =LastValue(ValueWhen(hk1,H,2));
+XV3 =LastValue(ValueWhen(hk1,H,3));
+XV4 =LastValue(ValueWhen(hk1,H,4));
+XV5 =LastValue(ValueWhen(hk1,H,5));
+XV6 =LastValue(ValueWhen(hk1,H,6));
+XV7 =LastValue(ValueWhen(hk1,H,7));
+XV8 =LastValue(ValueWhen(hk1,H,8));
+XV9 =LastValue(ValueWhen(hk1,H,9));
+XV10 =LastValue(ValueWhen(hk1,H,10));
+XV11 =LastValue(ValueWhen(hk1,C,11));
+XV12 =LastValue(ValueWhen(hk1,C,12));
+XV13 =LastValue(ValueWhen(hk1,C,113));
+XV14 =LastValue(ValueWhen(hk1,C,14));
+XV15 =LastValue(ValueWhen(hk1,C,15));
+XV16 =LastValue(ValueWhen(hk1,C,16));
+XV17 =LastValue(ValueWhen(hk1,C,17));
+XV18 =LastValue(ValueWhen(hk1,C,18));
+XV19 =LastValue(ValueWhen(hk1,C,19));
+XV20 =LastValue(ValueWhen(hk1,C,20));
+LastBar = Cum(1) == LastValue(Cum(1));
+//plot High Volume lines
+Plot(IIf(y>hx1 AND j>=1 AND Vr,xv1,Null),"v1",colorBlue);
+Plot(IIf(y>hx2 AND j>=2 AND Vr,xv2,Null),"v2",colorBlue);
+Plot(IIf(y>hx3 AND j>=3 AND Vr,xv3,Null),"v3",colorBlue);
+Plot(IIf(y>hx4 AND j>=4 AND Vr,xv4,Null),"v4",colorBlue);
+Plot(IIf(y>hx5 AND j>=5 AND Vr,xv5,Null),"v5",colorBlue);
+Plot(IIf(y>hx6 AND j>=6 AND Vr,xv6,Null),"v6",colorBlue);
+Plot(IIf(y>hx7 AND j>=7 AND Vr,xv7,Null),"v7",colorBlue);
+Plot(IIf(y>hx8 AND j>=8 AND Vr,xv8,Null),"v8",colorBlue);
+Plot(IIf(y>hx9 AND j>=9 AND Vr,xv9,Null),"v9",colorBlue);
+Plot(IIf(y>hx10 AND j>=10 AND Vr,xv10,Null),"v10",colorBlue);
+Plot(IIf(y>hx11 AND j>=11 AND Vr,xv11,Null),"v11",colorBlue);
+Plot(IIf(y>hx12 AND j>=12 AND Vr,xv12,Null),"v12",colorBlue);
+Plot(IIf(y>hx13 AND j>=13 AND Vr,xv13,Null),"v13",colorBlue);
+Plot(IIf(y>hx14 AND j>=14 AND Vr,xv14,Null),"v14",colorBlue);
+Plot(IIf(y>hx15 AND j>=15 AND Vr,xv15,Null),"v15",colorBlue);
+Plot(IIf(y>hx16 AND j>=16 AND Vr,xv16,Null),"v16",colorBlue);
+Plot(IIf(y>hx17 AND j>=17 AND Vr,xv17,Null),"v17",colorBlue);
+Plot(IIf(y>hx18 AND j>=18 AND Vr,xv18,Null),"v18",colorBlue);
+Plot(IIf(y>hx19 AND j>=19 AND Vr,xv19,Null),"v19",colorBlue);
+Plot(IIf(y>hx20 AND j>=20 AND Vr,xv20,Null),"v20",colorBlue);
+_SECTION_END();
+
+_SECTION_BEGIN("Vol Spiker");
+// Volume
+DTL=Param("Linear regression period",60,10,100,10); 
+wbf=Param("WRB factor",1.5,1.3,2.5,.1);
+nbf=Param("NRB factor",0.7,0.3,0.9,0.1);
+TL=LinRegSlope(MA(C, DTL),2); 
+ Vlp=Param("Volume lookback period",30,20,300,10);
+Vrg=MA(V,Vlp);
+St = StDev(Vrg,Vlp); 
+Vp3 = Vrg + 3*st; 
+Vp2 = Vrg + 2*st;;
+Vp1 = Vrg + 1*st;;
+Vn1 = Vrg -1*st; 
+Vn2 = Vrg -2*st; 
+rg=(H-L);
+arg=Wilders(rg,30);
+wrb=rg>(wbf*arg);
+nrb=rg<(nbf*arg); 
+Vl=V<Ref(V,-1) AND V<Ref(V,-2);
+upbar=C>Ref(C,-1);
+dnbar=C<Ref(C,-1); 
+Vh=V>Ref(V,-1) AND Ref(V,-1)>Ref(V,-2);
+Cloc=C-L;
+x=rg/Cloc;
+x1=IIf(Cloc==0,arg,x);
+Vb=V>Vrg OR V>Ref(V,-1);
+ucls=x1<2;
+dcls=x1>2;
+mcls=x1<2.2 AND x1>1.8 ;
+Vlcls=x1>4;
+Vhcls=x1<1.35;
+j=MA(C,5);
+TLL=LinRegSlope(j,40) ;
+Tlm=LinRegSlope(j,15) ;
+tls=LinRegSlope(j,5);
+mp=(H+L)/2;
+C1 = Ref(C, -1);
+uc = C > C1; dc = C <= C1;
+ud = C > O; dd = C <= O;
+
+green = 1; blue = 2; yellow = 3; red = 4; white = 5;
+VType = IIf(ud,          
+         IIf(uc, green, yellow),
+       IIf(dd, 
+         IIf(dc, red, blue), white));
+
+/* green volume: up-day and up-close*/
+gv = IIf(VType == green, V, 0); 
+/* yellow volume: up-day but down-close */
+yv = IIf(VType == yellow, V, 0); 
+/* red volume: down-day and down-close */
+rv = IIf(VType == red, V, 0); 
+/* blue volume: down-day but up-close */
+bv = IIf(VType == blue, V, 0); 
+
+
+uv = gv + bv; uv1 = Ref(uv, -1); /* up volume */
+dv = rv + yv; dv1 = Ref(dv, -1); /* down volume */
+
+
+VolPer = Param("Adjust Vol. MA per.", 34, 1, 255, 1);//12
+ConvPer = Param("Adjust Conv. MA per.", 9, 1, 255, 1);//6
+
+
+MAuv = TEMA(uv, VolPer ); mauv1 = Ref(mauv, -1);
+MAdv = TEMA(dv, VolPer ); madv1 = Ref(madv, -1);
+MAtv = TEMA(V, VolPer );//total volume
+Converge = (TEMA(MAuv - MAdv, ConvPer));
+Converge1 = Ref(Converge, -1);
+ConvergeUp = Converge > Converge1;
+ConvergeOver = Converge > 0;
+rising = ConvergeUp AND ConvergeOver;
+falling = !ConvergeUp AND ConvergeOver;
+
+Pp1=Param("NumberOfDays",30,1,200,1);
+Pp2=Param("VolOfDays",15,1,200,1);
+
+numDays = Pp1;
+dwWideSpread = 1.8;
+dwNarrowSpread = 0.8;
+dwSpreadMiddle = 0.5;
+dwHighClose = 0.7;
+dwLowClose = 0.3;
+volNumDays = Pp2;
+dwUltraHighVol = 2;
+dwVeryHighVol = 1.75; // was 1.8
+dwHighVol = 1.75; // was 1.8
+dwmoderateVol = 1.10; // was 1.8
+dwLowVol = 0.75; // was 0.8
+upBar = C > Ref(C,-1);
+downBar = C < Ref(C,-1);
+spread = H-L;
+avgRange = Sum(spread, numDays) / numDays;
+wideRange = spread >= (dwWideSpread * avgRange);
+narrowRange = spread <= (dwNarrowSpread * avgRange);
+testHighClose = L + (spread * dwHighClose);
+testLowClose = L + (spread * dwLowClose);
+testCloseMiddle = L + (spread * dwSpreadMiddle);
+
+upClose = C > testHighClose;
+downClose = C < testLowClose;
+middleClose = C >= testLowClose AND C <= testHighClose;
+
+avgVolume = EMA(V, volNumDays);
+
+highVolume = V > (avgVolume * dwHighVol);
+moderateVol= V > (avgVolume * dwmoderateVol);
+veryHighVolume = V > (avgVolume * dwVeryHighVol);
+ultraHighVolume = V > (avgVolume * dwUltraHighVol);
+LowVolume = V < (avgVolume * dwLowVol);
+
+upThrustBar = downClose AND H > Ref(H,-1) AND (C == L) AND downClose AND (NOT narrowRange);
+noDemandBar = narrowRange AND LowVolume AND upBar AND (NOT upClose);
+noDemandBar = narrowRange AND LowVolume AND upBar AND (V < Ref(V,-1)) AND (V < Ref(V,-2));
+noSupplyBar = narrowRange AND LowVolume AND downBar AND (V < Ref(V,-1)) AND (V < Ref(V,-2));
+absorption = Ref(downbar, -1) AND Ref(highVolume, -1) AND upBar;
+support = Ref(downBar,-1) AND (NOT Ref(downClose,-1)) AND Ref(highVolume,-1) AND upBar;
+stoppingVolume = Ref(downBar,-1) AND Ref(highVolume,-1) AND C > testCloseMiddle AND (NOT downBar);
+bullishsign=moderateVol+UpThrustBar;//OR moderateVol+upBar;
+rallyEnd = (Ref(highVolume,-1) AND Ref(upBar,-1) AND wideRange AND downBar) OR
+// (narrowRange AND highVolume AND H > Ref(HHV(H, 250), -1));
+
+weakness = upThrustBar OR noDemandBar OR
+(narrowRange AND (H > Ref(H,-1)) AND highVolume) OR
+(Ref(highVolume,-1) AND Ref(upBar,-1) AND downBar AND (H < Ref(H,-1)));
+
+
+
+Volstat = WriteIf(V>Vp2,EncodeColor(colorLime)+"Very High",WriteIf(V>Vp1,EncodeColor(colorLime)+" High",WriteIf(V>Vrg,EncodeColor(colorLime)+"Above Average",WriteIf(V<Vrg AND V>Vn1,EncodeColor(colorRed)+"Less than Average",WriteIf(V<Vn1,EncodeColor(colorRed)+"Low","")))));
+VolSpread = WriteIf(rg >(arg*2),EncodeColor(colorLime)+" Wide",WriteIf(rg>arg,EncodeColor(colorLime)+" Above Average",EncodeColor(colorRed)+" Narrow"));
+VolClose = WriteIf(Vhcls,EncodeColor(colorLime)+"Very High",WriteIf(ucls,EncodeColor(colorLime)+"High",WriteIf(mcls,EncodeColor(colorYellow)+"Mid",
+WriteIf(dcls,EncodeColor(colorRed)+"Down","Very Low"))));
+VolZone = WriteIf(rising , EncodeColor(colorBrightGreen) + "Accumulation",WriteIf(falling , EncodeColor(colorCustom12) + "Distirbution",EncodeColor(colorAqua) + "Flat"));
+VolStatus = WriteIf(Weakness , EncodeColor(colorRed) + "Weak", WriteIf(stoppingVolume , EncodeColor(colorCustom12) + "StoppingVol", WriteIf(noSupplyBar , EncodeColor(colorLightOrange) + "NoSupply",
+WriteIf(support , EncodeColor(colorLightBlue) + "SupportVol", WriteIf(noDemandBar , EncodeColor(colorPink) + "NoDemand", WriteIf(absorption, EncodeColor(colorSkyblue) + "Absorption",
+WriteIf(upThrustBar, EncodeColor(colorBlue) + "Upthrust", WriteIf(bullishsign, EncodeColor(colorPaleGreen) + "STRONG", EncodeColor(colorTan) + "Neutral"))))))));
+
+VolChange = WriteIf(MAuv>MAdv,EncodeColor(colorBrightGreen)+" BullVol",WriteIf(MAuv<MAdv,EncodeColor(colorRed)+" BearVol",": Neutral"))+WriteIf(rising,EncodeColor(colorBrightGreen)+" Rising",WriteIf(falling,EncodeColor(colorRed)+" Falling"," Flat"));
+_SECTION_END();
+
+
+
+_SECTION_BEGIN("Title Information");
+function T3(price,periods)
+{
+    s = 0.84;
+    e1=EMA(price,periods);
+    e2=EMA(e1,Periods);
+    e3=EMA(e2,Periods);
+    e4=EMA(e3,Periods);
+    e5=EMA(e4,Periods);
+    e6=EMA(e5,Periods);
+    c1=-s*s*s;
+    c2=3*s*s+3*s*s*s;
+    c3=-6*s*s-3*s-3*s*s*s;
+    c4=1+3*s+s*s*s+3*s*s;
+    Ti3=c1*e6+c2*e5+c3*e4+c4*e3;
+    return ti3;
+}
+
+DC = EncodeColor(colorWhite);
+WB = EncodeColor(colorBrightGreen);
+BU = EncodeColor(colorBrightGreen);
+WS = EncodeColor(colorRed);
+BE = EncodeColor(colorRed);
+NE = EncodeColor(colorGrey50);
+
+TWB = "Buy Warning";
+TWS = "Sell Warning";
+TBU = "Bullish";
+TBE = "Bearish";
+TNE = "Netral";
+
+Ibuy =  Cross(RSI(14), EMA(RSI(14),9));
+Isell = Cross(EMA(RSI(14),9), RSI(14));
+Ibuy = ExRem(Ibuy, ISell);
+Isell = ExRem(ISell, Ibuy);
+BlRSI = RSI(14) > EMA(RSI(14),9);
+BrRSI = RSI(14) < EMA(RSI(14),9);
+IBuySell = WriteIf(Ibuy,TWB,WriteIf(ISell,TWS,WriteIf(BlRSI,TBU,WriteIf(BrRSI,TBE,TNE))));
+IbuySell_color = WriteIf(Ibuy,WB,WriteIf(Isell,WS,(WriteIf(BlRSI,BU,WriteIf(BrRSI,BE,NE)))));
+
+//  SwingBuy - Swing Buy Signal
+no=Param( "Swing", 3, 1, 55 );
+tsl_col=ParamColor( "Color", colorCycle );
+res=HHV(H,no);
+sup=LLV(L,no);
+avd=IIf(C>Ref(res,-1),1,IIf(C<Ref(sup,-1),-1,0));
+avn=ValueWhen(avd!=0,avd,1);
+tsl=IIf(avn==1,sup,res);
+SwBuy=Cross(Open,tsl);
+SwSell=Cross(tsl,Open);
+SwBuy1= Open > tsl;
+SwSell1 = tsl > Open;
+SwBuySell = WriteIf(SwBuy,TWB,WriteIf(SwSell,TWS,WriteIf(SwBuy1,TBU,WriteIf(SwSell1,TBE,TNE))));
+SwbuySell_color = WriteIf(SwBuy,WB,WriteIf(SwSell,WS,(WriteIf(SwBuy1,BU,WriteIf(SwSell1,BE,NE)))));
+
+
+//30 Week New High-New Low
+HI2 = High > Ref(HHV(High,130),-1);
+LI2 = Low < Ref(LLV(Low,130),-1);
+HIV2=Ref(HHV(High,130),-1);
+LIV2=Ref(LLV(Low,130),-1);
+
+//52 Week New High-New Low
+HI = High > Ref(HHV(High,260),-1);
+LI = Low < Ref(LLV(Low,260),-1);
+HIV1= Ref(HHV(High,260),-1);
+LIV1=Ref(LLV(Low,260),-1);
+
+//Wad: Larry Williams Acc/Distribution Status
+TRH = IIf(Ref(C, -1) > H, Ref(C, -1), H);
+TRL = IIf(Ref(C, -1) < L, Ref(C, -1), L);
+ad = IIf(C > Ref(C, -1), C - TRL, IIf(C < Ref(C, -1), C - TRH, 0));
+WAD = Cum(ad);
+wu = wad > Ref(wad,-1);
+wd = wad < Ref(wad,-1);
+WadBuySell = WriteIf(wu,"Accumulation",WriteIf(wd,"Distribution","Neutral"));
+WadbuySell_color = WriteIf(wu,WB,WriteIf(wd,WS,NE));
+
+// "ZL W%R"
+R = ((HHV(H,14) - C) /(HHV (H,14) -LLV (L,14))) *-100;
+MaxGraph=10;
+Period= 10;
+EMA1= EMA(R,Period);
+EMA2= EMA(EMA1,5);
+Difference= EMA1 - EMA2;
+ZeroLagEMA= EMA1 + Difference;
+PR=100-abs(ZeroLagEMA);
+MoveAvg=MA(PR,5);
+ZBuy = Cross(PR,moveAvg) AND PR > 50;
+ZSell = Cross(moveAvg,PR) AND PR < 50;
+ZBuy1= PR >= MoveAvg AND PR>= Ref(PR,-1) ;
+ZSell1=(PR < MoveAvg) OR PR>= MoveAvg AND PR< Ref(PR,-1) ;
+
+ZWRBuySell = WriteIf(ZBuy,TWB,WriteIf(ZSell,TWS,WriteIf(ZBuy1,TBU,WriteIf(ZSell1,TBE,TNE))));
+ZWRbuySell_color = WriteIf(ZBuy,WB,WriteIf(ZSell,WS,(WriteIf(ZBuy1,BU,WriteIf(ZSell1,BE,NE)))));
+
+//Term Frame
+//Shortterm Bullish or Bearish
+sBull = C >WMA(C,15);
+sBear= C <WMA(C,15);
+ShortTerm = WriteIf(sBull,"UP",WriteIf(sBear,"DOWN","Neutral"));
+ShortTerm_color = WriteIf(sBull,WB,WriteIf(sBear,WS,NE));
+
+//Midterm Bullish or Bearish
+mBull = C > WMA(C,50);
+mBear= C < WMA(C,50);
+MidTerm = WriteIf(mBull,"UP",WriteIf(mBear,"DOWN","Neutral"));
+MidTerm_color = WriteIf(mBull,WB,WriteIf(mBear,WS,NE));
+
+//Longterm Bullish or Bearish
+LongBull = C > WMA(C,200);
+LongBear= C <WMA(C,200);
+LongTerm = WriteIf(LongBull,"UP",WriteIf(LongBear,"DOWN","Neutral"));
+LongTerm_color = WriteIf(LongBull,WB,WriteIf(LongBear,WS,NE));
+
+
+Title = Name() +" - "+ Date() + "\n"+
+DC +"Open: "+Open+"  High: "+High+"  Low: "+Low+"  Close: "+Close+"\n"+
+DC +"MidTerm Tren : "+MidTerm_color + MidTerm+"\n"+
+DC +"LongTerm Tren : "+LongTerm_color + LongTerm+"\n\n"+
+DC +"----- Signal -----\n"+
+DC +"Initial Buy : "+ IBuySell_color + IBuySell +"\n"+
+DC +"Swing Buy : "+ SwBuySell_color + SwBuySell+"\n"+
+DC +"Acc/Dist : "+WadBuySell_color + WadBuySell+"\n"+
+DC +"%R : "+ZWRBuySell_color+ZWRBuySell+"\n\n"+
+DC +"----- Volume -----\n"+
+DC +"Volume : "+Volstat+"\n"+
+DC +"Spread : "+VolSpread+"\n"+
+DC +"Close : "+VolClose+"\n"+
+DC +"Zone : "+VolZone+"\n"+
+DC +"Status : "+VolStatus+"\n"+
+DC +"Change : "+VolChange+"\n";
+
+
+_SECTION_END();
+
+/*
+|-----------------------------------------------------------------------------------------
+|PatternExplorer.com - Sector industry relative strength analysis
+|Copyright © 2007, PatternExplorer.com
+|http://www.PatternExplorer.com
+|e-mail: support@PatternExplorer.com
+|-----------------------------------------------------------------------------------------
+*/
+FormulaName = "PE - SI Relative Strength";
+
+SetChartOptions( 0, chartShowDates | chartWrapTitle );
+#pragma nocache
+#include_once  <\PEInc\PatternExplorer_f0.afl>
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Defaults.afl"
+#Include_once "C:\Program Files (x86)\AmiBroker\Formulas\PatternExplorer\#Defaults & Mods\PE - Mods.afl"
+
+/*******************************************************************************************/
+AddCustomCodeBeforePE();
+/*******************************************************************************************/
+
+_SECTION_BEGIN( "Styles" );
+width = Param( "Sector ( Width )", 2.5, 0, 5, 0.5 );
+IndustryStyle = ParamStyle( "Industry", styleLine, maskAll );
+_SECTION_END();
+
+_SECTION_BEGIN( "Colors" );
+Sectorcolor = ParamColor( "Sector", def_Sectorcolor );
+IndustryColor = ParamColor( "Industry", def_Industrycolor );
+_SECTION_END();
+
+/*******************************************************************************************/
+
+AddGradientBackground( def_BGColorswitch, def_BgTopcolor, def_BgBottomcolor, def_titlebkcolor );
+
+/*******************************************************************************************/
+
+Plot( iRSavg, "", IndustryColor, IndustryStyle );
+PlotOHLC( sRSavg - ( width*0.01*sRSavg ), sRSavg + ( width*0.01*sRSavg ), sRSavg - ( width*0.01*sRSavg ), sRSavg, "", sectorcolor, styleCloud );
+
+/*******************************************************************************************/
+
+if ( inAA )
+{
+
+/*******************************************************************************************/
+
+    if ( Filtercond == 0 )
+    {
+        Filter = def_Filter AND SymF AND IIf( FilterUndefined, IIf( StrLeft( Name(), 1 ) != "~", SectorID() > 0 AND IndustryID() > 0, SymFSI ), 1 );
+        Addefaultcolumns();
+        AddColumn( sRSavg, "RS(Sector)", 1.2, colorDefault, colorDefault, width = 70 );
+        AddColumn( iRSavg, "RS(Industry)", 1.2, colorDefault, colorDefault, width = 80 );
+        AddTextColumn( Sector, "Sector name" );
+        AddTextColumn( Industry, "Industry name" );
+        AddColumn( sFT, "Tickers in Sector", 1, colorDefault, colorDefault, width = 100 );
+        AddColumn( iFT, "Tickers in Industry", 1, colorDefault, colorDefault, width = 120 );
+        AddColumn( GetFnData( "InsiderHoldPercent" ), "Insider Hold Percent" );
+        AddColumn( GetFnData( "InstitutionHoldPercent" ), "Institution Hold Percent" );
+        AddTextColumn( FullName(), "Full name" );
+    }
+
+    if ( Filtercond == 1 )
+    {
+        Filter = def_Filter AND SymF AND GroupID() == 253 AND IIf( FilterUndefined, SymFSI, 1 );
+        AddColumn( sRSavg, "RS(Sector)", 1.2, colorDefault, colorDefault, width = 70 );
+        AddColumn( iRSavg, "RS(Industry)", 1.2, colorDefault, colorDefault, width = 80 );
+        AddColumn( sFT, "Tickers in Sector", 1.0, colorDefault, colorDefault, width = 100 );
+        AddColumn( iFT, "Tickers in Industry", 1.0, colorDefault, colorDefault, width = 120 );
+    }
+}
+
+/*******************************************************************************************/
+
+ToolTip = def_ToolTip;
+
+/*******************************************************************************************/
+AddCustomCodeAfterPE();
+
+/*******************************************************************************************/
+Title = "PatternExplorer.com - Sector Industry Strength Analysis - " + Name() + " - {{INTERVAL}}"
+        + EncodeColor( SectorColor ) + ", Sector " + SectorID( 1 ) + ", contains " + WriteVal( sFT, 1.0 ) + " Symbols, " + "Strength = " + WriteVal( sRSavg, 1.2 ) + ", "
+        + EncodeColor( IndustryColor ) + "Industry " + IndustryID( 1 ) + ", contains " + WriteVal( iFT, 1.0 ) + " Symbols, " + "Strength = " + WriteVal( iRSavg, 1.2 );
+
+//+", contains "+WriteVal(sFT,1.0)+ " Symbols, "+WriteVal(sFBu_p,1.0)+"% in UpTrend, "

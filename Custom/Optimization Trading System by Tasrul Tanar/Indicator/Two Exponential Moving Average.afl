@@ -1,0 +1,10 @@
+P = ParamField("Price field short",-1);
+Periods = Param("MA Short Periode", 10, 1, 500, 1, 1 );
+iColor=ParamColor( "MA Short Color", colorRed );
+iStyle=ParamStyle("MA Short Style"); 
+P2 = ParamField("Price field long",-1);
+Periods2 = Param("MA Long Periode", 60, 1, 1000, 1, 1 );
+iColor2=ParamColor( "MA Long Color", colorBlue );
+iStyle2=ParamStyle("MA Long Style"); 
+Plot( TAS_EMA( P, Periods ), "Short MA", iColor,iStyle);
+Plot( TAS_EMA( P2, Periods2 ), "Long MA", iColor2,iStyle2);

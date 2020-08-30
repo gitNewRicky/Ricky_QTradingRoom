@@ -1,0 +1,6 @@
+sig1 = Optimize("DEMA Short Periods",9,2,15,1);
+sig2 = Optimize("DEMA Long Periods",14,2,30,1);
+sig3 = Optimize("Trigger Periods",9,2,15,1);
+
+Buy=TAS_Buy_MACD_Smooth(sig1,sig2,sig3);
+Sell=TAS_Sell_MACD_Smooth(sig1,sig2,sig3);

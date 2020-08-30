@@ -1,0 +1,6 @@
+r1 = Param( "Periode", 100, 1, 100000, 1 );
+r2 = Param( "Std Dev (1)/Std Err (2)", 2, 1, 2, 1 );
+r3 = Param( "Z Value", 2, -100, 100, 1 );
+iColor=ParamColor( "Color", colorBlue );
+iStyle=ParamStyle("Style",styleThick); 
+TAS_TrendChannel_prd(r1,r2,r3,iColor,iStyle);

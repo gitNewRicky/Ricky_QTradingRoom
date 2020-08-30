@@ -1,0 +1,8 @@
+#include_once <../Include/FF_Tools.afl>
+
+FF = fnGetNBSVolA();
+CumFF = Cum(FF);
+MA5_Cum = WMA(CumFF,5);
+MA21_Cum = WMA(CumFF,21);
+
+Plot(CumFF,"Cum_FF",colorRed,styleLine);

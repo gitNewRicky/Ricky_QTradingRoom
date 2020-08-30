@@ -1,0 +1,6 @@
+sig1 = Optimize("EMA Short Periods",9,2,20,1);
+sig2 = Optimize("EMA Long Periods",14,2,40,1);
+sig3 = Optimize("Trigger",9,2,20,1);
+
+Buy=TAS_Buy_MACD(sig1,sig2,sig3);
+Sell=TAS_Sell_MACD(sig1,sig2,sig3);

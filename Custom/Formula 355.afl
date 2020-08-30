@@ -1,0 +1,10 @@
+Filter = 1;
+AddColumn(open,"open",1.0);
+AddColumn(high,"high",1.0);
+AddColumn(low,"low",1.0);
+AddColumn(close,"close",1.0);
+AddColumn(openint,"openint",1.0);
+AddColumn(aux1,"aux1",1.0);
+AddColumn(aux2,"NBSA",1.0);
+EstVNBSA = Aux2 / ((Open + High + Low + Close)/4);
+AddColumn(EstVNBSA,"EstVolumeNBSA",1.0);

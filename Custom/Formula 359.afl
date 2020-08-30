@@ -1,0 +1,6 @@
+_SECTION_BEGIN("new");
+
+Graph0 = odbcGetValueSQL("select aux1 from price where SYMBOL = 'ERAA'");
+
+
+_SECTION_END();

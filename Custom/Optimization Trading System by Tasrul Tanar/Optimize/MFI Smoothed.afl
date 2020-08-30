@@ -1,0 +1,6 @@
+sig1 = Optimize("MFI Periods",9,2,15,1);
+sig4 = Optimize("Smoothing Periods",2,2,5,1);
+sig2 = Optimize("OS",14,0,20,1);
+sig3 = Optimize("OB",9,80,100,1);
+Buy=TAS_Buy_MFI_Smooth(sig1,sig2,sig4);
+Sell=TAS_Sell_MFI_Smooth(sig1,sig3,sig4);

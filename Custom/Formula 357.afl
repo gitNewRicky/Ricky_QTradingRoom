@@ -1,0 +1,13 @@
+_SECTION_BEGIN("Dual CCI");
+SetChartBkColor(colorBlack);
+
+SmoothingCCI = WMA(CCI(50),3);
+
+//Plot(SmoothingCCI,"CCI[20]",colorGreen,styleStaircase);
+Plot(CCI(50),"CCI[50]",colorWhite,styleStaircase);
+Plot(0,"",colorWhite,styleLine);
+Plot(-100,"",colorBrightGreen,styleLine);
+Plot(100,"",colorRed,styleLine);
+
+
+_SECTION_END();

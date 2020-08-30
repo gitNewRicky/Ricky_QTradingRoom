@@ -1,0 +1,29 @@
+//------------------------------------------------------------------------------
+//  Formula Name	:      RSI WITH OVERBOUGHT & OVERSOLD COLOURED FOR AMIBROKER AFL by pipschart
+//  Author	        :      KrT group
+//  Up-loader	        :      www.pipschart.com
+//  E-mail		:      info@pipschart.com
+//  Amibroker Blog	:      www.pipschart.com/amibroker
+//  Origin		:      Modified & Collected from different sources.
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+
+_SECTION_BEGIN("RSI");
+SetChartOptions(0,0,ChartGrid20|ChartGrid80,0,100);
+periods = Param( "Periods", 8, 1, 200, 1 );
+z = RSI( periods);
+
+RSILineColor = ParamColor("RSI Line Color",ColorRGB(127,0,83));
+RSIOverboughtColor = ParamColor("RSI Overbought Color",ColorRGB(127,0,83));
+RSIOversoldColor = ParamColor("RSI Oversold Color",colorRed);
+
+
+Plot( z, _DEFAULT_NAME(), RSILineColor , styleLine  );
+Plot( 50, _DEFAULT_NAME(), RSILineColor , styleDashed|styleNoTitle  );
+Plot( 80, _DEFAULT_NAME(), RSILineColor , styleLine|styleNoTitle  );
+Plot( 20, _DEFAULT_NAME(), RSILineColor , styleLine|styleNoTitle  );
+PlotOHLC(z,z,50,z,"",IIf(z>50,RSIOverboughtColor,RSIOversoldColor),styleCloud|styleClipMinMax,20,80);
+
+
+_SECTION_END();

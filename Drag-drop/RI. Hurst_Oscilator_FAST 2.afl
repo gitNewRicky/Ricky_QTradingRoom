@@ -1,0 +1,31 @@
+_SECTION_BEGIN( "Hurstband Oscilator" );
+
+CY1 =  Param("Short Cycle Length?" ,10, 1 ,1000 ,1 )/2;
+CY2 =  Param("Medium Cycle Length?" ,80, 1 ,1000 ,1 )/2;
+M1 =  Param("Short Cycle Multiplyer?" ,1, 0.01 ,10 ,1 );
+M2 =  Param("Medium Cycle Multiplyer?" ,3, 0.01 ,10 ,1 );
+
+T1 =  Ref(WMA(Close ,CY1 ),CY1/2)+ M1*ATR(CY1 );
+B1 =  Ref(WMA( Close ,CY1 ),CY1/2)- M1*ATR(CY1 );
+T2 =  Ref(WMA(Close ,CY2 ),CY2/2)+ M2*ATR(CY2 );
+B2 =  Ref(WMA( Close ,CY2 ),CY2/2)- M2*ATR(CY2 );
+
+
+OO = (O - B1) / (T1 - B1) *100;
+OH = (H - B1) / (T1 - B1) *100;
+OL = (L - B1) / (T1 - B1) *100;
+OC = (C - B1) / (T1 - B1) *100;
+
+BarCol = IIf(OO < OC, colorBrightGreen,colorRed);
+SetChartBkColor(colorBlack);
+SetBarFillColor(BarCol);
+PlotOHLC(OO,OH,OL,OC,"",colorRose,styleCandle);
+
+Plot(150,"",colorRed,styleLine);
+Plot(100,"",colorDarkRed,styleLine);
+Plot(75,"",colorOrange,styleDashed);
+Plot(50,"",colorYellow,styleLine);
+Plot(25,"",colorDarkOliveGreen,styleDashed);
+Plot(0,"",colorGreen,styleLine);
+Plot(-50,"",colorBrightGreen,styleLine);
+_SECTION_END();

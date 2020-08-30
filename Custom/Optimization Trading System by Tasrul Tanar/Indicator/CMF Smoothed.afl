@@ -1,0 +1,5 @@
+Periods = Param("Periode", 14, 1, 1000, 1, 1 );
+Periods2 = Param("Smoothing", 2, 2, 5, 1, 1 );
+
+a=TAS_CMF_Smooth(Periods,Periods2);
+Plot( a, "CMF Smoothed", ParamColor( "Color", colorRed ), ParamStyle("Style") ); 

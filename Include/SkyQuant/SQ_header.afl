@@ -1,0 +1,178 @@
+/*******************************************************************************************/
+// SkyQuant for AmiBroker
+// http://skyquant.googlecode.com - HomeSite
+// http://groups.google.com/group/skyquant - Forum
+// You may use, copy, distribute, modify SkyQuant under the terms of
+// the GNU General Public License (GPL) Version 2, 2012 - 2013
+/*******************************************************************************************/
+EnableTextOutput(False);
+SetBarsRequired( -2, -2 );
+//RequestTimedRefresh(5);
+GraphXSpace = 3;
+//SetChartOptions(0,0);
+		method = -1;
+PList1 = "TZpath,ABpath";
+for( pp1 = 0; StrExtract( PList1, pp1 ) != ""; pp1++ )
+{
+	key = StrExtract( PList1, pp1 );
+	fh = fopen( "SkyQuant.ini", "r");
+	if( fh ) 
+	{ 
+		while( ! feof( fh ) ) 
+		{ 
+			str = fgets( fh );
+			if( StrExtract( str, 0 ) == key + "=" )
+			{ 
+				str = StrExtract( str, 1 );
+				str = StrReplace( str, "\\", "\\\\" );
+				VarSetText( key, str );
+			}
+		}
+		fclose( fh ); 
+	}
+	else 
+	{ 
+	   printf("ERROR: INI file can not be found (does not exist)"); 
+	}
+}
+
+//TZpath = "c:\\Program Files (x86)\\AmiBroker\\Formulas\\";
+//ABpath = "c:\\Program Files (x86)\\AmiBrokerBeta\\";
+SetChartBkColor( ParamColor( "BackGround Color", ColorRGB( 255, 245, 223 ) ) ); 
+pColors = 40;
+pColors[0] = 49;
+pColors[1] = 30;
+pColors[2] = 33;
+pColors[3] = 34;
+pColors[4] = 25;
+pColors[5] = 29;
+pColors[6] = 16;
+pColors[7] = ColorRGB( 255, 80, 255 );
+pColors[8] = 27;
+pColors[9] = ColorRGB( 170, 0, 170 );
+pColors[11] = 37;
+pColors[12] = 44;
+pColors[14] = 49;
+pColors[15] = 47;
+pColors[17] = 17;
+
+ORB = 2;
+ORB = Param ("Default Orbis", ORB, 0.5, 5, 0.5);
+OrbisBase = ORB;
+OrbisBase[0] =  2;
+OrbisBase[60] =  1;
+OrbisBase[120] =  1;
+OrbisBase[90] =  1;
+OrbisBase[180] =  1;
+OrbisBase[40] = 0.5;
+OrbisBase[45] = 0.5;
+OrbisBase[135] = 0.5;
+OrbisBase[30] = 0.5;
+OrbisBase[150] = 0.8;
+OrbisBase[72] = 0.8;
+OrbisBase[144] = 0.5;
+OrbisBase[108] = 0.5;
+OrbisBase[51] = 0.8;
+OrbisBase[102] = 0.7;
+OrbisBase[154] = 0.5;
+
+tzchoice = ParamList("Select TimeZone", "Moscow|London|NewYork|Chicago|Frankfurt|Sydney|HongKong|Mumbai|Jakarta" );
+ys = Param ("Font size", 6, 3, 15, 0.1);
+//Clr = Param( "Colors chain", 29, 0, 56, 1 );
+_TRACE("!CLEAR!"); // clears log window 
+#include <SkyQuant\SQ_func.afl>;
+
+//_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 ) ) ));
+//Plot( C, "Close", ParamColor("Color", colorBlack ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() );
+Color = colorLightGrey;
+ 
+	sysID = tzchoice + "_" + Name() + "_" + Interval( format = 2 );
+	TZ = StaticVarGet( sysID );
+	if( IsNull(TZ[BarCount-1]) || IsNull(TZ[0]) ) // for offline only
+	{
+		TZ = TIMEZONES( tzchoice );
+	}
+	StaticVarSet( sysID, TZ );
+	TZ = StaticVarGet( sysID );
+	Lat = StaticVarGet( "Lat"+tzchoice );
+	Lon = StaticVarGet( "Lon"+tzchoice );
+//Plot( TZ, "TZ", colorTan, styleDashed | styleOwnScale );
+			printf("Bars: " + WriteVal( BarCount, 1.0) + 
+			". Stats: " + WriteVal( StaticVarCount(), 1.0) + 
+			". " + tzchoice + ": " + WriteVal( TZ, 1.1) + "\n\n"); 
+
+SPosition = ParamList("Select Space Position", "Longitude|Declination|Speed|Heliocentric|Sidereal" );
+	switch( SPosition )
+	{
+		case "Longitude": 
+		{	
+			iflag = 256;
+			Cpos = 0;
+		}		break;
+		case "Declination": 
+		{	
+			iflag = 2 | 256 | 2048;
+			Cpos = 1;
+		}		break;
+		case "Speed": 
+		{	
+			iflag = 2 | 256;
+			Cpos = 3;
+		}		break;
+		case "Heliocentric": 
+		{	
+			iflag = 8 | 256;
+			Cpos = 0;
+		}		break;
+		case "Sidereal": 
+		{	
+			iflag = 256 | 65536;
+			Cpos = 0;
+             //  FAGAN_BRADLEY         0
+             //  LAHIRI                1
+             //  DELUCE                2
+             //  RAMAN                 3
+             //  USHASHASHI            4
+             //  KRISHNAMURTI          5
+             //  DJWHAL_KHUL           6
+             //  YUKTESHWAR            7
+             //  JN_BHASIN             8
+             //  BABYL_KUGLER1         9
+             //  BABYL_KUGLER2        10
+             //  BABYL_KUGLER3        11
+             //  BABYL_HUBER          12
+             //  BABYL_ETPSC          13
+             //  ALDEBARAN_15TAU      14
+             //  HIPPARCHOS           15
+             //  SASSANIAN            16
+             //  GALCENT_0SAG         17
+             //  J2000                18
+             //  J1900                19
+             //  B1950                20
+             //  USER                 255
+			ayanamsha = Param ("Select Ayanamsha", 1, 0, 20, 1);
+		//	ayanamsha = 1;   //  LAHIRI
+			SQsidmode(ayanamsha,0,0);
+		}		break;
+		default:
+		{	
+			iflag = 256;
+			Cpos = 0;
+		}
+	}
+
+	fvb = FirstVisibleValue( BarIndex() );
+	lvb = LastVisibleValue( BarIndex() );
+	width = Status("pxchartwidth");
+	pxchartleft = Status("pxchartleft"); 
+	pxchartright = Status("pxchartright");
+	pxchartwidth = Status("pxchartwidth"); 
+//	pxcharttop = Status("pxcharttop");
+	pxchartbottom = Status("pxchartbottom");
+	barw = ceil(width / (lvb - fvb));
+	bx = SelectedValue(BarIndex());
+
+if( ParamTrigger("Clearing", "Click here to recalculate all ephemeris") ) 
+{ 
+	StaticVarRemove( "*" );
+} 

@@ -1,0 +1,5 @@
+sig1 = Optimize("CMF Periods",9,2,100,1);
+sig2 = Optimize("EMA Periods",14,2,100,1);
+
+Buy=TAS_Buy_CMF_EMA(sig1,sig2);
+Sell=TAS_Sell_CMF_EMA(sig1,sig2);

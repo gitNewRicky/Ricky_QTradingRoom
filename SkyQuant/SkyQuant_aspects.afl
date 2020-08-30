@@ -1,0 +1,126 @@
+/*******************************************************************************************/
+// SkyQuant for AmiBroker
+// http://skyquant.googlecode.com - HomeSite
+// http://groups.google.com/group/skyquant - Forum
+// You may use, copy, distribute, modify SkyQuant under the terms of
+// the GNU General Public License (GPL) Version 2, 2012 - 2013
+/*******************************************************************************************/
+#include <SkyQuant\SQ_header.afl>;
+
+PList1 = "11,9,8,7,6,5,4,3,2,0,1";
+PList2 =  "9,8,7,6,5,4,3,2,0,1,12,15";
+//PList1 = "9,8,7,6,5,4,3,2,0,1";
+//PList2 = "8,7,6,5,4,3,2,0,1,11,12,15";
+_N( PList1 = ParamStr("Planets 1", PList1 ) );
+_N( PList2 = ParamStr("Planets 2", PList2 ) );
+_N( AnglesList = ParamStr("Angles", "0,90,180,60,120") );
+pMax = 0;
+allPl = 0;
+p1arr = p2arr = -1;
+for( pp = 0; StrExtract( PList1, pp ) != ""; pp++ )
+{
+	p = StrToNum( StrExtract( PList1, pp ) );
+	allPl[p] = 1;
+	if( p > pMax ) pMax = p;
+	p1arr[pp] = p;
+}
+for( pp2 = 0; StrExtract( PList2, pp2 ) != ""; pp2++ )
+{
+	p = StrToNum( StrExtract( PList2, pp2 ) );
+	allPl[p] = 1;
+	if( p > pMax ) pMax = p;
+	p2arr[pp2] = p;
+}
+
+mode = "P";
+for(p = 0; p <= pMax; p++)
+{
+	if( allPl[p] > 0 ){
+		EPHEMERIS( mode, p, iflag, cpos );
+		printf( SQname(p) + "\t|  " + ZODIACNAME(zod[bx]) + 
+			" %0.0f°%0.0f' \t#%0.0f\n", floor(grad1), grad2, p ); 
+	}
+}
+
+printf( "\n     << Aspects >>\n" );
+GfxSetBkMode(1); 
+GfxSetTextColor(colorBlue); 
+y1 = 35;
+titleStr = "";
+//ys = (pxchartbottom - y1) / (p1Count + 1) / 4.2;
+Hfont = ys * 1.8;
+GfxSelectFont("Tahoma", Hfont, 500 );
+nl = 0;
+
+for( pp1 = 0; p1arr[pp1] >= 0; pp1++ )
+{
+	p1 = p1arr[pp1];
+	GfxSetTextColor( colorBlue );
+	bgc = GetChartBkColor(); 
+	for( pp2 = pp1; p2arr[pp2] >= 0; pp2++ ) 
+	{
+		p2 = p2arr[pp2];
+		ang = ANGLE( VarGet("eph" + mode + p1), VarGet("eph" + mode + p2) );
+
+		grad2 = 60 * frac(ang);
+		printf( SQname(p1) + "-" + SQname(p2) + " \t|  %0.0f°%0.0f'" 
+			+ PRINTASP(ang[bx], ORB, p1, p2) + "\n", floor(ang), grad2 );
+				_N(Title = "Aspects: " + titleStr);
+		for( angN = 0; StrExtract( AnglesList, angN ) != ""; angN++ ) // перебираем углы
+		{
+			aspect = StrToNum( StrExtract( AnglesList, angN ) ) ;
+			ORB = OrbisBase[floor(aspect)];
+				if( aspect == 51 ) aspect = 51.42857; // 360 / 7;
+			else if( aspect == 102 ) aspect = 102.85714; // 360 / 7 * 2;
+			else if( aspect == 154 ) aspect = 154.28571; // 360 / 7 * 3;
+			for( i = 2; i < Min( Lvb - fvb, BarCount - fvb ) ; i++ ) 
+			{
+				b = i + fvb;
+				asp = ang[b];
+				if( aspect-ORB <= asp && asp <= aspect+ORB && p1 != p2 )
+				{
+					Color = ColorBlend( bgc[b] , ASPCOLOR(aspect), (ORB-abs(aspect-asp))/ORB );
+					GfxSelectSolidBrush( Color );
+					GfxSelectPen( Color );  
+ 					x = pxchartleft + i  * pxchartwidth / ( lvb - fvb + 1 );
+
+ 					y = y1 + ys * nl * 4; 
+					GfxGradientRect( x - barw/2, y-ys+7, x + barw/2, y+ys, bgc[b], color );
+					y = y + ys * 2;  
+					GfxGradientRect( x - barw/2, y-ys, x + barw/2, y+ys-7, color, bgc[b] );
+					bgc[b] = color;
+ 
+					if( ( aspect != 0 && ang[i+fvb-1] >= aspect && ang[i+fvb] < aspect
+						|| ang[i+fvb-1] <= aspect && ang[i+fvb] > aspect ) OR
+						( aspect == 0 && ang[i+fvb-2] > ang[i+fvb-1]
+							&& ang[i+fvb-1] <= ang[i+fvb] ) OR 
+						( aspect == 180 && ang[i+fvb-2] < ang[i+fvb-1]
+							&& ang[i+fvb-1] >= ang[i+fvb] ))
+					{
+						GfxSetTextAlign( 2 );
+						gx = 36;
+						gy = y - ys * 4.3;
+						GfxSetTextColor( pColors[p1] ); 
+						SYMBOL( p1, Hfont, x-gx, gy );
+						gx -= 14;
+						GfxSetTextColor( STICKCOLOR (aspect) );
+						SYMBOL( -1000-aspect, Hfont, x-gx, gy );
+						gx -= 14;
+						GfxSetTextColor( pColors[p2] );
+						SYMBOL( p2, Hfont, gx = x-gx, gy );
+						GfxSelectPen( STICKCOLOR (aspect) ); 
+						GfxSelectSolidBrush( STICKCOLOR (aspect) );
+						GfxRoundRect( x - barw/4, y-ys*4.5, x + barw/4, y+ys*0.5, 10, 10 ); 
+					}
+				}
+			}
+		}
+	}
+	GfxSetTextAlign( 0 );
+	GfxSetTextColor( pColors[p1] ); 
+	y = y1 + ys * nl * 4;
+	SYMBOL( p1, Hfont, 0, y-7 );
+	nl++;
+}
+
+//

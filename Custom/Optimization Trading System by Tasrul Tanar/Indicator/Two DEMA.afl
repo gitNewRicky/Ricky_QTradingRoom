@@ -1,0 +1,11 @@
+P = ParamField("Short Price field",-1);
+Periods = Param("DEMA Short Periods", 10, 1, 500, 1, 1 );
+iColor=ParamColor( "DEMA Short Color", colorRed );
+iStyle=ParamStyle("DEMA Short Style"); 
+Plot( TAS_DEMA( P, Periods ), "Short DEMA", iColor,iStyle); 
+
+P2 = ParamField("Long Price field",-1);
+Periods2 = Param("DEMA Long Periods", 60, 1, 1000, 1, 1 );
+iColor2=ParamColor( "DEMA Long Color", colorBlue );
+iStyle2=ParamStyle("DEMA Long Style"); 
+Plot( TAS_DEMA( P2, Periods2 ), "Long DEMA", iColor2,iStyle2); 

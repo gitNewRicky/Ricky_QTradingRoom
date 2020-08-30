@@ -1,0 +1,25 @@
+_SECTION_BEGIN("Volume");
+Plot( Volume, _DEFAULT_NAME(), ParamColor("Color", colorBlueGrey ), ParamStyle( "Style", styleHistogram | styleOwnScale | styleThick, maskHistogram  ) );
+_SECTION_END();
+
+_SECTION_BEGIN("Avg. Volume_date");
+r1 = Param( "Month", 1, 1, 12, 1 );
+r2 = Param( "Date", 31, 1, 31, 1 );
+r3 = Param( "Year", 2011, 1, 3000, 1 );
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style",styleThick); 
+
+a=TAS_AverageVolume_date(r2,r1,r3);
+Plot(a,"Avg.Volume_date",iColor,iStyle); 
+_SECTION_END();
+
+_SECTION_BEGIN("Avg. Volume_date1");
+r1 = Param( "Month", 1, 1, 12, 1 );
+r2 = Param( "Date", 31, 1, 31, 1 );
+r3 = Param( "Year", 2011, 1, 3000, 1 );
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style",styleThick); 
+
+a=TAS_AverageVolume_date(r2,r1,r3);
+Plot(a,"Avg.Volume_date",iColor,iStyle); 
+_SECTION_END();

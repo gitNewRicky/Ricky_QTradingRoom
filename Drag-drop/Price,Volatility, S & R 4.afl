@@ -1,0 +1,290 @@
+_SECTION_BEGIN("Price,Volatility, S & R");
+// Created by: Isfandi 18/05/17
+// Updated 1 Oktober 2017
+iMktVal=Param("Mkt. Value (Milyar) >",2,0,1000,1);
+iStrtPrd=Param("Start Periode",30,1,5000,1);
+iMaxR2=Param("r-squared >= ",70,0,100,1);
+sSymbol="^JKSE"; //ParamStr("Symbol","^JKSE");
+
+RR= TAS_r2_1stPeak(iStrtPrd,(iMaxR2/100));
+RP= TAS_r2_1stPeak_Prd(iStrtPrd,(iMaxR2/100));
+
+SetBarFillColor( IIf(O>C,colorViolet, colorLime) );
+Plot(Close, "", colorBlack, styleThick + styleCandle);
+
+pds = Param( "Periods", 5000, 1, 5000);
+
+AP = (H+L+C)/3;
+VLTP = (H-O)/O;
+VLTM = (L-O)/O;
+
+NV= (VLTP + VLTM)/VLTM;
+PV= (VLTP - VLTM)/VLTM;
+
+SumVolPlus = MA(VLTP, pds );
+SumVolMin = MA(VLTM, pds );
+RefAP= AP;
+UpperBand= RefAP+(RefAP*SumVolPlus );
+LowerBand= RefAP+(RefAP*SumVolMin );
+Vratio = (SumVolPlus /(SumVolMin*-1)) ;
+
+UB= UpperBand;
+y2 = LastValue(UB);
+LB= LowerBand;
+y12 = LastValue(LB);
+
+text = ParamToggle("Plot Text","Off|On",1);
+numbars = LastValue(Cum(Status("barvisible")));
+hts = Param ("Text Shift", 100,100,2000,100);
+fraction= 5;
+
+TP1 = (UB-C)/C*100;
+TK1 = (LB-C)/C*100;
+
+
+if(text==1) {
+PlotText("_____ " + WriteVal(Y2,format=1.1) + "", LastValue(BarIndex())-(numbars/hts), Y2 + 0.5, colorBlue);
+PlotText("_____ " + WriteVal(Y12,format=1.1) + "", LastValue(BarIndex())-(numbars/hts), Y12 + 0.5, colorRed);
+}
+
+Chg = ROC( C, 1 );
+Title = EncodeColor(1)+ Title = FullName()+" [ "+Name()+" ] - {{INTERVAL}} - "+ EncodeColor(1) + Date() +EncodeColor(11) +
+EncodeColor(1)+ " Open: "+ WriteIf(O> Ref(O,-1),EncodeColor(colorGreen),EncodeColor(colorRed))+ WriteVal(O,format=1.0) +
+EncodeColor(1)+ " High: "+ WriteIf(H> Ref(H,-1),EncodeColor(colorGreen),EncodeColor(colorRed)) + WriteVal(H,format=1.0) +
+EncodeColor(1)+ " Low: "+ WriteIf(L> Ref(L,-1),EncodeColor(colorGreen),EncodeColor(colorRed))+ WriteVal(L,format=1.0) +
+EncodeColor(1)+ " Close: "+ WriteIf(C> Ref(C,-1),EncodeColor(colorGreen),EncodeColor(colorRed))+ WriteVal(C,format=1.0)+
+EncodeColor(1)+ " Vol. "+ WriteIf(V > Ref(V,-1),EncodeColor(colorGreen),EncodeColor(colorRed))+ WriteVal(V,format=1.0)+
+
+"\n"+
+
+EncodeColor(1)+ "Prev. Avg. Price: "+ WriteIf(C > AP ,EncodeColor(colorGreen),EncodeColor(colorBlue))+ WriteVal(AP ,format=1.1)+
+"\n"+
+EncodeColor(1)+ "R-Squared: "+ EncodeColor(colorBlue)+ WriteVal(RR,format=1.4)+
+"\n"+
+EncodeColor(1)+ "Period: "+ EncodeColor(colorBlue)+ WriteVal(RP,format=1.0)+
+"\n"+
+EncodeColor(1)+ "Std.Dev: "+WriteIf(RR>=0.7016 AND RR <0.7062 ,EncodeColor(1)+ "1.04","")+
+
+
+WriteIf(RR>=0.956 AND RR <0.1034,EncodeColor(colorBlue)+ "0.12","")+
+WriteIf(RR>=0.1034 AND RR <0.1114,EncodeColor(colorBlue)+ "0.13","")+
+WriteIf(RR>=0.1114 AND RR <0.1192,EncodeColor(colorBlue)+ "0.14","")+
+WriteIf(RR>=0.1192 AND RR <0.1272,EncodeColor(colorBlue)+ "0.15","")+
+WriteIf(RR>=0.1272 AND RR <0.1350,EncodeColor(colorBlue)+ "0.16","")+
+WriteIf(RR>=0.1350 AND RR <0.1428,EncodeColor(colorBlue)+ "0.17","")+
+WriteIf(RR>=0.1428 AND RR <0.1506,EncodeColor(colorBlue)+ "0.18","")+
+WriteIf(RR>=0.1506 AND RR <0.1589,EncodeColor(colorBlue)+ "0.19","")+
+WriteIf(RR>=0.1589 AND RR <0.1646,EncodeColor(colorBlue)+ "0.20","")+
+WriteIf(RR>=0.1646 AND RR <0.1742,EncodeColor(colorBlue)+ "0.21","")+
+WriteIf(RR>=0.1742 AND RR <0.1820,EncodeColor(colorBlue)+ "0.22","")+
+WriteIf(RR>=0.1820 AND RR <0.1896,EncodeColor(colorBlue)+ "0.23","")+
+WriteIf(RR>=0.1896 AND RR <0.1974,EncodeColor(colorBlue)+ "0.24","")+
+WriteIf(RR>=0.1974 AND RR <0.2052,EncodeColor(colorBlue)+ "0.25","")+
+WriteIf(RR>=0.2052 AND RR <0.2128,EncodeColor(colorBlue)+ "0.26","")+
+WriteIf(RR>=0.2128 AND RR <0.2206,EncodeColor(colorBlue)+ "0.27","")+
+WriteIf(RR>=0.2206 AND RR <0.2282,EncodeColor(colorBlue)+ "0.28","")+
+WriteIf(RR>=0.2282 AND RR <0.2358,EncodeColor(colorBlue)+ "0.29","")+
+WriteIf(RR>=0.2358 AND RR <0.2434,EncodeColor(colorBlue)+ "0.30","")+
+WriteIf(RR>=0.2434 AND RR <0.2510,EncodeColor(colorBlue)+ "0.31","")+
+WriteIf(RR>=0.2510 AND RR <0.2586,EncodeColor(colorBlue)+ "0.32","")+
+WriteIf(RR>=0.2586 AND RR <0.2662,EncodeColor(colorBlue)+ "0.33","")+
+WriteIf(RR>=0.2662 AND RR <0.2736,EncodeColor(colorBlue)+ "0.34","")+
+WriteIf(RR>=0.2736 AND RR <0.2812,EncodeColor(colorBlue)+ "0.35","")+
+WriteIf(RR>=0.2812 AND RR <0.2886,EncodeColor(colorBlue)+ "0.36","")+
+WriteIf(RR>=0.2886 AND RR <0.2960,EncodeColor(colorBlue)+ "0.37","")+
+WriteIf(RR>=0.2960 AND RR <0.3034,EncodeColor(colorBlue)+ "0.38","")+
+WriteIf(RR>=0.3034 AND RR <0.3108,EncodeColor(colorBlue)+ "0.39","")+
+WriteIf(RR>=0.3108 AND RR <0.3182,EncodeColor(colorBlue)+ "0.40","")+
+WriteIf(RR>=0.3182 AND RR <0.3356,EncodeColor(colorBlue)+ "0.41","")+
+WriteIf(RR>=0.3256 AND RR <0.3328,EncodeColor(colorBlue)+ "0.42","")+
+WriteIf(RR>=0.3328 AND RR <0.3400,EncodeColor(colorBlue)+ "0.43","")+
+WriteIf(RR>=0.3400 AND RR <0.3544,EncodeColor(colorBlue)+ "0.44","")+
+WriteIf(RR>=0.3544 AND RR <0.3616,EncodeColor(colorBlue)+ "0.46","")+
+WriteIf(RR>=0.3616 AND RR <0.3688,EncodeColor(colorBlue)+ "0.47","")+
+WriteIf(RR>=0.3688 AND RR <0.3758,EncodeColor(colorBlue)+ "0.48","")+
+WriteIf(RR>=0.3758 AND RR <0.3830,EncodeColor(colorBlue)+ "0.49","")+
+WriteIf(RR>=0.3830 AND RR <0.3900,EncodeColor(colorBlue)+ "0.50","")+
+WriteIf(RR>=0.3900 AND RR <0.3970,EncodeColor(colorBlue)+ "0.51","")+
+WriteIf(RR>=0.3970 AND RR <0.4038,EncodeColor(colorBlue)+ "0.52","")+
+WriteIf(RR>=0.4038 AND RR <0.4108,EncodeColor(colorBlue)+ "0.53","")+
+WriteIf(RR>=0.4108 AND RR <0.4038,EncodeColor(colorBlue)+ "0.54","")+
+WriteIf(RR>=0.4038 AND RR <0.4108,EncodeColor(colorBlue)+ "0.53","")+
+WriteIf(RR>=0.4108 AND RR <0.4176,EncodeColor(colorBlue)+ "0.54","")+
+WriteIf(RR>=0.4176 AND RR <0.4246,EncodeColor(colorBlue)+ "0.55","")+
+WriteIf(RR>=0.4246 AND RR <0.4314,EncodeColor(colorBlue)+ "0.56","")+
+WriteIf(RR>=0.4314 AND RR <0.4380,EncodeColor(colorBlue)+ "0.57","")+
+WriteIf(RR>=0.4380 AND RR <0.4448,EncodeColor(colorBlue)+ "0.58","")+
+WriteIf(RR>=0.4448 AND RR <0.4514,EncodeColor(colorBlue)+ "0.59","")+
+WriteIf(RR>=0.4514 AND RR <0.4582,EncodeColor(colorBlue)+ "0.60","")+
+WriteIf(RR>=0.4582 AND RR <0.4648,EncodeColor(colorBlue)+ "0.61","")+
+WriteIf(RR>=0.4648 AND RR <0.4714,EncodeColor(colorBlue)+ "0.62","")+
+WriteIf(RR>=0.4714 AND RR <0.4778,EncodeColor(colorBlue)+ "0.63","")+
+WriteIf(RR>=0.4778 AND RR <0.4844,EncodeColor(colorBlue)+ "0.64","")+
+WriteIf(RR>=0.4844 AND RR <0.4908,EncodeColor(colorBlue)+ "0.65","")+
+WriteIf(RR>=0.4908 AND RR <0.4972,EncodeColor(colorBlue)+ "0.66","")+
+WriteIf(RR>=0.4972 AND RR <0.5034,EncodeColor(colorBlue)+ "0.67","")+
+WriteIf(RR>=0.5034 AND RR <0.5098,EncodeColor(colorBlue)+ "0.68","")+
+WriteIf(RR>=0.5098 AND RR <0.5160,EncodeColor(colorBlue)+ "0.69","")+
+WriteIf(RR>=0.5160 AND RR <0.5222,EncodeColor(colorBlue)+ "0.70","")+
+WriteIf(RR>=0.5222 AND RR <0.5284,EncodeColor(colorBlue)+ "0.71","")+
+WriteIf(RR>=0.5284 AND RR <0.5346,EncodeColor(colorBlue)+ "0.72","")+
+WriteIf(RR>=0.5346 AND RR <0.5408,EncodeColor(colorBlue)+ "0.73","")+
+WriteIf(RR>=0.5408 AND RR <0.5668,EncodeColor(colorBlue)+ "0.74","")+
+WriteIf(RR>=0.5668 AND RR <0.5528,EncodeColor(colorBlue)+ "0.75","")+
+WriteIf(RR>=0.5528 AND RR <0.5588,EncodeColor(colorBlue)+ "0.76","")+
+WriteIf(RR>=0.5588 AND RR <0.5646,EncodeColor(colorBlue)+ "0.77","")+
+WriteIf(RR>=0.5646 AND RR <0.5704,EncodeColor(colorBlue)+ "0.78","")+
+WriteIf(RR>=0.5704 AND RR <0.5762,EncodeColor(colorBlue)+ "0.79","")+
+WriteIf(RR>=0.5762 AND RR <0.5820,EncodeColor(colorBlue)+ "0.80","")+
+WriteIf(RR>=0.5820 AND RR <0.5878,EncodeColor(colorBlue)+ "0.81","")+
+WriteIf(RR>=0.5878 AND RR <0.5934,EncodeColor(colorBlue)+ "0.82","")+
+WriteIf(RR>=0.5934 AND RR <0.5990,EncodeColor(colorBlue)+ "0.83","")+
+WriteIf(RR>=0.5990 AND RR <0.6046,EncodeColor(colorBlue)+ "0.84","")+
+WriteIf(RR>=0.6046 AND RR <0.6102,EncodeColor(colorBlue)+ "0.85","")+
+WriteIf(RR>=0.6102 AND RR <0.6156,EncodeColor(colorBlue)+ "0.86","")+
+WriteIf(RR>=0.6156 AND RR <0.6212,EncodeColor(colorBlue)+ "0.87","")+
+WriteIf(RR>=0.6212 AND RR <0.6266,EncodeColor(colorBlue)+ "0.88","")+
+WriteIf(RR>=0.6266 AND RR <0.6318,EncodeColor(colorBlue)+ "0.89","")+
+WriteIf(RR>=0.6318 AND RR <0.6372,EncodeColor(colorBlue)+ "0.90","")+
+WriteIf(RR>=0.6372 AND RR <0.6424,EncodeColor(colorBlue)+ "0.91","")+
+WriteIf(RR>=0.6424 AND RR <0.6476,EncodeColor(colorBlue)+ "0.92","")+
+WriteIf(RR>=0.6476 AND RR <0.6528,EncodeColor(colorBlue)+ "0.93","")+
+WriteIf(RR>=0.6528 AND RR <0.6578,EncodeColor(colorBlue)+ "0.94","")+
+WriteIf(RR>=0.6578 AND RR <0.6630,EncodeColor(colorBlue)+ "0.95","")+
+WriteIf(RR>=0.6630 AND RR <0.6680,EncodeColor(colorBlue)+ "0.96","")+
+WriteIf(RR>=0.6680 AND RR <0.6730,EncodeColor(colorBlue)+ "0.97","")+
+WriteIf(RR>=0.6730 AND RR <0.6778,EncodeColor(colorBlue)+ "0.98","")+
+WriteIf(RR>=0.6778 AND RR <0.6826,EncodeColor(colorBlue)+ "0.99","")+
+WriteIf(RR>=0.6826 AND RR <0.6876,EncodeColor(colorBlue)+ "1.00","")+
+WriteIf(RR>=0.6876 AND RR <0.6922,EncodeColor(colorBlue)+ "1.01","")+
+WriteIf(RR>=0.6922 AND RR <0.6979,EncodeColor(colorBlue)+ "1.02","")+
+WriteIf(RR>=0.6970 AND RR <0.7016,EncodeColor(colorBlue)+ "1.03","")+
+WriteIf(RR>=0.7016 AND RR <0.7062,EncodeColor(colorBlue)+ "1.04","")+
+WriteIf(RR>=0.7062 AND RR <0.7108,EncodeColor(colorBlue)+ "1.05","")+
+WriteIf(RR>=0.7108 AND RR <0.7154,EncodeColor(colorBlue)+ "1.06","")+
+WriteIf(RR>=0.7154 AND RR <0.7198,EncodeColor(colorBlue)+ "1.07","")+
+WriteIf(RR>=0.7198 AND RR <0.7242,EncodeColor(colorBlue)+ "1.08","")+
+WriteIf(RR>=0.7242 AND RR <0.7286,EncodeColor(colorBlue)+ "1.09","")+
+WriteIf(RR>=0.7286 AND RR <0.7330,EncodeColor(colorBlue)+ "1.10","")+
+WriteIf(RR>=0.7330 AND RR <0.7372,EncodeColor(colorBlue)+ "1.11","")+
+WriteIf(RR>=0.7372 AND RR <0.7416,EncodeColor(colorBlue)+ "1.12","")+
+WriteIf(RR>=0.7416 AND RR <0.7458,EncodeColor(colorBlue)+ "1.13","")+
+WriteIf(RR>=0.7458 AND RR <0.7498,EncodeColor(colorBlue)+ "1.14","")+
+WriteIf(RR>=0.7498 AND RR <0.7540,EncodeColor(colorBlue)+ "1.15","")+
+WriteIf(RR>=0.7540 AND RR <0.7580,EncodeColor(colorBlue)+ "1.16","")+
+WriteIf(RR>=0.7580 AND RR <0.7620,EncodeColor(colorBlue)+ "1.17","")+
+WriteIf(RR>=0.7620 AND RR <0.7660,EncodeColor(colorBlue)+ "1.18","")+
+WriteIf(RR>=0.7660 AND RR <0.7698,EncodeColor(colorBlue)+ "1.19","")+
+WriteIf(RR>=0.7698 AND RR <0.7738,EncodeColor(colorBlue)+ "1.20","")+
+WriteIf(RR>=0.7738 AND RR <0.7776,EncodeColor(colorBlue)+ "1.21","")+
+WriteIf(RR>=0.7776 AND RR <0.7814,EncodeColor(colorBlue)+ "1.22","")+
+WriteIf(RR>=0.7814 AND RR <0.7850,EncodeColor(colorBlue)+ "1.23","")+
+WriteIf(RR>=0.7850 AND RR <0.7888,EncodeColor(colorBlue)+ "1.24","")+
+WriteIf(RR>=0.7888 AND RR <0.7924,EncodeColor(colorBlue)+ "1.25","")+
+WriteIf(RR>=0.7924 AND RR <0.7960,EncodeColor(colorBlue)+ "1.26","")+
+WriteIf(RR>=0.7960 AND RR <0.7994,EncodeColor(colorBlue)+ "1.27","")+
+WriteIf(RR>=0.7994 AND RR <0.8030,EncodeColor(colorBlue)+ "1.28","")+
+WriteIf(RR>=0.8030 AND RR <0.8064,EncodeColor(colorBlue)+ "1.29","")+
+WriteIf(RR>=0.8064 AND RR <0.8098,EncodeColor(colorBlue)+ "1.30","")+
+WriteIf(RR>=0.8098 AND RR <0.8132,EncodeColor(colorBlue)+ "1.31","")+
+WriteIf(RR>=0.8132 AND RR <0.8164,EncodeColor(colorBlue)+ "1.32","")+
+WriteIf(RR>=0.8164 AND RR <0.8198,EncodeColor(colorBlue)+ "1.34","")+
+WriteIf(RR>=0.8198 AND RR <0.8230,EncodeColor(colorBlue)+ "1.35","")+
+WriteIf(RR>=0.8230 AND RR <0.8262,EncodeColor(colorBlue)+ "1.36","")+
+WriteIf(RR>=0.8262 AND RR <0.8294,EncodeColor(colorBlue)+ "1.37","")+
+WriteIf(RR>=0.8294 AND RR <0.8324,EncodeColor(colorBlue)+ "1.38","")+
+WriteIf(RR>=0.8324 AND RR <0.8354,EncodeColor(colorBlue)+ "1.39","")+
+WriteIf(RR>=0.8354 AND RR <0.8384,EncodeColor(colorBlue)+ "1.40","")+
+WriteIf(RR>=0.8384 AND RR <0.8414,EncodeColor(colorBlue)+ "1.41","")+
+WriteIf(RR>=0.8414 AND RR <0.8444,EncodeColor(colorBlue)+ "1.42","")+
+WriteIf(RR>=0.8444 AND RR <0.8472,EncodeColor(colorBlue)+ "1.43","")+
+WriteIf(RR>=0.8472 AND RR <0.8502,EncodeColor(colorBlue)+ "1.44","")+
+WriteIf(RR>=0.8502 AND RR <0.8530,EncodeColor(colorBlue)+ "1.45","")+
+WriteIf(RR>=0.8530 AND RR <0.8558,EncodeColor(colorBlue)+ "1.46","")+
+WriteIf(RR>=0.8558 AND RR <0.8584,EncodeColor(colorBlue)+ "1.47","")+
+WriteIf(RR>=0.8584 AND RR <0.8612,EncodeColor(colorBlue)+ "1.48","")+
+WriteIf(RR>=0.8612 AND RR <0.8638,EncodeColor(colorBlue)+ "1.49","")+
+WriteIf(RR>=0.8638 AND RR <0.8664,EncodeColor(colorBlue)+ "1.50","")+
+WriteIf(RR>=0.8664 AND RR <0.8690,EncodeColor(colorBlue)+ "1.51","")+
+WriteIf(RR>=0.8690 AND RR <0.8714,EncodeColor(colorBlue)+ "1.52","")+
+WriteIf(RR>=0.8714 AND RR <0.8740,EncodeColor(colorBlue)+ "1.53","")+
+WriteIf(RR>=0.8740 AND RR <0.8764,EncodeColor(colorBlue)+ "1.54","")+
+WriteIf(RR>=0.8764 AND RR <0.8788,EncodeColor(colorBlue)+ "1.55","")+
+WriteIf(RR>=0.8788 AND RR <0.8812,EncodeColor(colorBlue)+ "1.56","")+
+WriteIf(RR>=0.8812 AND RR <0.8836,EncodeColor(colorBlue)+ "1.57","")+
+WriteIf(RR>=0.8836 AND RR <0.8858,EncodeColor(colorBlue)+ "1.58","")+
+WriteIf(RR>=0.8858 AND RR <0.8882,EncodeColor(colorBlue)+ "1.59","")+
+WriteIf(RR>=0.8882 AND RR <0.8904,EncodeColor(colorBlue)+ "1.60","")+
+WriteIf(RR>=0.8904 AND RR <0.8926,EncodeColor(colorBlue)+ "1.61","")+
+WriteIf(RR>=0.8926 AND RR <0.8948,EncodeColor(colorBlue)+ "1.62","")+
+WriteIf(RR>=0.8948 AND RR <0.8968,EncodeColor(colorBlue)+ "1.63","")+
+WriteIf(RR>=0.8968 AND RR <0.8990,EncodeColor(colorBlue)+ "1.64","")+
+WriteIf(RR>=0.8990 AND RR <0.9010,EncodeColor(colorBlue)+ "1.65","")+
+WriteIf(RR>=0.9010 AND RR <0.9030,EncodeColor(colorBlue)+ "1.66","")+
+WriteIf(RR>=0.9030 AND RR <0.9050,EncodeColor(colorBlue)+ "1.67","")+
+WriteIf(RR>=0.9050 AND RR <0.9070,EncodeColor(colorBlue)+ "1.68","")+
+WriteIf(RR>=0.9070 AND RR <0.9090,EncodeColor(colorBlue)+ "1.69","")+
+WriteIf(RR>=0.9090 AND RR <0.9108,EncodeColor(colorBlue)+ "1.70","")+
+WriteIf(RR>=0.9108 AND RR <0.9128,EncodeColor(colorBlue)+ "1.71","")+
+WriteIf(RR>=0.9128 AND RR <0.9146,EncodeColor(colorBlue)+ "1.72","")+
+WriteIf(RR>=0.9146 AND RR <0.9164,EncodeColor(colorBlue)+ "1.73","")+
+WriteIf(RR>=0.9164 AND RR <0.9182,EncodeColor(colorBlue)+ "1.74","")+
+WriteIf(RR>=0.9182 AND RR <0.9198,EncodeColor(colorBlue)+ "1.75","")+
+WriteIf(RR>=0.9198 AND RR <0.9216,EncodeColor(colorBlue)+ "1.76","")+
+WriteIf(RR>=0.9216 AND RR <0.9232,EncodeColor(colorBlue)+ "1.77","")+
+WriteIf(RR>=0.9232 AND RR <0.9250,EncodeColor(colorBlue)+ "1.78","")+
+WriteIf(RR>=0.9250 AND RR <0.9266,EncodeColor(colorBlue)+ "1.79","")+
+WriteIf(RR>=0.9266 AND RR <0.9282,EncodeColor(colorBlue)+ "1.80","")+
+WriteIf(RR>=0.9282 AND RR <0.9298,EncodeColor(colorBlue)+ "1.81","")+
+WriteIf(RR>=0.9298 AND RR <0.9312,EncodeColor(colorBlue)+ "1.82","")+
+WriteIf(RR>=0.9312 AND RR <0.9328,EncodeColor(colorBlue)+ "1.83","")+
+WriteIf(RR>=0.9328 AND RR <0.9342,EncodeColor(colorBlue)+ "1.84","")+
+WriteIf(RR>=0.9342 AND RR <0.9356,EncodeColor(colorBlue)+ "1.85","")+
+WriteIf(RR>=0.9356 AND RR <0.9372,EncodeColor(colorBlue)+ "1.86","")+
+WriteIf(RR>=0.9372 AND RR <0.9386,EncodeColor(colorBlue)+ "1.87","")+
+WriteIf(RR>=0.9386 AND RR <0.9398,EncodeColor(colorBlue)+ "1.88","")+
+WriteIf(RR>=0.9398 AND RR <0.9412,EncodeColor(colorBlue)+ "1.89","")+
+WriteIf(RR>=0.9412 AND RR <0.9426,EncodeColor(colorBlue)+ "1.90","")+
+WriteIf(RR>=0.9426 AND RR <0.9438,EncodeColor(colorBlue)+ "1.91","")+
+WriteIf(RR>=0.9438 AND RR <0.9452,EncodeColor(colorBlue)+ "1.92","")+
+WriteIf(RR>=0.9452 AND RR <0.9464,EncodeColor(colorBlue)+ "1.93","")+
+WriteIf(RR>=0.9464 AND RR <0.9476,EncodeColor(colorBlue)+ "1.94","")+
+WriteIf(RR>=0.9476 AND RR <0.9488,EncodeColor(colorBlue)+ "1.95","")+
+WriteIf(RR>=0.9488 AND RR <0.9500,EncodeColor(colorBlue)+ "1.96","")+
+WriteIf(RR>=0.9500 AND RR <0.9512,EncodeColor(colorBlue)+ "1.97","")+
+WriteIf(RR>=0.9512 AND RR <0.9522,EncodeColor(colorBlue)+ "1.98","")+
+WriteIf(RR>=0.9522 AND RR <0.9534,EncodeColor(colorBlue)+ "1.99","")+
+WriteIf(RR>=0.9534 AND RR <0.9544,EncodeColor(colorBlue)+ "2.00","")+
+WriteIf(RR>=0.9544 AND RR <0.9556,EncodeColor(colorBlue)+ "2.01","")+
+WriteIf(RR>=0.9556 AND RR <0.9566,EncodeColor(colorBlue)+ "2.02","")+
+WriteIf(RR>=0.9566 AND RR <0.9576,EncodeColor(colorBlue)+ "2.03","")+
+WriteIf(RR>=0.9576 AND RR <0.9586,EncodeColor(colorBlue)+ "2.04","")+
+WriteIf(RR>=0.9586 AND RR <0.9596,EncodeColor(colorBlue)+ "2.05","")+
+WriteIf(RR>=0.9596 AND RR <0.9606,EncodeColor(colorBlue)+ "2.06","")+
+WriteIf(RR>=0.9606 AND RR <0.9616,EncodeColor(colorBlue)+ "2.07","")+
+WriteIf(RR>=0.9616 AND RR <0.9624,EncodeColor(colorBlue)+ "2.08","")+
+WriteIf(RR>=0.9624 AND RR <0.9634,EncodeColor(colorBlue)+ "2.09","")+
+WriteIf(RR>=0.9634 AND RR <0.9700,EncodeColor(colorBlue)+ "2.17","")+
+WriteIf(RR>=0.9700 AND RR <0.9798,EncodeColor(colorBlue)+ "2.18","")+
+
+
+"\n"+
+EncodeColor(1)+ "Volatility (+) : "+ WriteIf(SumVolPlus > 0 ,EncodeColor(colorGreen),EncodeColor(colorDarkBlue))+ WriteVal(SumVolPlus ,format=1.4)+
+"\n"+
+EncodeColor(1)+ "Volatility (-) : "+ WriteIf(SumVolMin < 0 ,EncodeColor(colorRed),EncodeColor(colorDarkBlue))+ WriteVal(SumVolMin ,format=1.4)+
+"\n"+
+EncodeColor(1)+ "V-Ratio : "+ WriteIf(Vratio < Ref(Vratio ,-1) ,EncodeColor(colorRed),EncodeColor(colorDarkBlue))+ WriteVal(Vratio ,format=1.2)
++"\n"+
+EncodeColor(1)+ "Chg.: "+ WriteIf(Chg > 0,EncodeColor(1),EncodeColor(1))+ WriteVal(ROC(C,1),format=1.2)+ "%"+"\n";
+_SECTION_END();
+
+_SECTION_BEGIN("VWAP_date");
+r1 = Param( "Month", 1, 1, 12, 1 );
+r2 = Param( "Date", 31, 1, 31, 1 );
+r3 = Param( "Year", 2019, 1, 3000, 1 );
+a=TAS_WAP_date(r2,r1,r3);
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style"); 
+
+Plot(a,"VWAP_date",iColor,iStyle); 
+_SECTION_END();

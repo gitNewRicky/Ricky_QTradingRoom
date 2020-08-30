@@ -1,0 +1,205 @@
+/*
+//------------------------------------------------------------------------------
+//
+//  Formula Name: QIFA v1.2 - PER Vs ROE
+//  Author		: Isnandar 
+//  E-mail		: isnandar2009@gmail.com
+//  Date		: Jan 2017
+//  Ref.		: AFL to plot a scatter chart (XY Chart) v:0.1 by Anderson Wilson (www.andersonwilson.com)
+// 				  based on October 11, 2007 - Low-level gfx example: Yearly profit chart from Tomasz Janeczko 
+//  
+//------------------------------------------------------------------------------
+*/
+
+/*
+New Update :
+
+v.1.2 : 2017-09-02
+- Add parameter symbol info
+
+v.1.1 : 2017-08-24
+- Add Exploration
+
+
+*/
+QIsnInitialize();
+
+GfxSetOverlayMode( 2 );
+GfxSetBkMode( 0 );
+result=0;
+
+_SECTION_BEGIN("Symbols");
+	Remark = "Selected Symbols" ;
+	SectorList = "Agriculture   ,Mining        ,Basic Industry,Misc. Industry,Consumer      ,Property      ,Infrastructure,Finance       ,Trade          ";
+
+	function ParamIndustryNum( n )
+	{
+	 global ListNum;
+		ListNum 		= Param("Industry#", 1, 1, 9, 1);
+	 return (n*10)+ListNum;
+	}
+
+	SymBank = "BBRI,BBCA,BBNI,BMRI,PNBN,BDMN,BNII,BJTM,BJBR,BNGA,BBKP,BBTN";
+	SymList = ParamStr( "Symbols", symBank );
+	SymList = StrToUpper(SymList);
+	BasedOn = ParamList("Based On", "SelectedSymbols|Sector|Industry|Watchlist",1);
+	SectorName = ParamList("Sectors", SectorList,0);
+	nSectorID = (StrFind( SectorList, SectorName)-1)/15 + 1 ;
+	nIndustryNum 	= ParamIndustryNum(nSectorID);
+	WatchlistNum 	= Param("Watchlist#", 1, 1, 255, 1);
+	WatchlistNum-=1;
+_SECTION_END();
+
+_SECTION_BEGIN("Range PER");
+	MinPER 	= Param("Min PER", 0, -100, 10, 5);
+	MaxPER 	= Param("Max PER", 50, 25, 250, 5);
+_SECTION_END();
+
+_SECTION_BEGIN("Range ROE");
+	MinROE 	= Param("Min ROE", -25, -300, 10, 5);
+	MaxROE 	= Param("Max ROE", 100, 25, 250, 5);
+_SECTION_END();
+
+function GetSymbols()
+{
+	Remark = TickerList = "";
+	if(BasedOn == "Watchlist" )
+	{
+		SymbolList = CategoryGetSymbols(categoryWatchlist, WatchlistNum);
+		Remark = "Watchlist: " + CategoryGetName( categoryWatchlist, WatchlistNum);	
+	}
+	
+	if( BasedOn == "Sector" )
+	{
+		SymbolList = CategoryGetSymbols(categorySector, nSectorID);
+		Remark = "Sector: " + CategoryGetName( categorySector, nSectorID) ;
+	}
+
+	if( BasedOn == "Industry" )
+	{
+		SymbolList = CategoryGetSymbols(categoryIndustry, nIndustryNum);
+		Remark = CategoryGetName( categorySector, nSectorID) +" - "+"Industry: "+(CategoryGetName( categoryIndustry, nIndustryNum) ) ;
+	}
+	
+	if( SymbolList=="" )
+	{
+		Remark += " Undefined";
+	}
+
+ return SymbolList;
+}
+
+
+function DisplayPERvsROE()
+{
+    if( BasedOn!="SelectedSymbols" ) SymList = GetSymbols(); 
+
+    for( i = 0; ( symbol = StrExtract( SymList, i ) ) != ""; i++ )
+    {
+       result=QIsnGetPERvsROE(symbol,MinPER,MinROE,MaxPER,MaxROE);
+    }
+    QIsnGridLines();
+    for( i = 0; ( symbol = StrExtract( SymList, i ) ) != ""; i++ )
+    {
+		QIsnDrawPERvsROE(symbol,colorDefault);
+    }
+    
+	GfxSelectFont("Verdana", 13, 100);
+	if(result)
+	{
+		GfxSetTextColor(colorWhite); 		
+		GfxTextOut(Remark, 65, 5 ); 
+		GfxTextOut( Date(),  ( Status( "pxwidth" ) - 155 ), 15 ) ;
+			
+		GfxTextOut("Parameters: "+NumToStr(MinPER,format=1.0)+"<PER<"+NumToStr(MaxPER,format=1.0)+" And "+NumToStr(MinROE,format=1.0)+"<ROE<"+NumToStr(MaxROE,format=1.0), 65, 25 ); 
+		
+		GfxSetTextColor(colorDefault); 
+		GfxSelectFont("Verdana", 8, 100);
+		SetChartBkColor(16); 
+	}
+	
+}
+
+DisplayPERvsROE();
+
+_SECTION_BEGIN("Exploration");
+	if( Status("action") == actionExplore  ) 
+	{
+		Chg = C - Ref(C,-1);
+		ROE = QIsnFA("ROE");
+		BVS = QIsnFA("BookValuePerShare");
+		PBV = C/BVS ;
+		EPS = QIsnFA("EPS");
+		PER = C/EPS;
+		QtrlyEarningsGrowth= QIsnFA("QEG");
+		
+		Filter = PER >= MinPER AND PER <= MaxPER;
+
+		bkColorDefault = 54;
+		AddColumn(C,"Close",1,IIf(Chg>0,colorGreen,colorRed),-1,60);
+		AddColumn(Chg,"Chg",1,IIf(Chg>0,colorGreen,colorRed),-1,45);
+		AddColumn(ROC( C, 1 ), "%Chg",1.2,IIf(Chg>0,colorGreen,colorRed),-1,45);
+		AddColumn(QtrlyEarningsGrowth,"QtrlyEarningsGrowth",1.2,colorDefault,45,80);
+
+		AddColumn(BVS,"BV",1.2,colorDefault,bkColorDefault);
+		AddColumn(PBV,"PBV",1.2,colorDefault,bkColorDefault);
+		AddColumn(ROE,"ROE",1.2,colorDefault,bkColorDefault);
+		AddColumn(PER,"PER",1.2,colorDefault,45,80);
+		
+		AddTextColumn(SectorID(1), "Sector",1.0,colorDefault,bkColorDefault,90);
+		AddTextColumn(IndustryID(1), "Industry",1.0,colorDefault,bkColorDefault,150);
+		
+		SetSortColumns(11,9);
+
+	}
+_SECTION_END();
+
+
+_SECTION_BEGIN("Symbol Info.");
+	ShowFA = ParamToggle("Show?","Yes|No",0);
+	FAWidth=Param("Width",200,190,225,5);    	
+	FAHeight=Param("Height",115,115,480,5);    	
+	FAHor=Param("HPosition",50,50,480,1);
+	FAVer=Param("VPosition",70,70,740,1);   
+	if(ShowFA && result )
+	{
+		MRQorFY = QIsnFA("AsOfDate");
+		QtrlyEarningsGrowth= QIsnFA("QEG");
+		DER = Nz(QIsnFA("TotalLiabilities")/QIsnFA("TotalEquity")*100,0);
+		ROE = Nz(QIsnFA("ROE"),0);
+		BVS = Nz(QIsnFA("BookValuePerShare"),0);
+		PBV = Nz(C/BVS,0) ;
+		EPS = Nz(QIsnFA("EPS"),0);
+		PER = Nz(C/EPS,0);
+		MCap = Nz(C*QIsnFA("SharesOut")/1000000,0) ;
+		YrAgoEPS = QIsnFA("EPS",-1);
+		EPS1YrGrowth =IIf(YrAgoEPS>0 && EPS>0,Nz(100 * ( -1 + EPS / YrAgoEPS )),0);
+
+		x1=FAVer;y1=FAHor; 
+		x2=FAVer+FAWidth;	y2=FAHor+FAHeight; 		
+		x3=15;	y3=15;	xmargin=15;	
+
+		GfxSelectPen( colorWhite, 2 );
+		GfxSelectSolidBrush( colorLightGrey );
+		GfxRoundRect( x1, y1, x2, y2, x3, y3 );
+					
+		GfxSelectFont( "Verdana", 9, 100 );
+		GfxSetTextColor( colorBlue );
+		GfxSetTextAlign(0);
+		GfxTextOut( Name()+" : "+MRQorFY, x1+xmargin, y1+5);	
+		
+		GfxSelectFont( "Verdana", 8, 100 );		
+		GfxSetTextColor( colorBlack );
+		GfxTextOut( "EPSttm: "+EPS+"  PER: "+WriteVal(PER,1.2)+"x", x1+xmargin, y1+20);	
+		GfxTextOut( "Qtrly Earnings Growth: "+WriteVal(QtrlyEarningsGrowth,1.2)+"%", x1+xmargin, y1+35);
+		GfxTextOut( "1Yr. EPS Growth: "+WriteVal(EPS1YrGrowth,1.2)+"%", x1+xmargin, y1+50);
+		
+		GfxSetTextColor( colorBlack );
+		GfxTextOut( "BV: "+BVS+"  PBV: "+WriteVal(PBV,1.2)+"x", x1+xmargin, y1+65);
+		GfxTextOut( "ROE: "+WriteVal(ROE,1.2)+"%  DER: "+WriteVal(DER,1.2)+"%", x1+xmargin, y1+80);
+		GfxTextOut( "M. Cap.: "+WriteVal(MCap,1.2)+"B", x1+xmargin, y1+95);
+		
+		
+	}
+_SECTION_END();
+

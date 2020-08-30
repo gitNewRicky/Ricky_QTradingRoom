@@ -1,0 +1,28 @@
+function stSetBackgroundTitle( txt )
+{
+	height = Status("pxheight");
+	titleFontHeight = height/3;
+	
+	GfxSetOverlayMode(1);
+	GfxSelectFont("Tahoma", titleFontHeight );
+	GfxSetTextAlign( 6 );// center alignment
+	GfxSetTextColor( ColorRGB( 120, 120, 120 ) );
+	GfxSetBkMode(1); // transparent
+	GfxTextOut( txt, Status("pxwidth")/2, height/8 - titleFontHeight/8);
+}
+
+function stSetBackgroundSubtitle( txt )
+{
+	height = Status("pxheight");
+	titleFontHeight = height/3;
+	subtitleFontHeight = height/10;
+	spacing = height/100;
+	
+	GfxSetOverlayMode(1);
+	GfxSelectFont("Tahoma",  subtitleFontHeight);
+	GfxSetTextAlign( 6 );// center alignment
+	GfxSetTextColor( ColorRGB( 120, 120, 120 ) );
+	GfxSetBkMode(1); // transparent
+	GfxTextOut( txt, Status("pxwidth")/2,  
+				height/8 + titleFontHeight + subtitleFontHeight + spacing);
+}

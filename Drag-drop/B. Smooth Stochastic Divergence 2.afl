@@ -1,0 +1,67 @@
+// Downloaded From www.WiseStockTrader.com
+_SECTION_BEGIN( "Stochastic" );
+ 
+periods = Param( "Periods", 14, 1, 200, 1 );
+Ksmooth = Param( "%K avg", 3, 1, 200, 1 );
+Dsmooth = Param( "%D avg", 3, 1, 200, 1 );
+myStochD =StochD( periods , Ksmooth, DSmooth );
+myStochK =StochK( periods , Ksmooth);
+Overbought = 80 ;
+Oversold =20 ;
+Center = 50 ;
+ 
+Buy1 = Cross(myStochK, Oversold ) ;
+Buy2 = Cross(myStochK, Center ) ;
+Sell1 = Cross( Overbought, myStochK );
+Sell2 = Cross( Center, myStochK );
+ 
+ 
+Plot( myStochD, "Stochastic %D"+_PARAM_VALUES( ), ParamColor( "ColorD", colorRed ), ParamStyle(" StyleD") );
+Plot( myStochK, "Stochastic %K", ParamColor( "ColorK", colorBlue ), ParamStyle(" StyleK") );
+ 
+PlotShapes(IIf( Sell1, shapeDownArrow , shapeNone), colorRed,0, Offset=Null) ;
+PlotShapes(IIf( Sell2, shapeDownArrow , shapeNone), colorRed,0, Offset=Null) ;
+PlotShapes(IIf( Buy1 , shapeUpArrow , shapeNone), colorGold,0, Offset=Null) ;
+PlotShapes(IIf( Buy2 , shapeUpArrow , shapeNone), colorGold,0, Offset=Null) ;
+ 
+Plot(Overbought, "",colorRed) ;
+Plot(Oversold, "",colorGreen) ;
+Plot(Center, "",colorWhite, styleDashed) ;
+ 
+y0=LastValue( Trough(StochD( periods , Ksmooth, DSmooth ),1,2));
+y1=LastValue( Trough(StochD( periods , Ksmooth, DSmooth ),1,1));
+x0=BarCount - 1 - LastValue(TroughBars(StochD( periods , Ksmooth, DSmooth ),1,2));
+price_start= Close[x0] ;
+x1=BarCount - 1 - LastValue(TroughBars(StochD( periods , Ksmooth, DSmooth ),1,1));
+price_end=Close[ x1];
+Line = LineArray( x0, y0, x1, y1, 0 );
+Plot( Line, "Support line", colorYellow );
+Buy = y1>y0 AND price_end<price_start;
+PlotShapes(shapeUpArrow * Buy, colorGreen,0, Line);
+ 
+y00=LastValue( Peak(StochD( periods , Ksmooth, DSmooth ),1,2));
+y11=LastValue( Peak(StochD( periods , Ksmooth, DSmooth ),1,1));
+x00=BarCount - 1 - LastValue(PeakBars( StochD(periods , Ksmooth, DSmooth ),1,2));
+price_start1= Close[x00] ;
+x11=BarCount - 1 - LastValue(PeakBars( StochD(periods , Ksmooth, DSmooth ),1,1));
+price_end1=Close[ x11];
+Line = LineArray( x00, y00, x11, y11, 0 );
+Plot( Line, "Resistance line", colorBrightGreen );
+Sell = y11<y00 AND price_end1>price_start1;
+PlotShapes(shapeDownArrow * Sell, colorOrange,0,Line) ;
+ 
+ 
+PlotOHLC( myStochK,myStochK, 50,myStochK, "", colorDarkGrey, styleCloud | styleClipMinMax, Oversold , Overbought);
+PlotOHLC( myStochD,myStochD, 50,myStochD, "", colorDarkRed, styleCloud | styleClipMinMax, Oversold , Overbought);
+ 
+ 
+//Optimize
+ 
+range = Optimize( "Range", 8, 8, 14, 1 );
+Ksmooth = Optimize("%K smooth", 3, 2, 5, 1 );
+Dsmooth = Optimize("%D smooth", 3, 2, 5, 1 );
+Buy=Cross( StochK (range,Ksmooth) , StochD (range,Ksmooth, Dsmooth) );
+Sell = Cross( StochD(range, Ksmooth,Dsmooth) , StochK(range, Ksmooth) );
+ 
+ 
+_SECTION_END( );

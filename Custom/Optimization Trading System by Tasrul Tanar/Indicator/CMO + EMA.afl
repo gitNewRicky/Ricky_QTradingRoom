@@ -1,0 +1,9 @@
+Periods = Param("CMO Periods", 14, 1, 1000, 1, 1 );
+Periods2 = Param("EMA Periods", 10, 1, 1000, 1, 1 );
+iColor=ParamColor( "CMO Color", colorBlack );
+iStyle=ParamStyle("CMO Style",styleThick); 
+iColor2=ParamColor( "EMA Color", colorRed );
+iStyle2=ParamStyle("EMA Style",styleThick); 
+
+
+a=TAS_CMO_EMA(Periods,Periods2,iColor,iStyle,iColor2,iStyle2);

@@ -1,0 +1,22 @@
+#include_once <..\Include\Tools.afl>
+
+function stGetFreq()
+{
+	if (Interval() < inDaily) {
+		_N( sql = "SELECT Freq, dtime from Price where ticker = '"+ Name()+"' " +
+					stSQLDateTimeFilter() +
+					" ORDER BY dtime ASC");
+	} else {
+		if (Interval() > inDaily) {
+			stAlert("Error: Interval greater than daily is not supported yet");
+		}
+		
+		_N( sql = "SELECT Freq, dtime from price where ticker = '"+Name()+"'" +
+					stSQLDateTimeFilter() +
+					" ORDER BY dtime ASC");
+	}
+	
+	ffIntVal = stCachedSQL("stFFIntervalValue", sql);
+	return ffIntVal;	
+}
+

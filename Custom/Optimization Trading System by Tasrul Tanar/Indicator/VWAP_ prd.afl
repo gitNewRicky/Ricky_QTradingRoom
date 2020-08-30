@@ -1,0 +1,6 @@
+r1 = Param( "Periode", 100, 1, 1000, 1 );
+a=TAS_WAP_prd(r1);
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style"); 
+
+Plot(a,"VWAP_prd",iColor,iStyle); 

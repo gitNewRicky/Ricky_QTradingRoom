@@ -1,0 +1,31 @@
+// Downloaded From www.WiseStockTrader.com
+_SECTION_BEGIN("Ehler Channel");
+Price = (H+L)/2;
+MomLength = 10;
+
+PriceMomSum = 0;
+FiveMomSum = 0;
+
+FiveMom = abs(Price - Ref(Price, -5));
+PriceMom = Price * FiveMom;
+for (i=0; i < MomLength; i++) {
+ PriceMomSum = PriceMomSum + Ref(PriceMom, -i);
+ FiveMomSum = FiveMomSum + Ref(FiveMom, -i);
+}
+NLEF = PriceMomSum / FiveMomSum;
+Buy=  Close  > NLEF;
+Sell= Close < NLEF;
+Buy=ExRem(Buy,Sell); Sell=ExRem(Sell,Buy); 
+PlotShapes( shapeUpArrow* Buy , colorBrightGreen ,0);
+PlotShapes( shapeDownArrow* Sell, colorRed ,0);
+
+Plot(Close, "Close", colorWhite, styleThick);
+Plot(NLEF, "NonLinear Ehlers Filter", IIf(Close>NLEF, colorBrightGreen, colorRed), styleThick);
+GraphXSpace = 10;
+
+Filter = Buy OR Sell;
+Buy=ExRem(Buy,Sell); Sell=ExRem(Sell,Buy); 
+AddTextColumn(FullName(),"Name");
+AddColumn( Buy, "BUY" );
+AddColumn( Sell, "SELL" );
+_SECTION_END();

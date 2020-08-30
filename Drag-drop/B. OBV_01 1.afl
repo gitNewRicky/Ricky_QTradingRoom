@@ -1,0 +1,5 @@
+_SECTION_BEGIN("OBV_01");
+Plot( OBV(), _DEFAULT_NAME(), colorGreen, ParamStyle("Style"));
+Plot( WMA(OBV(),3), "Signal", colorBlack, ParamStyle("Style"));
+
+_SECTION_END();

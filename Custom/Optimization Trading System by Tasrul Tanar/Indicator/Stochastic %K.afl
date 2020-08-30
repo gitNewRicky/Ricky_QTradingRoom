@@ -1,0 +1,6 @@
+r1 = Param( "Periods", 14, 14, 1000, 1 );
+r2 = Param( "%K avg", 3, 1, 1000, 1 );
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style"); 
+
+TAS_StochasticOscillator1(r1,r2,iColor,iStyle);

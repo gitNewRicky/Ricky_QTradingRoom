@@ -1,0 +1,20 @@
+#include_once <../Include/BS_Tools.afl>
+#include_once <../Include/Common_Tools.afl>
+
+
+_SECTION_BEGIN("Retail Broker NetVol");
+stSetBackgroundTitle("Net Buy and Sell Retail");
+
+	NBRetail = fnGetNetBuyRetail();
+	NSRetail = fnGetNetSellRetail();
+	Netvol = NBRetail + NSRetail;
+	CumNetVol = Cum(Netvol);
+	WMA_CumNetVol = WMA(CumNetVol,10);
+	CumNetVol_color = IIf(CumNetVol < WMA_CumNetVol,colorGreen,colorRed);
+	
+	Plot(CumNetVol,"Net Volume",CumNetVol_color,styleLine | styleThick |  styleDashed);	
+	Plot(NBRetail,"Net Buy Retail",colorGreen,styleHistogram);
+	Plot(NSRetail,"Net Sell Retail",colorRed,styleHistogram);
+	
+
+_SECTION_END();

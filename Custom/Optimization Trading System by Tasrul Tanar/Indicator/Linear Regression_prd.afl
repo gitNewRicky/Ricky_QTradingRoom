@@ -1,0 +1,6 @@
+r1 = Param( "Periode", 100, 1, 1000, 1 );
+iColor=ParamColor( "Color", colorRed );
+iStyle=ParamStyle("Style"); 
+
+a=TAS_LinearRegression_prd(r1);
+Plot(a,"Linear Regression_prd",iColor,iStyle); 

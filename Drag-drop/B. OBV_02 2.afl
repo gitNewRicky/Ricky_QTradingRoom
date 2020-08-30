@@ -1,0 +1,12 @@
+_SECTION_BEGIN("OBV");
+COBV = OBV();
+MOBV = WMA(OBV(),3);
+
+Histogram = COBV - MOBV;
+
+
+//Plot( COBV _DEFAULT_NAME(), ParamColor("Color", colorCycle ), ParamStyle("Style")  );
+//Plot( MOBV, "Signal", colorBlack, ParamStyle("Style"));
+Plot(Histogram,"Histogram",colorBlack,styleHistogram);
+
+_SECTION_END();

@@ -1,0 +1,5 @@
+sig1 = Optimize("Periods",9,2,100,1);
+sig2 = Optimize("Smoothing Periods",2,2,5,1);
+
+Buy=TAS_Buy_CMF_Smooth(sig1,sig2);
+Sell=TAS_Sell_CMF_Smooth(sig1,sig2);
